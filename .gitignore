@@ -4,3 +4,4 @@ dist
 .claude/
 .claude-flow/
 android/app/build
+apps/mobile/build
