@@ -1,0 +1,8 @@
+{
+  "appId": "app.chaharbarg.game",
+  "appName": "چهاربرگ",
+  "webDir": "dist",
+  "backgroundColor": "#0d1830",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" }
+}

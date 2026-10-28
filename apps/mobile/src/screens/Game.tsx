@@ -15,9 +15,11 @@ import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
 import { saveMatch, update, useProfile, type MatchCtx } from '../lib/store';
 
+const FAST = typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast'); // test hook: quick bots
 const POS: Record<number, string[]> = { 2: ['top'], 3: ['tr', 'tl'], 4: ['right', 'top', 'left'] };
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
 const byRank = (a: Card, b: Card) => a.rank - b.rank || a.suit.localeCompare(b.suit);
+const label = (c: Card) => `${({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[c.rank] ?? c.rank}${{ S: '♠', H: '♥', D: '♦', C: '♣' }[c.suit]}`;
 
 interface Settled {
   outcome: 'win' | 'loss' | 'draw';
@@ -97,7 +99,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     const t = setTimeout(() => {
       const mv = chooseMove(deal, seat, arena.botLevel, rng);
       commit(mv.cardId, mv.captureIds);
-    }, 700 + Math.random() * 500);
+    }, FAST ? 20 : 700 + Math.random() * 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mc, summary, result, menu]);
@@ -131,7 +133,9 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
   // ---- unit labels and scores ----
   const u0 = unitOf(players, view);
   const unitName = (u: number) =>
-    players === 4 ? (u === u0 ? tr('تیم شما', 'Your team') : tr('تیم حریف', 'Opponents')) : u === u0 ? tr('شما', 'You') : ctx.seats[u].name;
+    ctx.mode === 'pnp'
+      ? players === 4 ? tr(`تیم ${n(u + 1)}`, `Team ${u + 1}`) : ctx.seats[u].name
+      : players === 4 ? (u === u0 ? tr('تیم شما', 'Your team') : tr('تیم حریف', 'Opponents')) : u === u0 ? tr('شما', 'You') : ctx.seats[u].name;
   const targetLabel = mc.config.target === 'single' ? tr('یک دست', 'Single deal') : n(mc.config.target);
 
   // ---- finishing ----
@@ -191,7 +195,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
         ? tr('کارتی برای برداشتن نیست؛ دوباره بزن تا بیفتد', 'Nothing to capture — tap again to drop it')
         : opts.length === 1
           ? tr('دوباره بزن تا برداشته شود', 'Tap again to capture')
-          : tr('کارت‌های زمین را برای برداشتن انتخاب کن', 'Select the floor cards to capture');
+          : tr('یک ترکیب را انتخاب کن (یا کارت‌های زمین را بزن)', 'Choose a combination (or tap floor cards)');
 
   return (
     <div className="game" style={{ ['--felt' as string]: table.felt, ['--rim' as string]: table.rim }}>
@@ -255,6 +259,18 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
 
       <div className="myzone">
         <div className="hint-line">{hint}</div>
+        {myTurn && card && opts.length > 1 && (
+          <div className="opts">
+            {opts.map((o, i) => {
+              const oi = o.map((x) => x.id);
+              return (
+                <button key={i} className={`optchip ${sameSet(oi, pick) ? 'on' : ''}`} onClick={() => { sfx('click'); setPick(oi); }}>
+                  {o.map(label).join(' + ')}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="actions">
           {myTurn && card && (
             <>

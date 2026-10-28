@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type { MatchState } from '@chaharbarg/engine';
 import { DEFAULT_SETTINGS, createProfile, verifyProfile, type Profile } from '../economy/economy';
 
+// ponytail: localStorage is enough for a profile + 40-entry ledger; move to SQLite (Capacitor) if saves grow or the OS evicts it.
 const KEY = 'chaharbarg.profile.v1';
 const MATCH_KEY = 'chaharbarg.match.v1';
 

@@ -28,7 +28,10 @@ function moveGain(s: DealState, m: Move): { gain: number; after: DealState } {
   return { gain, after: state };
 }
 
-/** Hard bot: expected best reply of an opponent holding a random unseen card. */
+/**
+ * Hard bot: expected best reply of an opponent holding a random unseen card.
+ * ponytail: ignores which unseen cards are in whose hand and any sur-cap/last-round limits; add belief tracking if bots need to be stronger.
+ */
 function threat(s: DealState, after: DealState, seat: number): number {
   const seen = new Set<string>([
     ...after.floor.map((c) => c.id),
