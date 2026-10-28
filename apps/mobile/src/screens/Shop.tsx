@@ -53,8 +53,10 @@ export function Shop() {
         {msg && <span className="mute">{msg}</span>}
       </div>
 
-      <div style={{ padding: '0 14px' }} className="seg">
-        {KINDS.map((x) => <button key={x.k} className={kind === x.k ? 'on' : ''} onClick={() => setKind(x.k)}>{lang === 'fa' ? x.fa : x.en}</button>)}
+      <div style={{ padding: '0 14px' }}>
+        <div className="seg">
+          {KINDS.map((x) => <button key={x.k} className={kind === x.k ? 'on' : ''} onClick={() => setKind(x.k)}>{lang === 'fa' ? x.fa : x.en}</button>)}
+        </div>
       </div>
       <div className="grid2" style={{ padding: '0 14px 14px', gridTemplateColumns: 'repeat(2, 1fr)' }}>
         {COSMETICS.filter((c) => c.kind === kind).map((c) => {
