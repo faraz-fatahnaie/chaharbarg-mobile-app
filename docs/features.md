@@ -5,7 +5,7 @@ Legend: **✅ built in this branch** · v1 = release scope · v2 = next · later
 ## Gameplay
 | Feature | Priority | Status |
 |---|---|---|
-| Rules engine: 2/3/4 players, teams, sur, Sur Sarbaz, scoring, match to 62/100/single deal | v1 | ✅ 35 tests |
+| Rules engine: 2/3/4 players, teams, sur, Sur Sarbaz, scoring, match to 62/100/single deal | v1 | ✅ 36 tests |
 | Bots at 3 levels (measured: medium beats easy 75%, hard beats medium 65%) | v1 | ✅ |
 | Pass-and-play on one device with hand-off screen | v1 | ✅ |
 | Valid-capture hints, one-tap combination chips when several captures exist | v1 | ✅ |
