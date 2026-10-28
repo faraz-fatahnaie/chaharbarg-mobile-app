@@ -15,7 +15,7 @@ import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
 import { saveMatch, update, useProfile, type MatchCtx } from '../lib/store';
 
-const FAST = typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast'); // test hook: quick bots
+const FAST = (!!import.meta.env.VITE_AUTOPILOT && !String(import.meta.env.VITE_AUTOPILOT).endsWith(':slow')) ||(typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast')); // test hook: quick bots
 const POS: Record<number, string[]> = { 2: ['top'], 3: ['tr', 'tl'], 4: ['right', 'top', 'left'] };
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
 const byRank = (a: Card, b: Card) => a.rank - b.rank || a.suit.localeCompare(b.suit);

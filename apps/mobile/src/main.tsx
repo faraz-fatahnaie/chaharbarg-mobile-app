@@ -12,6 +12,9 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
+// test hook: only present in builds made with VITE_AUTOPILOT=<players>:<bots|pnp>
+if (import.meta.env.VITE_AUTOPILOT) void import('./lib/autopilot').then((m) => m.run(String(import.meta.env.VITE_AUTOPILOT)));
+
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
