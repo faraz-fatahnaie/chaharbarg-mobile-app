@@ -16,5 +16,7 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -dest
   CODE_SIGNING_ALLOWED=NO -derivedDataPath build/ios build | tail -3
 xcrun simctl install "$DEVICE" build/ios/Build/Products/Debug-iphonesimulator/App.app
 xcrun simctl launch "$DEVICE" app.chaharbarg.game
-open -a Simulator
-xcrun simctl io "$DEVICE" screenshot build/ios/launch.png && echo "screenshot: build/ios/launch.png"
+open -a Simulator 2>/dev/null || true # not present in every Xcode layout; the app runs headless anyway
+sleep 4
+# multi-display devices (e.g. "iPhone Duo") render the app on display 1; the default display can be black
+xcrun simctl io "$DEVICE" screenshot --display=1 build/ios/launch.png && echo "screenshot: build/ios/launch.png"
