@@ -1,0 +1,11 @@
+{
+  "name": "chaharbarg",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm test -w @chaharbarg/engine && npm test -w @chaharbarg/mobile",
+    "dev": "npm run dev -w @chaharbarg/mobile",
+    "build": "npm run build -w @chaharbarg/mobile"
+  }
+}
