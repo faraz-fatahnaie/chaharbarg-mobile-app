@@ -44,9 +44,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-044 Close F-022 and F-026, which no longer apply.
 
 ## Ready
-- [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 
 ## In progress
+- [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 
 ## Awaiting approval
 
