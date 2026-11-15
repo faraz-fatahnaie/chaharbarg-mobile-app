@@ -4,3 +4,5 @@ Lasting facts about this project, added by the software factory when tasks land.
 
 - (F-002, 2026-11-15) Docs-only features here are checked by grep for stale values (62, 100, single deal) in the changed files, plus the three gate commands.
 - (F-001, 2026-11-15) `fixMatchTarget` and `rulesFrom` are tested in `apps/mobile/src/lib/match.test.ts`, and the engine tests are in `packages/engine/test/engine.test.ts`.
+- (F-003, 2026-11-15) `npm run cap:sync -w @chaharbarg/mobile` needs a native toolchain and was not run in this task, so the generated Capacitor files are still unregistered for the local-notifications plugin.
+- (F-003, 2026-11-15) `sound.ts` caches its AudioContext, so tests that stub `globalThis.window` must call `vi.resetModules()` and re-import the module in each case.
