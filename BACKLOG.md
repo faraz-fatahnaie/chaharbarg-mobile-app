@@ -27,14 +27,21 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-025 When F-001 lands, check that its target choices match these docs: whether it keeps or drops the single-deal option, and any default target it sets.
 - [ ] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target.
 - [ ] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes.
+- [ ] F-028 Run `npm run cap:sync -w @chaharbarg/mobile` so the local-notifications plugin is registered in the Android and iOS projects. Check that the diff only adds this plugin. Then test the daily reminder on
+- [ ] F-029 After the sync, add `tools:node="remove"` for `SCHEDULE_EXACT_ALARM` in the Android manifest. The reminder no longer uses exact alarms, and Google Play may reject an app that asks for the permission w
+- [ ] F-030 The new Notifications panel and the Contact support / Send feedback links have no automated tests. Check them in the running app.
+- [ ] F-031 After `cap sync` registers `@capacitor/local-notifications`, remove the merged `SCHEDULE_EXACT_ALARM` permission from the Android manifest with `tools:node="remove"`. Reminders are no longer exact, an
+- [ ] F-032 Run `npm run cap:sync -w @chaharbarg/mobile` to register the local-notifications plugin in the Android and iOS projects, then test the daily reminder on a real device.
+- [ ] F-033 After the sync, remove the `SCHEDULE_EXACT_ALARM` permission from the Android manifest with `tools:node="remove"`.
+- [ ] F-034 No automated test covers the new Notifications panel or the Contact support and Send feedback links, so check them in the running app.
 
 ## Ready
 
 ## In progress
-- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 - [ ] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
 
 ## Awaiting approval
+- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## Blocked
 
