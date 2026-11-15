@@ -4,7 +4,6 @@ The software factory's intake queue. `factory run` takes the top item under Read
 Add ideas to Inbox and promote them to Ready; the factory moves items after that.
 
 ## Inbox
-- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 - [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 - [ ] F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for 
 - [ ] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
@@ -31,6 +30,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes.
 
 ## Ready
+- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## In progress
 
