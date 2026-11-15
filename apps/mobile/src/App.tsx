@@ -4,7 +4,7 @@ import { canEnter, payFee, settleMatch, todayKey } from './economy/economy';
 import { buildCtx } from './lib/match';
 import { useLang } from './lib/i18n';
 import { registerAdUI, registerPayUI } from './lib/services';
-import { setSoundEnabled } from './lib/sound';
+import { setEffectsEnabled, setMusicEnabled } from './lib/sound';
 import { getProfile, loadMatch, saveMatch, update, useProfile, type MatchCtx } from './lib/store';
 import { Game } from './screens/Game';
 import { Home } from './screens/Home';
@@ -81,8 +81,9 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = p.settings.lang;
     document.documentElement.dir = dir;
-    setSoundEnabled(p.settings.sound);
-  }, [p.settings.lang, p.settings.sound, dir]);
+    setMusicEnabled(p.settings.music);
+    setEffectsEnabled(p.settings.effects);
+  }, [p.settings.lang, p.settings.music, p.settings.effects, dir]);
 
   const begin = (ctx: MatchCtx) => { saveMatch(ctx); setSaved(ctx); setPlaying({ ctx, key: Date.now() }); };
 

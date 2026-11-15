@@ -230,6 +230,7 @@ Both are behind interfaces in `apps/mobile/src/lib/services.ts`, so no screen ch
 | Change bot strength | `packages/engine/src/bot.ts`; `bot-strength.test.ts` must still show hard > medium > easy |
 | Add a cosmetic | `COSMETICS` (+ `BACK_STYLES` / `TABLE_COLORS`) in `src/data/cosmetics.ts`; deck styles are CSS classes (`.deck-…`) in `styles.css` |
 | Change fees, payouts, rewards, ad limits | constants at the top of `src/economy/economy.ts`; update `economy.test.ts` expectations |
+| Support email, daily reminder time | `SUPPORT_EMAIL` in `src/lib/support.ts`; `REMINDER_HOUR` in `src/lib/reminders.ts` |
 | Add a language string | `tr(fa, en)` inline where used; no catalog |
 | New achievement | `ACHIEVEMENTS` in `economy.ts` + names in `src/data/achievements.ts` |
 

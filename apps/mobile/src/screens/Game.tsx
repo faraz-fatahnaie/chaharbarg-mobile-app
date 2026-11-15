@@ -57,9 +57,9 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
   }, [mc, ctx]);
 
   useEffect(() => {
-    if (profile.settings.sound) startAmbient(arena.ambient);
+    if (profile.settings.music) startAmbient(arena.ambient);
     return () => stopAmbient();
-  }, [arena.ambient, profile.settings.sound]);
+  }, [arena.ambient, profile.settings.music]);
 
   const say = (seat: number, text: string) => {
     setBubbles((b) => ({ ...b, [seat]: text }));

@@ -19,7 +19,9 @@ export interface LedgerEntry { t: number; reason: string; dS: number; dG: number
 
 export interface Settings {
   lang: 'fa' | 'en';
-  sound: boolean;
+  music: boolean;
+  effects: boolean;
+  notifications: boolean;
   hints: boolean;
   timeOfDay: 'auto' | 'day' | 'dusk' | 'night';
   target: 62 | 100 | 'single';
@@ -73,9 +75,24 @@ export const LOGIN_SHAHI = [40, 60, 80, 100, 120, 150, 200];
 export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
-  lang: 'fa', sound: true, hints: true, timeOfDay: 'auto',
+  lang: 'fa', music: true, effects: true, notifications: false, hints: true, timeOfDay: 'auto',
   target: 62, surCap: true, noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
 };
+
+/** Load-time migration of saved settings: old `sound` becomes music + effects; bad booleans fall back to defaults. */
+export function migrateSettings(raw: unknown): Settings {
+  const r: Record<string, unknown> = raw && typeof raw === 'object' ? { ...(raw as object) } : {};
+  const out = { ...DEFAULT_SETTINGS, ...r } as Record<string, unknown>;
+  if (typeof r.sound === 'boolean') {
+    if (r.music === undefined) out.music = r.sound;
+    if (r.effects === undefined) out.effects = r.sound;
+  }
+  delete out.sound;
+  for (const k of ['music', 'effects', 'notifications'] as const) {
+    if (typeof out[k] !== 'boolean') out[k] = DEFAULT_SETTINGS[k];
+  }
+  return out as unknown as Settings;
+}
 
 const hashEntry = (e: Omit<LedgerEntry, 'h'>) => sha256([SECRET, e.prev, e.t, e.reason, e.dS, e.dG, e.s, e.g].join('|'));
 

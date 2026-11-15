@@ -4,7 +4,7 @@ import { sha256 } from './sha256';
 import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
-  loginPreview, payFee, settleMatch, verifyProfile, type MatchSummary,
+  loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
 } from './economy';
 
 const NOW = 1_700_000_000_000;
@@ -182,5 +182,28 @@ describe('shop and purchases', () => {
     p = grantPurchase(p, 'gohar_20', 'tok-A', NOW + 1);
     expect(p.gohar).toBe(20);
     expect(grantPurchase(p, 'bogus', 'tok-B', NOW).gohar).toBe(20);
+  });
+});
+
+describe('settings migration', () => {
+  it('splits an old sound=false into music and effects', () => {
+    const s = migrateSettings({ sound: false, lang: 'en' });
+    expect(s).toMatchObject({ music: false, effects: false, notifications: false, lang: 'en' });
+    expect('sound' in s).toBe(false);
+  });
+  it('splits sound=true', () => {
+    expect(migrateSettings({ sound: true })).toMatchObject({ music: true, effects: true });
+  });
+  it('keeps music and effects independent', () => {
+    expect(migrateSettings({ music: false, effects: true })).toMatchObject({ music: false, effects: true });
+  });
+  it('returns defaults for non-objects', () => {
+    for (const raw of [undefined, null, 'garbage']) expect(migrateSettings(raw)).toEqual(DEFAULT_SETTINGS);
+  });
+  it('rejects non-boolean values', () => {
+    expect(migrateSettings({ music: 'yes' }).music).toBe(true);
+  });
+  it('new profiles have notifications off', () => {
+    expect(createProfile(NOW).settings.notifications).toBe(false);
   });
 });
