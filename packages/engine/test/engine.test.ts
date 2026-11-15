@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, startDeal, mulberry32,
+  DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, liveScore, startDeal, mulberry32,
   newMatch, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level,
 } from '../src/index';
 import { cs, ids, mk } from './helpers';
@@ -209,6 +209,64 @@ describe('end of deal and scoring (R18-R21)', () => {
     s.surs = [2, 0];
     expect(scoreDeal(s)[0].sur).toBe(10);
     expect(scoreDeal(s)[0].total).toBe(10);
+  });
+});
+
+describe('live score (F-004)', () => {
+  const zero = { clubCount: 0, points: 0, surs: 0, total: 0 };
+  it('is all zero before the first move (2/3/4p)', () => {
+    for (const n of [2, 3, 4] as const) {
+      const s = startDeal({ ...DEFAULT_RULES, players: n }, mulberry32(n), 0, new Array(n === 4 ? 2 : n).fill(0));
+      const l = liveScore(s);
+      expect(l.length).toBe(n === 4 ? 2 : n);
+      l.forEach((u) => expect(u).toEqual(zero));
+    }
+  });
+  it('counts a sur on the first turn', () => {
+    const s = play(mk({ hands: ['C1 H9', 'D3 D8'], floor: 'D10', stock: 'S2 S3' }), 'C1', ['D10']).state;
+    const l = liveScore(s);
+    expect(l[0]).toEqual({ clubCount: 1, points: 4, surs: 1, total: 9 });
+    expect(l[1]).toEqual(zero);
+  });
+  it('counts the clubs bonus once certain (2p)', () => {
+    const s = mk({ hands: ['', ''], piles: ['C1 C3 C4 C5 C6 C7 C8', 'C9'] });
+    expect(liveScore(s)[0]).toMatchObject({ clubCount: 7, points: 8 });
+  });
+  it('does not count the 3p clubs bonus mid-deal', () => {
+    const s = mk({ hands: ['', '', ''], piles: ['C1 C3 C4 C5 C6 C7', 'C8 C9 C10', 'C11 C12 C13 C2'] });
+    expect(liveScore(s)[0].points).toBe(1);
+    s.over = true;
+    expect(liveScore(s)[0].points).toBe(8);
+    expect(liveScore(s)[0].total).toBe(scoreDeal(s)[0].total);
+  });
+  it('does not count a blocked last-round sur', () => {
+    const s = play(mk({ hands: ['C5 H9', 'D3 D8'], floor: 'H6', round: 5 }), 'C5', ['H6']).state;
+    const l = liveScore(s)[0];
+    expect(l.surs).toBe(0);
+    expect(l.total).toBe(l.points);
+  });
+  it('sums 4p team totals', () => {
+    const s = mk({ hands: ['', '', '', ''], piles: ['C1 D10', 'C2 H1', 'S1 S11', 'H11 C13'] });
+    s.surs = [1, 0, 1, 0];
+    s.sarbaz = [0, 1, 0, 0];
+    expect(s.config.surSarbazPoints).toBe(10);
+    const l = liveScore(s);
+    expect(l[0]).toEqual({ clubCount: 1, points: 6, surs: 2, total: 16 });
+    expect(l[1]).toEqual({ clubCount: 2, points: 4, surs: 1, total: 14 });
+  });
+  it('matches scoreDeal at the end of random deals', () => {
+    for (const n of [2, 3, 4] as const) {
+      for (let seed = 1; seed <= 5; seed++) {
+        const rng = mulberry32(seed * 17 + n);
+        let s = startDeal({ ...DEFAULT_RULES, players: n }, rng, 0, new Array(n === 4 ? 2 : n).fill(0));
+        while (!s.over) { const m = chooseMove(s, s.turn, 'medium', rng); s = play(s, m.cardId, m.captureIds).state; }
+        const sc = scoreDeal(s);
+        liveScore(s).forEach((u, i) => {
+          expect(u.total).toBe(sc[i].total);
+          expect(u.clubCount).toBe(sc[i].clubCount);
+        });
+      }
+    }
   });
 });
 
