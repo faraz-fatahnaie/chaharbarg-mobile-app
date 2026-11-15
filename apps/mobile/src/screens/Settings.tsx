@@ -33,9 +33,6 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
 
       <div className="panel col" style={{ margin: '0 14px' }}>
         <h3>{tr('قوانین (برای بازی‌های جدید)', 'House rules (new matches)')}</h3>
-        <label className="tog"><span>{tr('هدف امتیاز', 'Target score')}</span>
-          <select value={String(s.target)} onChange={(e) => set('target', e.target.value === 'single' ? 'single' : (Number(e.target.value) as 62 | 100))}>
-            <option value="62">۶۲</option><option value="100">۱۰۰</option><option value="single">{tr('فقط یک دست', 'Single deal')}</option></select></label>
         <Tog k="surCap" label={tr('با ۵۰ امتیاز یا بیشتر دیگر سور حساب نمی‌شود', 'No sur once a side has 50+ points')} />
         <Tog k="noSurInLastRound" label={tr('در نوبت آخر سور حساب نمی‌شود', 'No sur in the last round')} />
         <Tog k="mustCapture" label={tr('کارتی که می‌تواند بردارد نباید روی زمین بیفتد', 'A card that can capture may not be dropped')} />

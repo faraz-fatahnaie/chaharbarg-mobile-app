@@ -136,7 +136,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     ctx.mode === 'pnp'
       ? players === 4 ? tr(`تیم ${n(u + 1)}`, `Team ${u + 1}`) : ctx.seats[u].name
       : players === 4 ? (u === u0 ? tr('تیم شما', 'Your team') : tr('تیم حریف', 'Opponents')) : u === u0 ? tr('شما', 'You') : ctx.seats[u].name;
-  const targetLabel = mc.config.target === 'single' ? tr('یک دست', 'Single deal') : n(mc.config.target);
+  const targetLabel = n(mc.config.target);
 
   // ---- finishing ----
   function finish() {

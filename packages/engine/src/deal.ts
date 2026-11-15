@@ -1,9 +1,11 @@
 import { type Card, type Rng, isJack, isQueen, isKing, newDeck, shuffle } from './cards';
 
+export type MatchTarget = 35 | 65 | 112;
+
 export interface RulesConfig {
   players: 2 | 3 | 4;
-  /** match target: first unit to reach it (unique leader) wins; 'single' = one deal only */
-  target: 62 | 100 | 'single';
+  /** match target: first unit to reach it as the only leader wins; allowed values depend on `players` (see `targetOptions`) */
+  target: MatchTarget;
   /** 'replace': a lone jack on the opening floor is replaced (Pagat/Wikipedia/Jahanshiri) */
   openingJack: 'replace' | 'allow';
   /** a card that can capture may not be dropped on the floor */
@@ -16,7 +18,7 @@ export interface RulesConfig {
 
 export const DEFAULT_RULES: RulesConfig = {
   players: 2,
-  target: 62,
+  target: 35,
   openingJack: 'replace',
   mustCapture: true,
   noSurInLastRound: true,
@@ -61,6 +63,8 @@ export interface PlayResult {
 
 export const unitOf = (players: number, seat: number) => (players === 4 ? seat % 2 : seat);
 export const unitCount = (players: number) => (players === 4 ? 2 : players);
+/** [short, long] match targets for a player count */
+export const targetOptions = (players: number): readonly [MatchTarget, MatchTarget] => (players === 4 ? [65, 112] : [35, 65]);
 export const roundsPerDeal = (players: number) => 12 / players;
 
 /** All valid capture sets for `card` against `floor` (each a non-empty list of floor cards). */

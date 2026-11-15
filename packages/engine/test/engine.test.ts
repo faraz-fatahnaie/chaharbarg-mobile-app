@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, startDeal, mulberry32,
-  newMatch, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level,
+  newMatch, targetOptions, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level,
 } from '../src/index';
 import { cs, ids, mk } from './helpers';
 
@@ -219,22 +219,72 @@ describe('match (R21)', () => {
   };
   it('T30 plays deals until a unique leader reaches the target', () => {
     const rng = mulberry32(99);
-    let m = newMatch({ ...DEFAULT_RULES, players: 2, target: 62 }, rng);
+    let m = newMatch({ ...DEFAULT_RULES, players: 2, target: 65 }, rng);
     let guard = 0;
     while (m.phase !== 'matchOver' && guard++ < 40) {
       m = finish(m, rng);
       if (m.phase === 'dealOver') m = matchNextDeal(m, rng);
     }
     expect(m.phase).toBe('matchOver');
-    expect(Math.max(...m.scores)).toBeGreaterThanOrEqual(62);
+    expect(Math.max(...m.scores)).toBeGreaterThanOrEqual(65);
     expect(m.winner).not.toBeNull();
     expect(m.history.length).toBeGreaterThan(1);
   });
-  it('single-deal target ends after one deal', () => {
-    const rng = mulberry32(5);
-    let m = finish(newMatch({ ...DEFAULT_RULES, players: 3, target: 'single' }, rng), rng);
-    expect(m.phase).toBe('matchOver');
-    expect(m.history.length).toBe(1);
+  it('targetOptions per player count', () => {
+    expect(targetOptions(2)).toEqual([35, 65]);
+    expect(targetOptions(3)).toEqual([35, 65]);
+    expect(targetOptions(4)).toEqual([65, 112]);
+  });
+  it('ends at each valid target only with a unique leader at or above it', () => {
+    for (const n of [2, 3, 4] as const) {
+      for (const target of targetOptions(n)) {
+        const rng = mulberry32(7 * n + target);
+        let m = newMatch({ ...DEFAULT_RULES, players: n, target }, rng);
+        for (let guard = 0; guard < 100 && m.phase !== 'matchOver'; guard++) {
+          m = finish(m, rng);
+          if (m.phase === 'dealOver') {
+            const max = Math.max(...m.scores);
+            expect(max < target || m.scores.filter((s) => s === max).length > 1).toBe(true);
+            m = matchNextDeal(m, rng);
+          }
+        }
+        expect(m.phase).toBe('matchOver');
+        expect(m.winner).not.toBeNull();
+        const w = m.scores[m.winner!];
+        expect(w).toBeGreaterThanOrEqual(target);
+        m.scores.forEach((s, i) => { if (i !== m.winner) expect(s).toBeLessThan(w); });
+      }
+    }
+  });
+  it('rejects a target not allowed for the player count', () => {
+    expect(() => newMatch({ ...DEFAULT_RULES, players: 4, target: 35 }, mulberry32(1))).toThrow();
+    expect(() => newMatch({ ...DEFAULT_RULES, players: 2, target: 112 }, mulberry32(1))).toThrow();
+  });
+  it('first player is random through the rng and deterministic per seed', () => {
+    for (const n of [2, 3, 4] as const) {
+      const seen = new Set<number>();
+      for (let seed = 1; seed <= 100; seed++) {
+        const cfg = { ...DEFAULT_RULES, players: n, target: targetOptions(n)[0] };
+        const turn = newMatch(cfg, mulberry32(seed)).deal.turn;
+        expect(turn).toBe((Math.floor(mulberry32(seed)() * n) + 1) % n);
+        expect(newMatch(cfg, mulberry32(seed)).deal.turn).toBe(turn);
+        seen.add(turn);
+      }
+      expect(seen.size).toBe(n);
+    }
+  });
+  it('an injected first dealer is used and turns go up by one', () => {
+    const m = newMatch({ ...DEFAULT_RULES, players: 4, target: 65 }, mulberry32(1), 2);
+    expect(m.deal.dealer).toBe(2);
+    expect(m.deal.turn).toBe(3);
+  });
+  it('later deals keep rotating the dealer', () => {
+    const rng = mulberry32(3);
+    let m = newMatch({ ...DEFAULT_RULES, players: 3, target: 65 }, rng);
+    const prev = m.deal.dealer;
+    m = finish(m, rng);
+    expect(m.phase).toBe('dealOver');
+    expect(matchNextDeal(m, rng).deal.dealer).toBe((prev + 1) % 3);
   });
 });
 
