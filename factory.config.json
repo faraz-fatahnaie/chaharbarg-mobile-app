@@ -1,0 +1,64 @@
+{
+  "setup": [
+    "npm install"
+  ],
+  "gate": [
+    "npm test",
+    "npm run typecheck -w @chaharbarg/engine",
+    "npm run typecheck -w @chaharbarg/mobile"
+  ],
+  "graph": true,
+  "team": {
+    "preset": "balanced"
+  },
+  "roles": {
+    "planner": {
+      "runner": "claude",
+      "model": "haiku",
+      "effort": "low",
+      "fallback": [
+        "sonnet"
+      ]
+    },
+    "architect": {
+      "runner": "claude",
+      "model": "opus",
+      "effort": "high",
+      "fallback": [
+        "sonnet"
+      ]
+    },
+    "builder": {
+      "runner": "claude",
+      "model": "sonnet",
+      "effort": "medium",
+      "fallback": [
+        "haiku"
+      ]
+    },
+    "reviewer": {
+      "runner": "claude",
+      "model": "opus",
+      "effort": "high",
+      "fallback": [
+        "sonnet"
+      ]
+    },
+    "security-performance": {
+      "runner": "claude",
+      "model": "opus",
+      "effort": "high",
+      "fallback": [
+        "sonnet"
+      ]
+    },
+    "scribe": {
+      "runner": "claude",
+      "model": "haiku",
+      "effort": "low",
+      "fallback": [
+        "sonnet"
+      ]
+    }
+  }
+}
