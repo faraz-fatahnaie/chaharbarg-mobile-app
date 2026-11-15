@@ -9,6 +9,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 - [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 - [ ] F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for 
+- [ ] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
 
 ## Ready
 
