@@ -49,7 +49,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
 
 ## Blocked
 
@@ -58,3 +57,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
 - [x] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
+- [x] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
