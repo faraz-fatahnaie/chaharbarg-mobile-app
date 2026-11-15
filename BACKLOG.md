@@ -34,14 +34,18 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-032 Run `npm run cap:sync -w @chaharbarg/mobile` to register the local-notifications plugin in the Android and iOS projects, then test the daily reminder on a real device.
 - [ ] F-033 After the sync, remove the `SCHEDULE_EXACT_ALARM` permission from the Android manifest with `tools:node="remove"`.
 - [ ] F-034 No automated test covers the new Notifications panel or the Contact support and Send feedback links, so check them in the running app.
+- [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
+- [ ] F-036 Free the canvas in `readPhoto` after `toDataURL` (`canvas.width = canvas.height = 0`) to stay under the iOS canvas memory limit.
+- [ ] F-037 In `readPhoto`, reject or shrink pictures with a very large pixel count before fully opening them (for example, check `naturalWidth * naturalHeight`, or use `createImageBitmap` with a resize). A very 
+- [ ] F-038 In `readPhoto`, free the canvas after `toDataURL` (`canvas.width = canvas.height = 0` in a `finally`), to stay under iOS's limit on canvas memory.
 
 ## Ready
 
 ## In progress
-- [ ] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
 
 ## Awaiting approval
 - [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
+- [ ] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
 
 ## Blocked
 
