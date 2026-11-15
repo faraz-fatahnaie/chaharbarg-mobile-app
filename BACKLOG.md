@@ -30,9 +30,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes.
 
 ## Ready
-- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## In progress
+- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## Awaiting approval
 
