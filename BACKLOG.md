@@ -32,11 +32,11 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
-- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## Awaiting approval
 
 ## Blocked
+- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## Done
 - [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
