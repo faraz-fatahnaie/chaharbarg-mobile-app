@@ -21,6 +21,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-015 [Employer #15, NEEDS SERVER, do not promote] Friends list with a chat button per friend
 - [ ] F-016 [Employer #9, NEEDS SERVER, do not promote] Public text chat room (needs moderation plan)
 - [ ] F-017 [Employer #10, NEEDS SERVER, do not promote] Weekly and monthly rankings by wins and coins won
+- [ ] F-018 [Employer #13, NEEDS SERVER, do not promote] Prize announcement at app start and weekly/monthly winner prizes
 
 ## Ready
 
