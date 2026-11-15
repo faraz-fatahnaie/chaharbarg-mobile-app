@@ -37,14 +37,19 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-036 Free the canvas in `readPhoto` after `toDataURL` (`canvas.width = canvas.height = 0`) to stay under the iOS canvas memory limit.
 - [ ] F-037 In `readPhoto`, reject or shrink pictures with a very large pixel count before fully opening them (for example, check `naturalWidth * naturalHeight`, or use `createImageBitmap` with a resize). A very 
 - [ ] F-038 In `readPhoto`, free the canvas after `toDataURL` (`canvas.width = canvas.height = 0` in a `finally`), to stay under iOS's limit on canvas memory.
+- [ ] F-040 Close F-022 and F-026, which are moot now.
+- [ ] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes.
+- [ ] F-042 Check whether F-001's 35/65/112 targets reached this branch. The code and README here still use 62/100/single.
+- [ ] F-043 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands, because it still has R16 and `surCap` nodes.
+- [ ] F-044 Close F-022 and F-026, which no longer apply.
 
 ## Ready
 - [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 
 ## In progress
-- [ ] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
 
 ## Awaiting approval
+- [ ] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
 
 ## Blocked
 
