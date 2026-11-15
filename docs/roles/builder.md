@@ -8,3 +8,5 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-003, 2026-11-15) `sound.ts` caches its AudioContext, so tests that stub `globalThis.window` must call `vi.resetModules()` and re-import the module in each case.
 - (F-006, 2026-11-15) Tests in `apps/mobile/src/lib/*.test.ts` run in Node under vitest, so browser APIs must not run when a module loads; call `vi.resetModules()` before re-importing `store.ts` to simulate a restart.
 - (F-039, 2026-11-15) `docs/runbook.md` and `docs/plan.md` mention the old cap in more places than the spec lists, so run the cap grep over all of `docs/` before you finish.
+- (F-004, 2026-11-15) Engine tests for the live score sit in `packages/engine/test/engine.test.ts`; the gates are `npm test` plus the two typecheck commands.
+- (F-004, 2026-11-15) Browsers often ignore `max-width` on table cells, so long names in `.live td.nm` may need a `<span>` wrapper to truncate with an ellipsis.

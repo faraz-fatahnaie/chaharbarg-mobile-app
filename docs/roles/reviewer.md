@@ -7,3 +7,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-003, 2026-11-15) `@capacitor/local-notifications` 8.3 defaults `isExactNotification` to true, which opens the Android "Alarms & reminders" screen, so the reminder sets it to false.
 - (F-006, 2026-11-15) The gate commands do not cover the file picker, iOS camera permission or header visuals, so those need a device check.
 - (F-039, 2026-11-15) The gates do not open the Settings screen, so the removed toggle and the layout of the remaining toggles need a device check.
+- (F-004, 2026-11-15) The phone-viewport check (390×844, 2p/3p/4p, fa and en) is manual and not covered by the gates, so it must be done by hand before merge.
