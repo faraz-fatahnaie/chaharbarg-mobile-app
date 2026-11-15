@@ -15,6 +15,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
 - [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [ ] F-011 [Employer #5, offline P9] Quick-chat messages during play: polish the existing bot sticker chat; online delivery later
+- [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
 
 ## Ready
 
