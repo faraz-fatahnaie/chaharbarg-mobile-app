@@ -20,14 +20,22 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-016 [Employer #9, NEEDS SERVER, do not promote] Public text chat room (needs moderation plan)
 - [ ] F-017 [Employer #10, NEEDS SERVER, do not promote] Weekly and monthly rankings by wins and coins won
 - [ ] F-018 [Employer #13, NEEDS SERVER, do not promote] Prize announcement at app start and weekly/monthly winner prizes
+- [ ] F-019 `docs/plan.md` line 20 still says the match is played to 62, and line 21 doesn't mention the random first player. Update both.
+- [ ] F-020 `docs/features.md` line 8 still says "match to 62/100/single deal".
+- [ ] F-021 Once F-001 lands, check its target choices (single deal kept or dropped, any default) against these docs.
+- [ ] F-022 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether it should scale with the target.
+- [ ] F-023 `docs/plan.md` line 20 still says the match is played to 62, and line 21 doesn't mention the random first player.
+- [ ] F-024 `docs/features.md` line 8 still says "match to 62/100/single deal".
+- [ ] F-025 When F-001 lands, check that its target choices match these docs: whether it keeps or drops the single-deal option, and any default target it sets.
+- [ ] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target.
 
 ## Ready
 
 ## In progress
 - [ ] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
-- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## Awaiting approval
+- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## Blocked
 
