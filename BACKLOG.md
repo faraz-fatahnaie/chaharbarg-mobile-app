@@ -22,10 +22,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-018 [Employer #13, NEEDS SERVER, do not promote] Prize announcement at app start and weekly/monthly winner prizes
 
 ## Ready
-- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## In progress
 - [ ] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
+- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## Awaiting approval
 
