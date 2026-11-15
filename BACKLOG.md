@@ -4,7 +4,6 @@ The software factory's intake queue. `factory run` takes the top item under Read
 Add ideas to Inbox and promote them to Ready; the factory moves items after that.
 
 ## Inbox
-- [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 - [ ] F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for 
 - [ ] F-007 [Employer #4, offline P5] Avatar creator, shown on the left during play; leave room for later taunt moments. Depends on avatar art (plan: v2)
 - [ ] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels
@@ -40,6 +39,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-038 In `readPhoto`, free the canvas after `toDataURL` (`canvas.width = canvas.height = 0` in a `finally`), to stay under iOS's limit on canvas memory.
 
 ## Ready
+- [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 
 ## In progress
 - [ ] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
