@@ -28,13 +28,14 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-024 `docs/features.md` line 8 still says "match to 62/100/single deal".
 - [ ] F-025 When F-001 lands, check that its target choices match these docs: whether it keeps or drops the single-deal option, and any default target it sets.
 - [ ] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target.
+- [ ] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes.
 
 ## Ready
 
 ## In progress
-- [ ] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
 
 ## Awaiting approval
+- [ ] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
 
 ## Blocked
 
