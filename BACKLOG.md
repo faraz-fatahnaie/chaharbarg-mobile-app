@@ -53,10 +53,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Added in conversation.
 
 ## Ready
-- [ ] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
-  Added in conversation.
 
 ## In progress
+- [ ] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
+  Added in conversation.
 
 ## Awaiting approval
 
