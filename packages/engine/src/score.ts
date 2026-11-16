@@ -45,3 +45,16 @@ export function scoreDeal(s: DealState): UnitScore[] {
   for (const u of units) u.total = u.clubs + u.aces + u.jacks + u.tenD + u.twoC + u.sur + u.sarbaz;
   return units;
 }
+
+export interface LiveScore { clubCount: number; points: number; surs: number; total: number }
+
+/** Running per-unit numbers for the in-game panel. The 3p clubs bonus only counts once the deal is over. */
+export function liveScore(s: DealState): LiveScore[] {
+  const n = s.config.players;
+  const surs = Array.from({ length: unitCount(n) }, () => 0);
+  s.surs.forEach((c, seat) => { surs[unitOf(n, seat)] += c + s.sarbaz[seat]; });
+  return scoreDeal(s).map((u, i) => {
+    const points = u.aces + u.jacks + u.tenD + u.twoC + (s.over || n !== 3 ? u.clubs : 0);
+    return { clubCount: u.clubCount, points, surs: surs[i], total: points + u.sur + u.sarbaz };
+  });
+}
