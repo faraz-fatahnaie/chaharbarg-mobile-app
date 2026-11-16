@@ -51,14 +51,18 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Added in conversation.
 - [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
   Added in conversation.
+- [ ] F-053 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep `games: m.quit ? 0 : 1` in `settleMatch`.
+- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
+- [ ] F-055 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep this branch's `games: m.quit ? 0 : 1` in `settleMatch`.
+- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Ready
 
 ## In progress
-- [ ] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
-  Added in conversation.
 
 ## Awaiting approval
+- [ ] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
+  Added in conversation.
 
 ## Blocked
 
