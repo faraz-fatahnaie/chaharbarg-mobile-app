@@ -55,10 +55,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Ready
-- [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
-  Added in conversation.
 
 ## In progress
+- [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
+  Added in conversation.
 
 ## Awaiting approval
 - [ ] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
