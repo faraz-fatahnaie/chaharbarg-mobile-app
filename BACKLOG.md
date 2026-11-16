@@ -53,10 +53,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Ready
-- [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
-  Added in conversation.
 
 ## In progress
+- [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
+  Added in conversation.
 
 ## Awaiting approval
 
