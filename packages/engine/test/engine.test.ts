@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, startDeal, mulberry32,
-  newMatch, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level,
+  newMatch, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level, type RulesConfig,
 } from '../src/index';
 import { cs, ids, mk } from './helpers';
 
@@ -141,11 +141,43 @@ describe('sur (R15-R17)', () => {
     expect(play(mk(last), 'C5', ['H6']).result.sur).toBeNull();
     expect(play(mk({ ...last, config: { noSurInLastRound: false } }), 'C5', ['H6']).result.sur).toBe('sur');
   });
-  it('T22 units with >= surCap points cannot score a sur', () => {
-    const base = { hands: ['C5 H9', 'D3 D8'], floor: 'H6', stock: 'S2' };
-    expect(play(mk({ ...base, carry: [50, 0] }), 'C5', ['H6']).result.sur).toBeNull();
-    expect(play(mk({ ...base, carry: [49, 0] }), 'C5', ['H6']).result.sur).toBe('sur');
-    expect(play(mk({ ...base, carry: [80, 0], config: { surCap: null } }), 'C5', ['H6']).result.sur).toBe('sur');
+  const base = { hands: ['C5 H9', 'D3 D8'], floor: 'H6', stock: 'S2' };
+  it('T22 sur scores at any match score', () => {
+    for (const c of [49, 50, 80, 200]) {
+      const { state, result } = play(mk({ ...base, carry: [c, 0] }), 'C5', ['H6']);
+      expect(result.sur).toBe('sur');
+      expect(state.surs[0]).toBe(1);
+    }
+  });
+  it('T22 sur scores at every target', () => {
+    for (const [target, c] of [[62, 61], [100, 99], ['single', 55]] as const) {
+      const { state, result } = play(mk({ ...base, carry: [c, 0], config: { target } }), 'C5', ['H6']);
+      expect(result.sur).toBe('sur');
+      expect(scoreDeal(state)[0].sur).toBe(5);
+    }
+  });
+  it('T22 4-player team above 50', () => {
+    const s = mk({ hands: ['C5 H9', 'D3 D8', 'S9 S8', 'H2 H3'], floor: 'H6', stock: 'S2', carry: [60, 0] });
+    const { state, result } = play(s, 'C5', ['H6']);
+    expect(result.sur).toBe('sur');
+    expect(scoreDeal(state)[0].sur).toBe(5);
+  });
+  it('Sur Sarbaz above 50', () => {
+    const s = mk({ hands: ['C9 H9', 'D11 D8'], floor: 'S11', stock: 'S2 S3', turn: 1, carry: [0, 80] });
+    const { state, result } = play(s, 'D11', ['S11']);
+    expect(result.sur).toBe('sarbaz');
+    expect(scoreDeal(state)[1].sarbaz).toBe(10);
+  });
+  it('legacy config with surCap is inert', () => {
+    const config = { surCap: 50 } as unknown as Partial<RulesConfig>;
+    expect(play(mk({ ...base, carry: [80, 0], config }), 'C5', ['H6']).result.sur).toBe('sur');
+  });
+  it('restrictions still hold at a high score', () => {
+    const last = play(mk({ ...base, round: 5, carry: [80, 0] }), 'C5', ['H6']);
+    expect(last.result.sur).toBeNull();
+    expect(last.state.surs[0]).toBe(0);
+    const jack = mk({ hands: ['C11 H9', 'D3 D8'], floor: 'H6 D2', stock: 'S2', carry: [80, 0] });
+    expect(play(jack, 'C11', ['H6', 'D2']).result.sur).toBeNull();
   });
   it('T23 lone jack captured by the next player\'s jack is Sur Sarbaz (10)', () => {
     const s = mk({ hands: ['C9 H9', 'D11 D8'], floor: 'S11', stock: 'S2 S3', turn: 1 });

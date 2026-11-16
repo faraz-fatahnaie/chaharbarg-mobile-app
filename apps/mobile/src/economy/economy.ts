@@ -23,7 +23,6 @@ export interface Settings {
   hints: boolean;
   timeOfDay: 'auto' | 'day' | 'dusk' | 'night';
   target: 62 | 100 | 'single';
-  surCap: boolean;
   noSurInLastRound: boolean;
   mustCapture: boolean;
   openingJack: 'replace' | 'allow';
@@ -74,7 +73,7 @@ export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'fa', sound: true, hints: true, timeOfDay: 'auto',
-  target: 62, surCap: true, noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
+  target: 62,noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
 };
 
 const hashEntry = (e: Omit<LedgerEntry, 'h'>) => sha256([SECRET, e.prev, e.t, e.reason, e.dS, e.dG, e.s, e.g].join('|'));
