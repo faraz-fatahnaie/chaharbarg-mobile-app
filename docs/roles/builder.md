@@ -10,3 +10,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-039, 2026-11-15) `docs/runbook.md` and `docs/plan.md` mention the old cap in more places than the spec lists, so run the cap grep over all of `docs/` before you finish.
 - (F-004, 2026-11-15) Engine tests for the live score sit in `packages/engine/test/engine.test.ts`; the gates are `npm test` plus the two typecheck commands.
 - (F-004, 2026-11-15) Browsers often ignore `max-width` on table cells, so long names in `.live td.nm` may need a `<span>` wrapper to truncate with an ellipsis.
+- (F-005, 2026-11-16) `.factory/` is blocked for agents, so a stale line in `build.md` (pace "about 11 … about 25") cannot be corrected by the builder and must be fixed by a person.
