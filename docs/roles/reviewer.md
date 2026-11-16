@@ -9,3 +9,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-039, 2026-11-15) The gates do not open the Settings screen, so the removed toggle and the layout of the remaining toggles need a device check.
 - (F-004, 2026-11-15) The phone-viewport check (390×844, 2p/3p/4p, fa and en) is manual and not covered by the gates, so it must be done by hand before merge.
 - (F-005, 2026-11-16) `npm test` runs both the engine and mobile suites (36 and 27 tests), and the economy tests live in `apps/mobile/src/economy/economy.test.ts`.
+- (F-049, 2026-11-16) Gate commands are `npm test`, `npm run typecheck -w @chaharbarg/engine` and `npm run typecheck -w @chaharbarg/mobile`; the challenge logic lives in `apps/mobile/src/economy/economy.ts` and its tests in `economy.test.ts`.
