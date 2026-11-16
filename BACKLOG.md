@@ -51,6 +51,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Added in conversation.
 - [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
   Added in conversation.
+- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
+  Added in conversation.
 
 ## Ready
 
