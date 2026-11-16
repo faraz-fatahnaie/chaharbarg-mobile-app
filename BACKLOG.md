@@ -53,8 +53,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
-- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
-  Added in conversation.
 
 ## Awaiting approval
 
@@ -62,6 +60,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
 - [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
+  Added in conversation.
+- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
   Added in conversation.
 
 ## Done
