@@ -51,10 +51,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Ready
-- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
-  Added in conversation.
 
 ## In progress
+- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
+  Added in conversation.
 
 ## Awaiting approval
 
