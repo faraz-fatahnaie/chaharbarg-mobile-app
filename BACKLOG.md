@@ -45,6 +45,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 - [ ] F-047 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en) and confirm long 3p names in `.live td.nm` end in "…".
 - [ ] F-048 Have a person confirm that "Total" means this deal's total so far, not the match score (the spec's open question).
+- [ ] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
+  Added in conversation.
 
 ## Ready
 
