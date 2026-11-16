@@ -45,8 +45,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 - [ ] F-047 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en) and confirm long 3p names in `.live td.nm` end in "…".
 - [ ] F-048 Have a person confirm that "Total" means this deal's total so far, not the match score (the spec's open question).
-- [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
-  Added in conversation.
 - [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
   Added in conversation.
 - [ ] F-053 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep `games: m.quit ? 0 : 1` in `settleMatch`.
@@ -55,6 +53,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Ready
+- [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
+  Added in conversation.
 
 ## In progress
 
