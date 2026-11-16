@@ -51,7 +51,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for 
 
 ## Blocked
 
@@ -62,3 +61,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
 - [x] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
 - [x] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
+- [x] F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for 
