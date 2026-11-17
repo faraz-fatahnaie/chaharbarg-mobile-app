@@ -65,7 +65,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
-- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 - [ ] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 
 ## Awaiting approval
@@ -74,6 +73,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Blocked
 - [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
+- [ ] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 
 ## Done
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
