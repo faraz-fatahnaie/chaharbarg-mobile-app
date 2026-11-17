@@ -50,7 +50,7 @@ Each turn a player must play exactly one card (no passing) [src].
 - R20 [docx] Base points per deal always total 20 (invariant under test).
 
 ## 7. Match
-- R21 [src] A match is played over successive deals until a unit reaches the **target score**; default 62 (Pagat, Wikipedia, Jahanshiri agree; 100 is a common variant). Ties at the top continue to another deal. Option `target: 'single'` plays one deal only. Settings: `target` ∈ {62, 100, 'single'}.
+- R21 [src] A match is played over successive deals until a unit reaches the **target score**; default 62 (Pagat, Wikipedia, Jahanshiri agree; 100 is a common variant). Ties at the top continue to another deal. Option `target: 'single'` plays one deal only. Settings: `target` ∈ {62, 100, 'single'}. A single-deal match earns XP at `XP_SINGLE_SHARE` (0.2, rounded) of the normal match XP, so it is not a faster way to level (F-051).
 - R22 [call] The mid-deal "per shodam" early finish (Pagat) is not implemented in v1.
 
 ## 8. Test list (engine)

@@ -118,11 +118,16 @@ export function verifyProfile(p: Profile, now: number): Profile {
 export const levelOf = (xp: number) => 1 + Math.floor(Math.sqrt(xp / 60));
 export const xpForLevel = (lvl: number) => (lvl - 1) ** 2 * 60;
 
+/** Single-deal matches pay a fixed share of normal match XP, so they are not a faster way to level (F-051). */
+export const XP_SINGLE_SHARE = 0.2;
+export const xpShare = (target: number | 'single') => (target === 'single' ? XP_SINGLE_SHARE : 1);
+
 export const canEnter = (p: Profile, a: Arena) => p.trophies >= a.minTrophies && p.shahi >= a.fee;
 export const payFee = (p: Profile, a: Arena, now: number) => applyDelta(p, -a.fee, 0, `fee:${a.id}`, now);
 
 export interface MatchSummary {
   arenaId: string; players: 2 | 3 | 4; outcome: 'win' | 'loss' | 'draw'; surs: number; sarbaz: number; paid: boolean; fee: number;
+  target: number | 'single';
 }
 
 export function settleMatch(p: Profile, m: MatchSummary, today: string, now: number) {
@@ -130,7 +135,7 @@ export function settleMatch(p: Profile, m: MatchSummary, today: string, now: num
   const payout = !m.paid ? 0 : m.outcome === 'win' ? Math.round((m.fee * m.players * POT_RAKE) / winners) : m.outcome === 'draw' ? m.fee : 0;
   let q = payout ? applyDelta(p, payout, 0, `${m.outcome}:${m.arenaId}`, now) : p;
   const trophyDelta = !m.paid ? 0 : m.outcome === 'win' ? WIN_TROPHIES : m.outcome === 'loss' ? -Math.min(LOSS_TROPHIES, q.trophies) || 0 : 0;
-  const xpGain = 20 + (m.outcome === 'win' ? 30 : 0) + 5 * (m.surs + m.sarbaz);
+  const xpGain = Math.round(xpShare(m.target) * (20 + (m.outcome === 'win' ? 30 : 0) + 5 * (m.surs + m.sarbaz)));
   const before = levelOf(q.xp);
   const after = levelOf(q.xp + xpGain);
   const s = q.stats;

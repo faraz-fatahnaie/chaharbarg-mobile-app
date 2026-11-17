@@ -4,11 +4,11 @@ import { sha256 } from './sha256';
 import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
-  loginPreview, payFee, settleMatch, verifyProfile, type MatchSummary,
+  loginPreview, payFee, settleMatch, verifyProfile, xpShare, type MatchSummary,
 } from './economy';
 
 const NOW = 1_700_000_000_000;
-const win = (over: Partial<MatchSummary> = {}): MatchSummary => ({ arenaId: 'persepolis', players: 2, outcome: 'win', surs: 0, sarbaz: 0, paid: true, fee: 20, ...over });
+const win = (over: Partial<MatchSummary> = {}): MatchSummary => ({ arenaId: 'persepolis', players: 2, outcome: 'win', surs: 0, sarbaz: 0, paid: true, fee: 20, target: 62, ...over });
 
 describe('sha256', () => {
   it('matches known vectors', () => {
@@ -97,6 +97,28 @@ describe('arena entry and match settlement', () => {
       expect(ARENAS[i].fee).toBeGreaterThan(ARENAS[i - 1].fee);
       expect(ARENAS[i].minTrophies).toBeGreaterThan(ARENAS[i - 1].minTrophies);
     }
+  });
+});
+
+describe('single-deal XP', () => {
+  const single = (over: Partial<MatchSummary> = {}) => win({ target: 'single', ...over });
+  it('single-deal loss and win earn 0.2x', () => {
+    expect(settleMatch(createProfile(NOW), single({ outcome: 'loss' }), 'd', NOW).xpGain).toBe(4);
+    expect(settleMatch(createProfile(NOW), single({ surs: 1, sarbaz: 1 }), 'd', NOW).xpGain).toBe(12);
+  });
+  it('62 and 100 matches are unchanged', () => {
+    expect(settleMatch(createProfile(NOW), win({ surs: 1 }), 'd', NOW).xpGain).toBe(55);
+    expect(settleMatch(createProfile(NOW), win({ surs: 1, target: 100 }), 'd', NOW).xpGain).toBe(55);
+  });
+  it('xpShare', () => {
+    expect([xpShare(35), xpShare(100), xpShare('single')]).toEqual([1, 1, 0.2]);
+  });
+  it('a single deal cannot buy a level', () => {
+    const p = { ...createProfile(NOW), xp: 50 };
+    const r = settleMatch(p, single({ outcome: 'loss' }), 'd', NOW);
+    expect([r.profile.xp, r.levelUps, r.profile.gohar]).toEqual([54, 0, 0]);
+    const full = settleMatch(p, win({ outcome: 'loss' }), 'd', NOW);
+    expect(full.levelUps).toBe(1);
   });
 });
 

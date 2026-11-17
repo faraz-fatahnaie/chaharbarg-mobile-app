@@ -158,7 +158,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     let unlocked: string[] = [];
     if (ctx.mode === 'bots') {
       update((p) => {
-        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee }, todayKey(), Date.now());
+        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee, target: mc.config.target }, todayKey(), Date.now());
         info = r;
         const a = checkAchievements(r.profile, Date.now());
         unlocked = a.unlocked;

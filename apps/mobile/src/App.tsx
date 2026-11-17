@@ -98,7 +98,7 @@ export default function App() {
     if (saved && saved.mode === 'bots' && saved.paid) {
       const hu = 0;
       void hu;
-      update((q) => settleMatch(q, { arenaId: saved.arenaId, players: saved.match.config.players, outcome: 'loss', surs: 0, sarbaz: 0, paid: true, fee: saved.fee }, todayKey(), Date.now()).profile);
+      update((q) => settleMatch(q, { arenaId: saved.arenaId, players: saved.match.config.players, outcome: 'loss', surs: 0, sarbaz: 0, paid: true, fee: saved.fee, target: saved.match.config.target }, todayKey(), Date.now()).profile);
     }
     saveMatch(null);
     setSaved(null);

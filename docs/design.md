@@ -33,7 +33,7 @@ Each arena = place (landmark SVG scene + 3 times of day: day 06–17, dusk 17–
 | 9 | چغازنبیل | 2500 | 2500 | hard |
 | 10 | ارگ بم | 3200 | 4000 | hard |
 
-Progression: win +25 trophies, loss −12 (floor 0); XP 20 + 30 for a win + 5 per sur; level-up = 2 Gohar. Arenas stay unlocked once reached unless trophies fall below the gate (then locked until regained — Clash-style). **[review]** I used trophies as the only gate; the brief's "levelling up" is a reward channel, not a gate.
+Progression: win +25 trophies, loss −12 (floor 0); XP 20 + 30 for a win + 5 per sur; single-deal matches earn 0.2× XP, rounded **[review]**; level-up = 2 Gohar. Arenas stay unlocked once reached unless trophies fall below the gate (then locked until regained — Clash-style). **[review]** I used trophies as the only gate; the brief's "levelling up" is a reward channel, not a gate.
 Pot: every player pays the fee; a 2p win pays 1.8× (3p 2.7×, 4p each winner 1.8×); draw refunds; the 10% rake is the sink.
 Improvements to the candidate list (v2 arenas): Khaju Bridge, Hasht Behesht, Shushtar water-mills, Abyaneh village, Falak-ol-Aflak castle. Avoided: mosques, shrines, and tombs.
 Night scenes use window glows; day/dusk palettes are in `src/art/Scene.tsx`.
