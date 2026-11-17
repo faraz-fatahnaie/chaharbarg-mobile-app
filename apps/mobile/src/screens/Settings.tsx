@@ -10,7 +10,7 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
   const s = p.settings;
   const [confirm, setConfirm] = useState(false);
   const set = <K extends keyof S>(k: K, v: S[K]) => update((q) => ({ ...q, settings: { ...q.settings, [k]: v } }));
-  const Tog = ({ k, label }: { k: 'sound' | 'hints' | 'surCap' | 'noSurInLastRound' | 'mustCapture'; label: string }) => (
+  const Tog = ({ k, label }: { k: 'sound' | 'hints' |'noSurInLastRound' | 'mustCapture'; label: string }) => (
     <label className="tog"><span>{label}</span><input type="checkbox" checked={s[k]} onChange={(e) => set(k, e.target.checked)} /></label>
   );
   return (
@@ -36,7 +36,6 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         <label className="tog"><span>{tr('هدف امتیاز', 'Target score')}</span>
           <select value={String(s.target)} onChange={(e) => set('target', e.target.value === 'single' ? 'single' : (Number(e.target.value) as 62 | 100))}>
             <option value="62">۶۲</option><option value="100">۱۰۰</option><option value="single">{tr('فقط یک دست', 'Single deal')}</option></select></label>
-        <Tog k="surCap" label={tr('با ۵۰ امتیاز یا بیشتر دیگر سور حساب نمی‌شود', 'No sur once a side has 50+ points')} />
         <Tog k="noSurInLastRound" label={tr('در نوبت آخر سور حساب نمی‌شود', 'No sur in the last round')} />
         <Tog k="mustCapture" label={tr('کارتی که می‌تواند بردارد نباید روی زمین بیفتد', 'A card that can capture may not be dropped')} />
         <label className="tog"><span>{tr('زمین اول: سرباز', 'Opening floor jack')}</span>

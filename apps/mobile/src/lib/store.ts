@@ -11,7 +11,7 @@ function load(): Profile {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Profile;
-      return verifyProfile({ ...p, settings: { ...DEFAULT_SETTINGS, ...p.settings } }, Date.now());
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, settings: { ...DEFAULT_SETTINGS, ...p.settings } }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */

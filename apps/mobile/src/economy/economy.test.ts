@@ -5,10 +5,11 @@ import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, type MatchSummary,
+  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel,
 } from './economy';
 
 const NOW = 1_700_000_000_000;
-const win = (over: Partial<MatchSummary> = {}): MatchSummary => ({ arenaId: 'persepolis', players: 2, outcome: 'win', surs: 0, sarbaz: 0, paid: true, fee: 20, ...over });
+const win = (over: Partial<MatchSummary> = {}): MatchSummary => ({ arenaId: 'persepolis', players: 2, outcome: 'win', surs: 0, sarbaz: 0, paid: true, fee: 20, margin: 0, target: 62, ...over });
 
 describe('sha256', () => {
   it('matches known vectors', () => {
@@ -97,6 +98,56 @@ describe('arena entry and match settlement', () => {
       expect(ARENAS[i].fee).toBeGreaterThan(ARENAS[i - 1].fee);
       expect(ARENAS[i].minTrophies).toBeGreaterThan(ARENAS[i - 1].minTrophies);
     }
+  });
+});
+
+describe('levels and XP', () => {
+  it('curve boundaries', () => {
+    expect([0, 99].map(levelOf)).toEqual([1, 1]);
+    expect([100, 219].map(levelOf)).toEqual([2, 2]);
+    expect(levelOf(220)).toBe(3);
+    expect(xpForLevel(1)).toBe(0);
+  });
+  it('is unbounded and exact at large XP', () => {
+    for (const xp of [1e6, 1e9, 1e12]) {
+      const L = levelOf(xp);
+      expect(xpForLevel(L)).toBeLessThanOrEqual(xp);
+      expect(xp).toBeLessThan(xpForLevel(L + 1));
+    }
+    expect(levelOf(xpForLevel(1000))).toBe(1000);
+    expect(levelOf(xpForLevel(1000) - 1)).toBe(999);
+    expect(xpForLevel(5001)).toBeGreaterThan(xpForLevel(5000));
+  });
+  it('bad input gives level 1', () => {
+    expect(levelOf(-5)).toBe(1);
+    expect(levelOf(NaN)).toBe(1);
+  });
+  it('bigMarginAt', () => {
+    expect([35, 62, 65, 100, 112, 'single'].map((t) => bigMarginAt(t as number | 'single'))).toEqual([9, 16, 17, 25, 28, 10]);
+  });
+  it('matchXp', () => {
+    expect(matchXp(win({ outcome: 'loss' }))).toBe(20);
+    expect(matchXp(win({ outcome: 'draw' }))).toBe(20);
+    expect(matchXp(win({ margin: 15 }))).toBe(50);
+    expect(matchXp(win({ margin: 16 }))).toBe(70);
+    expect(matchXp(win({ outcome: 'loss', margin: 30 }))).toBe(20);
+    expect(matchXp(win({ outcome: 'loss', surs: 1, sarbaz: 1 }))).toBe(35);
+    expect(matchXp(win({ outcome: 'loss', surs: 20 }))).toBe(70);
+  });
+  it('forfeit never goes below 0 or below the current level start', () => {
+    const fresh = settleMatch(createProfile(NOW), win({ outcome: 'loss', quit: true }), 'd', NOW);
+    expect([fresh.profile.xp, fresh.xpGain, fresh.profile.gohar, levelOf(fresh.profile.xp)]).toEqual([0, 0, 0, 1]);
+    const a = settleMatch({ ...createProfile(NOW), xp: 650 }, win({ outcome: 'loss', quit: true }), 'd', NOW);
+    expect([a.profile.xp, a.xpGain]).toEqual([610, -40]);
+    const b = settleMatch({ ...createProfile(NOW), xp: 530 }, win({ outcome: 'loss', quit: true }), 'd', NOW);
+    expect([b.profile.xp, b.levelUps]).toEqual([520, 0]);
+    const c = settleMatch({ ...createProfile(NOW), xp: 650 }, win({ quit: true, surs: 3, margin: 99 }), 'd', NOW);
+    expect(c.xpGain).toBeLessThanOrEqual(0);
+  });
+  it('level-up Gohar on the new curve', () => {
+    const r = settleMatch({ ...createProfile(NOW), xp: 210 }, win(), 'd', NOW);
+    expect(levelOf(r.profile.xp)).toBe(3);
+    expect(r.profile.gohar).toBe(LEVEL_GOHAR);
   });
 });
 
