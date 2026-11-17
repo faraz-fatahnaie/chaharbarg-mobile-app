@@ -109,7 +109,7 @@ Primary source: the project's `چهاربرگ.docx`; gaps filled from Pagat, Wik
 
 - A numeric card (A=1 … 10) captures floor cards that, with it, sum to **11**. A **Queen** takes a Queen, a **King** a King. A **Jack** takes every floor card except Queens and Kings (including other Jacks).
 - A card that *can* capture must capture (you choose the card and the combination). A card with no capture is dropped on the floor.
-- **Sur** = emptying the floor: 5 points; not with a Jack, not in the last round, not for a side with 50+ points. **Sur Sarbaz** = a lone Jack on the floor taken by the next player's Jack: 10 points.
+- **Sur** = emptying the floor: 5 points; not with a Jack, not in the last round. **Sur Sarbaz** = a lone Jack on the floor taken by the next player's Jack: 10 points.
 - Deal scoring: 7 clubs or more = 7, each Ace and Jack = 1, 10♦ = 3, 2♣ = 2 (20 points per deal plus surs). The players choose the match target: 35 or 65 points with 2 or 3 players, 65 or 112 with 4 players. The first player is chosen at random, and play goes counter-clockwise.
 - Calls where I overrode your brief's defaults because all sources agreed are listed in [docs/plan.md](docs/plan.md).
 
