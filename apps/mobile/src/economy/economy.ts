@@ -23,7 +23,6 @@ export interface Settings {
   hints: boolean;
   timeOfDay: 'auto' | 'day' | 'dusk' | 'night';
   target: 62 | 100 | 'single';
-  surCap: boolean;
   noSurInLastRound: boolean;
   mustCapture: boolean;
   openingJack: 'replace' | 'allow';
@@ -74,7 +73,7 @@ export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'fa', sound: true, hints: true, timeOfDay: 'auto',
-  target: 62, surCap: true, noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
+  target: 62,noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
 };
 
 const hashEntry = (e: Omit<LedgerEntry, 'h'>) => sha256([SECRET, e.prev, e.t, e.reason, e.dS, e.dG, e.s, e.g].join('|'));
@@ -115,14 +114,42 @@ export function verifyProfile(p: Profile, now: number): Profile {
   return { ...p, shahi: head.s, gohar: head.g, ledger: p.ledger.slice(0, valid), tampered: p.tampered + 1 };
 }
 
-export const levelOf = (xp: number) => 1 + Math.floor(Math.sqrt(xp / 60));
-export const xpForLevel = (lvl: number) => (lvl - 1) ** 2 * 60;
+// XP values (see docs/xp-levels.md)
+export const XP_FINISH = 20;
+export const XP_WIN = 30;
+export const XP_BIG_MARGIN = 20;
+export const XP_SUR = 5;
+export const XP_SARBAZ = 10;
+export const XP_SUR_CAP = 50;
+export const XP_QUIT = 40;
+export const BIG_MARGIN_SHARE = 0.25;
+
+export const bigMarginAt = (target: number | 'single'): number => (target === 'single' ? 10 : Math.ceil(target * BIG_MARGIN_SHARE));
+
+/** Level L starts at 10·(L−1)·(L+8) XP; unbounded. */
+export const xpForLevel = (lvl: number) => 10 * (lvl - 1) * (lvl + 8);
+export function levelOf(xp: number): number {
+  if (!Number.isFinite(xp) || xp < 100) return 1;
+  let L = Math.floor((-9 + Math.sqrt(81 + 0.4 * xp)) / 2) + 1;
+  while (xpForLevel(L + 1) <= xp) L++;
+  while (L > 1 && xpForLevel(L) > xp) L--;
+  return L;
+}
 
 export const canEnter = (p: Profile, a: Arena) => p.trophies >= a.minTrophies && p.shahi >= a.fee;
 export const payFee = (p: Profile, a: Arena, now: number) => applyDelta(p, -a.fee, 0, `fee:${a.id}`, now);
 
 export interface MatchSummary {
   arenaId: string; players: 2 | 3 | 4; outcome: 'win' | 'loss' | 'draw'; surs: number; sarbaz: number; paid: boolean; fee: number;
+  /** Player's unit score minus best other unit's score; 0 when not a win. */
+  margin: number; target: number | 'single'; quit?: boolean;
+}
+
+export function matchXp(m: MatchSummary): number {
+  if (m.quit) return -XP_QUIT;
+  const win = m.outcome === 'win';
+  return XP_FINISH + (win ? XP_WIN : 0) + (win && m.margin >= bigMarginAt(m.target) ? XP_BIG_MARGIN : 0)
+    + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz);
 }
 
 export function settleMatch(p: Profile, m: MatchSummary, today: string, now: number) {
@@ -130,16 +157,18 @@ export function settleMatch(p: Profile, m: MatchSummary, today: string, now: num
   const payout = !m.paid ? 0 : m.outcome === 'win' ? Math.round((m.fee * m.players * POT_RAKE) / winners) : m.outcome === 'draw' ? m.fee : 0;
   let q = payout ? applyDelta(p, payout, 0, `${m.outcome}:${m.arenaId}`, now) : p;
   const trophyDelta = !m.paid ? 0 : m.outcome === 'win' ? WIN_TROPHIES : m.outcome === 'loss' ? -Math.min(LOSS_TROPHIES, q.trophies) || 0 : 0;
-  const xpGain = 20 + (m.outcome === 'win' ? 30 : 0) + 5 * (m.surs + m.sarbaz);
+  const raw = matchXp(m);
+  const newXp = raw >= 0 ? q.xp + raw : Math.max(xpForLevel(levelOf(q.xp)), q.xp + raw);
+  const xpGain = newXp - q.xp;
   const before = levelOf(q.xp);
-  const after = levelOf(q.xp + xpGain);
+  const after = levelOf(newXp);
   const s = q.stats;
   const streak = m.outcome === 'win' ? s.streak + 1 : m.outcome === 'loss' ? 0 : s.streak;
   const ar = s.byArena[m.arenaId] ?? { games: 0, wins: 0 };
   q = {
     ...q,
     trophies: q.trophies + trophyDelta,
-    xp: q.xp + xpGain,
+    xp: newXp,
     stats: {
       ...s, games: s.games + 1, wins: s.wins + (m.outcome === 'win' ? 1 : 0), losses: s.losses + (m.outcome === 'loss' ? 1 : 0),
       draws: s.draws + (m.outcome === 'draw' ? 1 : 0), surs: s.surs + m.surs, sarbaz: s.sarbaz + m.sarbaz,

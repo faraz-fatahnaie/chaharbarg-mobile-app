@@ -13,7 +13,6 @@ export function rulesFrom(p: Profile, players: 2 | 3 | 4): RulesConfig {
     openingJack: s.openingJack,
     mustCapture: s.mustCapture,
     noSurInLastRound: s.noSurInLastRound,
-    surCap: s.surCap ? 50 : null,
     surSarbazPoints: s.surSarbazPoints,
   };
 }

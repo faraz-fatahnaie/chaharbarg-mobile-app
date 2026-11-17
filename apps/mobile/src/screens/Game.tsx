@@ -154,11 +154,12 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     let sarbaz = 0;
     for (const d of mc.history) { surs += d[hu].sur / 5; sarbaz += d[hu].sarbaz / mc.config.surSarbazPoints; }
     const paid = ctx.mode === 'bots' && ctx.paid;
+    const margin = outcome === 'win' ? mc.scores[hu] - Math.max(...mc.scores.filter((_, u) => u !== hu)) : 0;
     let info = { payout: 0, trophyDelta: 0, xpGain: 0, levelUps: 0 };
     let unlocked: string[] = [];
     if (ctx.mode === 'bots') {
       update((p) => {
-        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee }, todayKey(), Date.now());
+        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee, margin, target: mc.config.target }, todayKey(), Date.now());
         info = r;
         const a = checkAchievements(r.profile, Date.now());
         unlocked = a.unlocked;
