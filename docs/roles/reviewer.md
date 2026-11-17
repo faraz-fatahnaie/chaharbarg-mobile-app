@@ -11,3 +11,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-005, 2026-11-16) `npm test` runs both the engine and mobile suites (36 and 27 tests), and the economy tests live in `apps/mobile/src/economy/economy.test.ts`.
 - (F-049, 2026-11-16) Gate commands are `npm test`, `npm run typecheck -w @chaharbarg/engine` and `npm run typecheck -w @chaharbarg/mobile`; the challenge logic lives in `apps/mobile/src/economy/economy.ts` and its tests in `economy.test.ts`.
 - (F-052, 2026-11-17) The mobile suite was recorded as 27 tests in earlier notes but runs 20 now, so check the test count against `apps/mobile/src/economy/economy.test.ts` before trusting old totals.
+- (F-051, 2026-11-17) The simulation's "unscaled" XP divides the already-rounded scaled XP by 0.2, so each per-match figure can be off by about ±2.5 XP; the assertions still hold because the margins are much larger.

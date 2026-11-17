@@ -13,3 +13,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-005, 2026-11-16) `.factory/` is blocked for agents, so a stale line in `build.md` (pace "about 11 … about 25") cannot be corrected by the builder and must be fixed by a person.
 - (F-049, 2026-11-16) On `factory/F-005`, the `quit` field and forfeit XP penalty exist only on that branch, so the F-005 merge needs its `quit?: boolean` and `quit: true` kept alongside `games: m.quit ? 0 : 1`.
 - (F-052, 2026-11-17) Gate commands are `npm test`, `npm run typecheck -w @chaharbarg/engine` and `npm run typecheck -w @chaharbarg/mobile`; run all three.
+- (F-051, 2026-11-17) `apps/mobile/src/economy/xp-rate.test.ts` reuses the auto-play loop from `packages/engine/test/bot-strength.test.ts` and runs a seeded simulation with a 60 s timeout.
