@@ -52,15 +52,24 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-057 The project notes from F-005 say the mobile suite had 27 tests, but it now runs 20. This change did not touch any test file, so the drop happened before this run. Someone should check whether tests in
   Depends on: F-052
   Found while building F-052.
+- [ ] F-058 When F-005 merges with F-051, apply `xpShare` inside `matchXp` to non-forfeit XP only, and add the `XP_SINGLE_SHARE` row and rule to `docs/xp-levels.md` using the text above.
+  Depends on: F-051
+  Found while building F-051.
+- [ ] F-059 Product owner to confirm the single-deal XP share (0.2 proposed, marked [review] in `docs/design.md`).
+  Depends on: F-051
+  Found while building F-051.
+- [ ] F-060 Manual check: the result screen should show the scaled `xpGain` after a single-deal match. The gate commands do not cover the result screen.
+  Depends on: F-051
+  Found while building F-051.
 
 ## Ready
 
 ## In progress
-- [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
-  Added in conversation.
 
 ## Awaiting approval
 - [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
+  Added in conversation.
+- [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
   Added in conversation.
 
 ## Blocked
