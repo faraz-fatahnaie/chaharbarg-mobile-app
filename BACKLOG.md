@@ -65,10 +65,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
-- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 - [ ] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
 
 ## Awaiting approval
+- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## Blocked
 - [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
