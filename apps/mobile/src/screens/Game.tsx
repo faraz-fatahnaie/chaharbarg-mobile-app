@@ -9,7 +9,7 @@ import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
 import { botById, EMOTES } from '../data/bots';
 import { TABLE_COLORS } from '../data/cosmetics';
-import { adStatus, checkAchievements, grantAd, settleMatch, todayKey } from '../economy/economy';
+import { adStatus, checkAchievements, grantAd, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
@@ -364,7 +364,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
                 <div className="stat"><b>{result.trophyDelta > 0 ? '+' : ''}{n(result.trophyDelta)}</b><span className="mute">{tr('جام', 'Trophies')}</span></div>
               </div>
             )}
-            {ctx.mode === 'bots' && <div className="mute">+{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * 2)} ${tr('گوهر', 'Gohar')}`}</div>}
+            {ctx.mode === 'bots' && <div className="mute">+{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
             {result.unlocked.map((id) => (
               <div key={id} className="panel">🏅 {tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}</div>
             ))}
