@@ -49,6 +49,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [ ] F-055 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep this branch's `games: m.quit ? 0 : 1` in `settleMatch`.
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
+- [ ] F-057 The project notes from F-005 say the mobile suite had 27 tests, but it now runs 20. This change did not touch any test file, so the drop happened before this run. Someone should check whether tests in
+  Depends on: F-052
+  Found while building F-052.
 
 ## Ready
 
@@ -57,10 +60,10 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Added in conversation.
 - [ ] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
   Added in conversation.
-- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
-  Added in conversation.
 
 ## Awaiting approval
+- [ ] F-052 The result screen hardcodes 'levelUps * 2' Gohar instead of using LEVEL_GOHAR (found in F-005 review).
+  Added in conversation.
 
 ## Blocked
 
