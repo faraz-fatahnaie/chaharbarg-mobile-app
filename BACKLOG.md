@@ -72,7 +72,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Blocked
 - [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
-- [ ] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
 
 ## Done
 - [x] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
@@ -86,3 +85,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Added in conversation.
 - [x] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
   Added in conversation.
+- [x] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
