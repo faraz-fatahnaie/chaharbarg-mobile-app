@@ -4,6 +4,8 @@ import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
 import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
 import type { Settings as S } from '../economy/economy';
 import { Header } from './Home';
+import { remindersSupported, setReminder } from '../lib/reminders';
+import { SUPPORT_EMAIL, feedbackHref, supportHref } from '../lib/support';
 
 export function Settings({ onTutorial }: { onTutorial: () => void }) {
   const { tr, n } = useLang();
@@ -38,7 +40,8 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
     input.value = '';
   };
   const set = <K extends keyof S>(k: K, v: S[K]) => update((q) => ({ ...q, settings: { ...q.settings, [k]: v } }));
-  const Tog = ({ k, label }: { k: 'sound' | 'hints' |'noSurInLastRound' | 'mustCapture'; label: string }) => (
+  const [remFailed, setRemFailed] = useState(false);
+  const Tog = ({ k, label }: { k: 'music' | 'effects' | 'hints' | 'noSurInLastRound' | 'mustCapture'; label: string }) => (
     <label className="tog"><span>{label}</span><input type="checkbox" checked={s[k]} onChange={(e) => set(k, e.target.checked)} /></label>
   );
   return (
@@ -68,7 +71,8 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         <h3>{tr('عمومی', 'General')}</h3>
         <label className="tog"><span>{tr('زبان', 'Language')}</span>
           <select value={s.lang} onChange={(e) => set('lang', e.target.value as S['lang'])}><option value="fa">فارسی</option><option value="en">English</option></select></label>
-        <Tog k="sound" label={tr('صدا', 'Sound')} />
+        <Tog k="music" label={tr('موسیقی', 'Music')} />
+        <Tog k="effects" label={tr('جلوه‌های صوتی', 'Sound effects')} />
         <Tog k="hints" label={tr('نمایش راهنما (برجسته‌کردن برداشت‌های ممکن)', 'Hints (highlight valid captures)')} />
         <label className="tog"><span>{tr('زمان روز در آرنا', 'Time of day')}</span>
           <select value={s.timeOfDay} onChange={(e) => set('timeOfDay', e.target.value as S['timeOfDay'])}>
@@ -91,10 +95,26 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         <span className="mute">{tr('پیش‌فرض‌ها طبق فایل قوانین و منابع معتبر است؛ جزئیات در docs/rules-spec.md', 'Defaults follow your rules file and validated sources; see docs/rules-spec.md')}</span>
       </div>
 
+      <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('اعلان‌ها', 'Notifications')}</h3>
+        <label className="tog"><span>{tr('یادآوری روزانه (ساعت ۲۰)', 'Daily reminder (8 pm)')}</span>
+          <input type="checkbox" checked={s.notifications} disabled={!remindersSupported()}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              void setReminder(checked, s.lang).then((ok) => { set('notifications', ok); setRemFailed(checked && !ok); });
+            }} /></label>
+        {remFailed && <span className="mute">{tr('اجازهٔ اعلان داده نشد. آن را در تنظیمات گوشی برای چهاربرگ روشن کنید.', 'Notifications were not allowed. Turn them on for Chaharbarg in your phone settings.')}</span>}
+        {!remindersSupported() && <span className="mute">{tr('فقط در نسخهٔ نصبی', 'Only in the installed app')}</span>}
+        <span className="mute">{tr('یادآوری روی همین گوشی؛ بدون سرور.', 'Reminders are local to this device; no server.')}</span>
+      </div>
+
       <div className="panel col" style={{ margin: '0 14px 14px' }}>
         <button className="btn" onClick={onTutorial}>📖 {tr('آموزش بازی', 'How to play')}</button>
+        <a className="btn" href={supportHref(s.lang)}>✉️ {tr('تماس با پشتیبانی', 'Contact support')}</a>
+        <a className="btn" href={feedbackHref(s.lang)}>💬 {tr('ارسال نظر و پیشنهاد', 'Send feedback / suggestions')}</a>
+        <span className="mute">{SUPPORT_EMAIL}</span>
         {!confirm ? <button className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
-          : <div className="row"><button className="btn danger grow" onClick={() => { resetAll(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div>}
+          : <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); resetAll(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div>}
         <span className="mute">{tr('چهاربرگ — نسخهٔ ۰٫۱ · همه‌چیز روی همین گوشی ذخیره می‌شود.', 'Chaharbarg v0.1 · everything is stored on this device.')}</span>
       </div>
     </div>
