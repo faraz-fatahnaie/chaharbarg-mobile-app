@@ -73,15 +73,24 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-064 Set XP pay for the short and long targets (35/65 and 65/112). Short matches now earn about 1.3–1.7× more XP per deal than long ones, which partly undoes F-051. Then bring back an XP-per-deal guard in 
   Depends on: F-001
   Found while building F-001.
+- [ ] F-065 Run `git add docs/rules-spec.md` (or have the orchestrator stage it) so the merge of main into the F-002 branch can be finished; the file is still marked unmerged (`UU`).
+  Depends on: F-002
+  Found while building F-002.
+- [ ] F-066 Make the match-target code match the docs: replace 62, 100 and `'single'` with 35/65 for 2–3 players and 65/112 for 4 players in `deal.ts`, `economy.ts`, `Settings.tsx`, `Game.tsx` and `autopilot.ts`.
+  Depends on: F-002
+  Found while building F-002.
+- [ ] F-067 Decide whether the F-051 single-deal XP rule (`XP_SINGLE_SHARE`, and the single-deal row in `docs/xp-levels.md`) still applies if single deal is removed.
+  Depends on: F-002
+  Found while building F-002.
 
 ## Ready
 
 ## In progress
 - [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
-- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## Awaiting approval
+- [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 
 ## Blocked
 
