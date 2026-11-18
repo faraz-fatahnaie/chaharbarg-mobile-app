@@ -122,6 +122,9 @@ export const XP_SUR = 5;
 export const XP_SARBAZ = 10;
 export const XP_SUR_CAP = 50;
 export const XP_QUIT = 40;
+/** Single-deal matches pay a fixed share of normal match XP, so they are not a faster way to level (F-051). The forfeit penalty is not scaled. */
+export const XP_SINGLE_SHARE = 0.2;
+export const xpShare = (target: number | 'single') => (target === 'single' ? XP_SINGLE_SHARE : 1);
 export const BIG_MARGIN_SHARE = 0.25;
 
 export const bigMarginAt = (target: number | 'single'): number => (target === 'single' ? 10 : Math.ceil(target * BIG_MARGIN_SHARE));
@@ -148,8 +151,8 @@ export interface MatchSummary {
 export function matchXp(m: MatchSummary): number {
   if (m.quit) return -XP_QUIT;
   const win = m.outcome === 'win';
-  return XP_FINISH + (win ? XP_WIN : 0) + (win && m.margin >= bigMarginAt(m.target) ? XP_BIG_MARGIN : 0)
-    + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz);
+  return Math.round(xpShare(m.target) * (XP_FINISH + (win ? XP_WIN : 0) + (win && m.margin >= bigMarginAt(m.target) ? XP_BIG_MARGIN : 0)
+    + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz)));
 }
 
 export function settleMatch(p: Profile, m: MatchSummary, today: string, now: number) {

@@ -5,7 +5,7 @@ import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, type MatchSummary,
-  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel,
+  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare,
 } from './economy';
 
 const NOW = 1_700_000_000_000;
@@ -98,6 +98,30 @@ describe('arena entry and match settlement', () => {
       expect(ARENAS[i].fee).toBeGreaterThan(ARENAS[i - 1].fee);
       expect(ARENAS[i].minTrophies).toBeGreaterThan(ARENAS[i - 1].minTrophies);
     }
+  });
+});
+
+describe('single-deal XP (F-051)', () => {
+  const single = (over: Partial<MatchSummary> = {}) => win({ target: 'single', ...over });
+  it('single-deal loss and win earn 0.2x, rounded', () => {
+    expect(settleMatch(createProfile(NOW), single({ outcome: 'loss' }), 'd', NOW).xpGain).toBe(4);
+    expect(settleMatch(createProfile(NOW), single({ surs: 1, sarbaz: 1 }), 'd', NOW).xpGain).toBe(13);
+  });
+  it('62 and 100 matches are unchanged', () => {
+    expect(settleMatch(createProfile(NOW), win({ surs: 1 }), 'd', NOW).xpGain).toBe(55);
+    expect(settleMatch(createProfile(NOW), win({ surs: 1, target: 100 }), 'd', NOW).xpGain).toBe(55);
+  });
+  it('xpShare', () => {
+    expect([xpShare(35), xpShare(100), xpShare('single')]).toEqual([1, 1, 0.2]);
+  });
+  it('the forfeit penalty is not scaled', () => {
+    expect(matchXp(single({ quit: true }))).toBe(matchXp(win({ quit: true })));
+  });
+  it('a single deal cannot buy a level', () => {
+    const p = { ...createProfile(NOW), xp: 90 };
+    const r = settleMatch(p, single({ outcome: 'loss' }), 'd', NOW);
+    expect([r.profile.xp, r.levelUps, r.profile.gohar]).toEqual([94, 0, p.gohar]);
+    expect(settleMatch(p, win({ outcome: 'loss' }), 'd', NOW).levelUps).toBe(1);
   });
 });
 
