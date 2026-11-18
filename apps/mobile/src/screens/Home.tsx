@@ -8,16 +8,19 @@ import {
 import { useLang } from '../lib/i18n';
 import { adProvider } from '../lib/services';
 import { sfx } from '../lib/sound';
-import { update, useProfile, type MatchCtx } from '../lib/store';
+import { update, usePhoto, useProfile, type MatchCtx } from '../lib/store';
 
 export function Header() {
   const { n } = useLang();
   const p = useProfile();
+  const photo = usePhoto();
   const lvl = levelOf(p.xp);
   const pct = ((p.xp - xpForLevel(lvl)) / (xpForLevel(lvl + 1) - xpForLevel(lvl))) * 100;
   return (
     <div className="topbar">
-      <div className="avatar" style={{ background: 'hsl(45 55% 38%)' }}>{n(lvl)}</div>
+      {photo
+        ? <div className="avatar photo"><img src={photo} alt="" /><span className="lvl">{n(lvl)}</span></div>
+        : <div className="avatar" style={{ background: 'hsl(45 55% 38%)' }}>{n(lvl)}</div>}
       <div className="grow">
         <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name || 'چهاربرگ'}</div>
         <div className="xpbar"><i style={{ width: `${pct}%` }} /></div>

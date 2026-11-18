@@ -1,14 +1,42 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useLang } from '../lib/i18n';
-import { resetAll, update, useProfile } from '../lib/store';
+import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
+import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
 import type { Settings as S } from '../economy/economy';
 import { Header } from './Home';
 
 export function Settings({ onTutorial }: { onTutorial: () => void }) {
-  const { tr } = useLang();
+  const { tr, n } = useLang();
   const p = useProfile();
   const s = p.settings;
   const [confirm, setConfirm] = useState(false);
+  const photo = usePhoto();
+  const [draft, setDraft] = useState(p.name);
+  const [nameErr, setNameErr] = useState('');
+  const [picErr, setPicErr] = useState('');
+  const saveName = () => {
+    const r = checkName(draft);
+    if ('error' in r) {
+      setNameErr(r.error === 'empty' ? tr('نام نمی‌تواند خالی باشد.', "Name can't be empty.")
+        : tr(`نام حداکثر ${n(NAME_MAX)} حرف باشد.`, `Name can be at most ${NAME_MAX} characters.`));
+      return;
+    }
+    update((q) => ({ ...q, name: r.name }));
+    setDraft(r.name);
+    setNameErr('');
+  };
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      setPicErr(setPhoto(await readPhoto(file)) ? '' : tr('ذخیرهٔ تصویر ممکن نشد.', "Couldn't save the picture."));
+    } catch (err) {
+      setPicErr((err as Error).message === 'too-big' ? tr('تصویر بزرگ‌تر از ۱۰ مگابایت است.', 'Picture is larger than 10 MB.')
+        : tr('این فایل تصویر نیست یا باز نشد.', "That file isn't a picture we can open."));
+    }
+    input.value = '';
+  };
   const set = <K extends keyof S>(k: K, v: S[K]) => update((q) => ({ ...q, settings: { ...q.settings, [k]: v } }));
   const Tog = ({ k, label }: { k: 'sound' | 'hints' |'noSurInLastRound' | 'mustCapture'; label: string }) => (
     <label className="tog"><span>{label}</span><input type="checkbox" checked={s[k]} onChange={(e) => set(k, e.target.checked)} /></label>
@@ -17,10 +45,27 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
     <div className="scroll col" style={{ padding: 0, gap: 12 }}>
       <Header />
       <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('پروفایل', 'Profile')}</h3>
+        <div className="row" style={{ alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', display: 'grid', placeItems: 'center', background: 'var(--panel2)', fontSize: 28, fontWeight: 800, flex: 'none' }}>
+            {photo ? <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : ([...p.name][0] ?? '👤')}
+          </div>
+          <label className="btn">{tr('انتخاب تصویر', 'Choose picture')}
+            <input type="file" accept="image/*" hidden onChange={onFile} /></label>
+          {photo && <button className="btn ghost" onClick={() => { setPhoto(null); setPicErr(''); }}>{tr('حذف تصویر', 'Remove picture')}</button>}
+        </div>
+        <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+          <span>{tr('نام شما', 'Your name')}</span>
+          <input value={draft} maxLength={40} onChange={(e) => setDraft(e.target.value)}
+            style={{ font: 'inherit', background: 'var(--panel2)', color: 'var(--ink)', border: 0, borderRadius: 10, padding: 7, width: 130 }} />
+          <button className="btn" onClick={saveName}>{tr('ذخیره', 'Save')}</button>
+        </div>
+        {(nameErr || picErr) && <span role="alert">{nameErr || picErr}</span>}
+        <span className="mute">{tr('تصویر پروفایل فقط روی همین گوشی ذخیره می‌شود و با آواتار بازی فرق دارد.', 'Your profile picture stays on this device and is separate from your in-game avatar.')}</span>
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px' }}>
         <h3>{tr('عمومی', 'General')}</h3>
-        <label className="tog"><span>{tr('نام شما', 'Your name')}</span>
-          <input value={p.name} maxLength={14} onChange={(e) => update((q) => ({ ...q, name: e.target.value }))}
-            style={{ font: 'inherit', background: 'var(--panel2)', color: 'var(--ink)', border: 0, borderRadius: 10, padding: 7, width: 130 }} /></label>
         <label className="tog"><span>{tr('زبان', 'Language')}</span>
           <select value={s.lang} onChange={(e) => set('lang', e.target.value as S['lang'])}><option value="fa">فارسی</option><option value="en">English</option></select></label>
         <Tog k="sound" label={tr('صدا', 'Sound')} />
@@ -49,7 +94,7 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
       <div className="panel col" style={{ margin: '0 14px 14px' }}>
         <button className="btn" onClick={onTutorial}>📖 {tr('آموزش بازی', 'How to play')}</button>
         {!confirm ? <button className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
-          : <div className="row"><button className="btn danger grow" onClick={() => { resetAll(); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div>}
+          : <div className="row"><button className="btn danger grow" onClick={() => { resetAll(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div>}
         <span className="mute">{tr('چهاربرگ — نسخهٔ ۰٫۱ · همه‌چیز روی همین گوشی ذخیره می‌شود.', 'Chaharbarg v0.1 · everything is stored on this device.')}</span>
       </div>
     </div>
