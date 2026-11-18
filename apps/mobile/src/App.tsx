@@ -4,7 +4,7 @@ import { canEnter, payFee, settleMatch, todayKey } from './economy/economy';
 import { buildCtx } from './lib/match';
 import { useLang } from './lib/i18n';
 import { registerAdUI, registerPayUI } from './lib/services';
-import { setSoundEnabled } from './lib/sound';
+import { setEffectsEnabled, setMusicEnabled } from './lib/sound';
 import { getProfile, loadMatch, saveMatch, update, useProfile, type MatchCtx } from './lib/store';
 import { Game } from './screens/Game';
 import { Home } from './screens/Home';
@@ -81,8 +81,9 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = p.settings.lang;
     document.documentElement.dir = dir;
-    setSoundEnabled(p.settings.sound);
-  }, [p.settings.lang, p.settings.sound, dir]);
+    setMusicEnabled(p.settings.music);
+    setEffectsEnabled(p.settings.effects);
+  }, [p.settings.lang, p.settings.music, p.settings.effects, dir]);
 
   const begin = (ctx: MatchCtx) => { saveMatch(ctx); setSaved(ctx); setPlaying({ ctx, key: Date.now() }); };
 
@@ -98,7 +99,7 @@ export default function App() {
     if (saved && saved.mode === 'bots' && saved.paid) {
       const hu = 0;
       void hu;
-      update((q) => settleMatch(q, { arenaId: saved.arenaId, players: saved.match.config.players, outcome: 'loss', surs: 0, sarbaz: 0, paid: true, fee: saved.fee }, todayKey(), Date.now()).profile);
+      update((q) => settleMatch(q, { arenaId: saved.arenaId, players: saved.match.config.players, outcome: 'loss', surs: 0, sarbaz: 0, paid: true, fee: saved.fee, margin: 0, target: saved.match.config.target, quit: true }, todayKey(), Date.now()).profile);
     }
     saveMatch(null);
     setSaved(null);

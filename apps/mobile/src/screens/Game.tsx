@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  captureOptions, chooseMove, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
+  captureOptions, chooseMove, liveScore, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
   type Card, type MatchState,
 } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
@@ -9,7 +9,7 @@ import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
 import { botById, EMOTES } from '../data/bots';
 import { TABLE_COLORS } from '../data/cosmetics';
-import { adStatus, checkAchievements, grantAd, settleMatch, todayKey } from '../economy/economy';
+import { adStatus, checkAchievements, grantAd, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
@@ -57,9 +57,9 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
   }, [mc, ctx]);
 
   useEffect(() => {
-    if (profile.settings.sound) startAmbient(arena.ambient);
+    if (profile.settings.music) startAmbient(arena.ambient);
     return () => stopAmbient();
-  }, [arena.ambient, profile.settings.sound]);
+  }, [arena.ambient, profile.settings.music]);
 
   const say = (seat: number, text: string) => {
     setBubbles((b) => ({ ...b, [seat]: text }));
@@ -154,11 +154,12 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     let sarbaz = 0;
     for (const d of mc.history) { surs += d[hu].sur / 5; sarbaz += d[hu].sarbaz / mc.config.surSarbazPoints; }
     const paid = ctx.mode === 'bots' && ctx.paid;
+    const margin = outcome === 'win' ? mc.scores[hu] - Math.max(...mc.scores.filter((_, u) => u !== hu)) : 0;
     let info = { payout: 0, trophyDelta: 0, xpGain: 0, levelUps: 0 };
     let unlocked: string[] = [];
     if (ctx.mode === 'bots') {
       update((p) => {
-        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee }, todayKey(), Date.now());
+        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee, margin, target: mc.config.target }, todayKey(), Date.now());
         info = r;
         const a = checkAchievements(r.profile, Date.now());
         unlocked = a.unlocked;
@@ -187,6 +188,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
   const last = mc.history[mc.history.length - 1];
   const lastId = mc.lastResult?.card.id;
   const floorCls = deal.floor.length > 14 ? 'lots' : deal.floor.length > 9 ? 'many' : '';
+  const live = liveScore(deal);
   const hint = !myTurn
     ? ''
     : !card
@@ -216,6 +218,21 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
           <span className="stockinfo">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Rd')} {n(deal.round + 1)}</span>
         </div>
         {ctx.mode === 'bots' && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label="chat">💬</button>}
+      </div>
+      <div className="live">
+        <table>
+          <thead>
+            <tr><th />{[tr('خاج', '♣'), tr('امتیاز', 'Pts'), tr('سور', 'Sur'), tr('جمع', 'Total')].map((h) => <th key={h}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {live.map((l, u) => (
+              <tr key={u} className={u === u0 ? 'me' : ''}>
+                <td className="nm">{unitName(u)}</td>
+                <td>{n(l.clubCount)}</td><td>{n(l.points)}</td><td>{n(l.surs)}</td><td>{n(l.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {chat && ctx.mode === 'bots' && (
         <div className="emotes">
@@ -363,7 +380,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
                 <div className="stat"><b>{result.trophyDelta > 0 ? '+' : ''}{n(result.trophyDelta)}</b><span className="mute">{tr('جام', 'Trophies')}</span></div>
               </div>
             )}
-            {ctx.mode === 'bots' && <div className="mute">+{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * 2)} ${tr('گوهر', 'Gohar')}`}</div>}
+            {ctx.mode === 'bots' && <div className="mute">+{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
             {result.unlocked.map((id) => (
               <div key={id} className="panel">🏅 {tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}</div>
             ))}

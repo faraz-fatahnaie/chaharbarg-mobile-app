@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import type { MatchState } from '@chaharbarg/engine';
-import { DEFAULT_SETTINGS, createProfile, verifyProfile, type Profile } from '../economy/economy';
+import { createProfile, migrateSettings, verifyProfile, type Profile } from '../economy/economy';
 import { fixMatchTarget } from './match';
+import { isPhotoDataUrl } from './identity';
 
 // ponytail: localStorage is enough for a profile + 40-entry ledger; move to SQLite (Capacitor) if saves grow or the OS evicts it.
 const KEY = 'chaharbarg.profile.v1';
@@ -12,11 +13,11 @@ function load(): Profile {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Profile;
-      const settings = { ...DEFAULT_SETTINGS, ...p.settings };
+      const settings = migrateSettings(p.settings);
       // old builds stored 62 / 100 / 'single'; storage may also hold edited values
       const t: unknown = settings.target;
       settings.target = t === 'long' || t === 100 ? 'long' : 'short';
-      return verifyProfile({ ...p, settings }, Date.now());
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, settings }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */
@@ -45,6 +46,38 @@ export function update(fn: (p: Profile) => Profile) {
 
 export const useProfile = () =>
   useSyncExternalStore((cb) => { subs.add(cb); return () => subs.delete(cb); }, () => profile);
+
+// ---- profile picture: its own key, never part of Profile ----
+const PHOTO_KEY = 'chaharbarg.photo.v1';
+
+function loadPhoto(): string | null {
+  try {
+    const v = localStorage.getItem(PHOTO_KEY);
+    return isPhotoDataUrl(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+let photo = loadPhoto();
+const photoSubs = new Set<() => void>();
+
+export const getPhoto = () => photo;
+export const usePhoto = () =>
+  useSyncExternalStore((cb) => { photoSubs.add(cb); return () => photoSubs.delete(cb); }, () => photo);
+
+export function setPhoto(dataUrl: string | null): boolean {
+  if (dataUrl !== null && !isPhotoDataUrl(dataUrl)) return false;
+  try {
+    if (dataUrl === null) localStorage.removeItem(PHOTO_KEY);
+    else localStorage.setItem(PHOTO_KEY, dataUrl);
+  } catch {
+    return false;
+  }
+  photo = dataUrl;
+  photoSubs.forEach((s) => s());
+  return true;
+}
 
 // ---- in-progress match (resume after the app is closed) ----
 export interface SeatInfo { name: string; botId: string | null; hue: number }
@@ -80,10 +113,13 @@ export function resetAll() {
   try {
     localStorage.removeItem(KEY);
     localStorage.removeItem(MATCH_KEY);
+    localStorage.removeItem(PHOTO_KEY);
   } catch {
     /* ignore */
   }
   profile = createProfile(Date.now());
   persist();
   subs.forEach((s) => s());
+  photo = null;
+  photoSubs.forEach((s) => s());
 }

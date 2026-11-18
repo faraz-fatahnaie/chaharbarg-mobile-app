@@ -1,16 +1,19 @@
 // Procedural sound: no audio files to ship, works offline. Replace with recorded Persian-instrument
 // loops (santur, tar, daf) later; keep these as the fallback.
 let ctx: AudioContext | null = null;
-let enabled = true;
+let musicOn = true;
+let effectsOn = true;
 let ambient: { stop: () => void } | null = null;
 
-export const setSoundEnabled = (on: boolean) => {
-  enabled = on;
+export const setMusicEnabled = (on: boolean) => {
+  musicOn = on;
   if (!on) stopAmbient();
+};
+export const setEffectsEnabled = (on: boolean) => {
+  effectsOn = on;
 };
 
 function ac() {
-  if (!enabled) return null;
   try {
     ctx ??= new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     if (ctx.state === 'suspended') void ctx.resume();
@@ -21,6 +24,7 @@ function ac() {
 }
 
 function tone(freq: number, dur: number, type: OscillatorType = 'sine', gain = 0.12, delay = 0, slide = 0) {
+  if (!effectsOn) return;
   const c = ac();
   if (!c) return;
   const o = c.createOscillator();
@@ -54,6 +58,7 @@ export function sfx(kind: Sfx) {
 /** Soft looping bed per arena (filtered noise): wind, water, bazaar murmur, garden, desert. */
 export function startAmbient(kind: 'wind' | 'water' | 'bazaar' | 'garden' | 'desert') {
   stopAmbient();
+  if (!musicOn) return;
   const c = ac();
   if (!c) return;
   const len = c.sampleRate * 2;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, startDeal, mulberry32,
-  newMatch, targetOptions, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level,
+  DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, liveScore, startDeal, mulberry32,
+  newMatch, targetOptions, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level, type RulesConfig,
 } from '../src/index';
 import { cs, ids, mk } from './helpers';
 
@@ -141,11 +141,43 @@ describe('sur (R15-R17)', () => {
     expect(play(mk(last), 'C5', ['H6']).result.sur).toBeNull();
     expect(play(mk({ ...last, config: { noSurInLastRound: false } }), 'C5', ['H6']).result.sur).toBe('sur');
   });
-  it('T22 units with >= surCap points cannot score a sur', () => {
-    const base = { hands: ['C5 H9', 'D3 D8'], floor: 'H6', stock: 'S2' };
-    expect(play(mk({ ...base, carry: [50, 0] }), 'C5', ['H6']).result.sur).toBeNull();
-    expect(play(mk({ ...base, carry: [49, 0] }), 'C5', ['H6']).result.sur).toBe('sur');
-    expect(play(mk({ ...base, carry: [80, 0], config: { surCap: null } }), 'C5', ['H6']).result.sur).toBe('sur');
+  const base = { hands: ['C5 H9', 'D3 D8'], floor: 'H6', stock: 'S2' };
+  it('T22 sur scores at any match score', () => {
+    for (const c of [49, 50, 80, 200]) {
+      const { state, result } = play(mk({ ...base, carry: [c, 0] }), 'C5', ['H6']);
+      expect(result.sur).toBe('sur');
+      expect(state.surs[0]).toBe(1);
+    }
+  });
+  it('T22 sur scores at every target', () => {
+    for (const [target, c] of [[35, 34], [65, 64], [112, 111]] as const) {
+      const { state, result } = play(mk({ ...base, carry: [c, 0], config: { target } }), 'C5', ['H6']);
+      expect(result.sur).toBe('sur');
+      expect(scoreDeal(state)[0].sur).toBe(5);
+    }
+  });
+  it('T22 4-player team above 50', () => {
+    const s = mk({ hands: ['C5 H9', 'D3 D8', 'S9 S8', 'H2 H3'], floor: 'H6', stock: 'S2', carry: [60, 0] });
+    const { state, result } = play(s, 'C5', ['H6']);
+    expect(result.sur).toBe('sur');
+    expect(scoreDeal(state)[0].sur).toBe(5);
+  });
+  it('Sur Sarbaz above 50', () => {
+    const s = mk({ hands: ['C9 H9', 'D11 D8'], floor: 'S11', stock: 'S2 S3', turn: 1, carry: [0, 80] });
+    const { state, result } = play(s, 'D11', ['S11']);
+    expect(result.sur).toBe('sarbaz');
+    expect(scoreDeal(state)[1].sarbaz).toBe(10);
+  });
+  it('legacy config with surCap is inert', () => {
+    const config = { surCap: 50 } as unknown as Partial<RulesConfig>;
+    expect(play(mk({ ...base, carry: [80, 0], config }), 'C5', ['H6']).result.sur).toBe('sur');
+  });
+  it('restrictions still hold at a high score', () => {
+    const last = play(mk({ ...base, round: 5, carry: [80, 0] }), 'C5', ['H6']);
+    expect(last.result.sur).toBeNull();
+    expect(last.state.surs[0]).toBe(0);
+    const jack = mk({ hands: ['C11 H9', 'D3 D8'], floor: 'H6 D2', stock: 'S2', carry: [80, 0] });
+    expect(play(jack, 'C11', ['H6', 'D2']).result.sur).toBeNull();
   });
   it('T23 lone jack captured by the next player\'s jack is Sur Sarbaz (10)', () => {
     const s = mk({ hands: ['C9 H9', 'D11 D8'], floor: 'S11', stock: 'S2 S3', turn: 1 });
@@ -209,6 +241,64 @@ describe('end of deal and scoring (R18-R21)', () => {
     s.surs = [2, 0];
     expect(scoreDeal(s)[0].sur).toBe(10);
     expect(scoreDeal(s)[0].total).toBe(10);
+  });
+});
+
+describe('live score (F-004)', () => {
+  const zero = { clubCount: 0, points: 0, surs: 0, total: 0 };
+  it('is all zero before the first move (2/3/4p)', () => {
+    for (const n of [2, 3, 4] as const) {
+      const s = startDeal({ ...DEFAULT_RULES, players: n }, mulberry32(n), 0, new Array(n === 4 ? 2 : n).fill(0));
+      const l = liveScore(s);
+      expect(l.length).toBe(n === 4 ? 2 : n);
+      l.forEach((u) => expect(u).toEqual(zero));
+    }
+  });
+  it('counts a sur on the first turn', () => {
+    const s = play(mk({ hands: ['C1 H9', 'D3 D8'], floor: 'D10', stock: 'S2 S3' }), 'C1', ['D10']).state;
+    const l = liveScore(s);
+    expect(l[0]).toEqual({ clubCount: 1, points: 4, surs: 1, total: 9 });
+    expect(l[1]).toEqual(zero);
+  });
+  it('counts the clubs bonus once certain (2p)', () => {
+    const s = mk({ hands: ['', ''], piles: ['C1 C3 C4 C5 C6 C7 C8', 'C9'] });
+    expect(liveScore(s)[0]).toMatchObject({ clubCount: 7, points: 8 });
+  });
+  it('does not count the 3p clubs bonus mid-deal', () => {
+    const s = mk({ hands: ['', '', ''], piles: ['C1 C3 C4 C5 C6 C7', 'C8 C9 C10', 'C11 C12 C13 C2'] });
+    expect(liveScore(s)[0].points).toBe(1);
+    s.over = true;
+    expect(liveScore(s)[0].points).toBe(8);
+    expect(liveScore(s)[0].total).toBe(scoreDeal(s)[0].total);
+  });
+  it('does not count a blocked last-round sur', () => {
+    const s = play(mk({ hands: ['C5 H9', 'D3 D8'], floor: 'H6', round: 5 }), 'C5', ['H6']).state;
+    const l = liveScore(s)[0];
+    expect(l.surs).toBe(0);
+    expect(l.total).toBe(l.points);
+  });
+  it('sums 4p team totals', () => {
+    const s = mk({ hands: ['', '', '', ''], piles: ['C1 D10', 'C2 H1', 'S1 S11', 'H11 C13'] });
+    s.surs = [1, 0, 1, 0];
+    s.sarbaz = [0, 1, 0, 0];
+    expect(s.config.surSarbazPoints).toBe(10);
+    const l = liveScore(s);
+    expect(l[0]).toEqual({ clubCount: 1, points: 6, surs: 2, total: 16 });
+    expect(l[1]).toEqual({ clubCount: 2, points: 4, surs: 1, total: 14 });
+  });
+  it('matches scoreDeal at the end of random deals', () => {
+    for (const n of [2, 3, 4] as const) {
+      for (let seed = 1; seed <= 5; seed++) {
+        const rng = mulberry32(seed * 17 + n);
+        let s = startDeal({ ...DEFAULT_RULES, players: n }, rng, 0, new Array(n === 4 ? 2 : n).fill(0));
+        while (!s.over) { const m = chooseMove(s, s.turn, 'medium', rng); s = play(s, m.cardId, m.captureIds).state; }
+        const sc = scoreDeal(s);
+        liveScore(s).forEach((u, i) => {
+          expect(u.total).toBe(sc[i].total);
+          expect(u.clubCount).toBe(sc[i].clubCount);
+        });
+      }
+    }
   });
 });
 

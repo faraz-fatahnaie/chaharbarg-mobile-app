@@ -11,8 +11,6 @@ export interface RulesConfig {
   /** a card that can capture may not be dropped on the floor */
   mustCapture: boolean;
   noSurInLastRound: boolean;
-  /** units with >= this many match points cannot score a sur; null = off */
-  surCap: number | null;
   surSarbazPoints: number;
 }
 
@@ -22,7 +20,6 @@ export const DEFAULT_RULES: RulesConfig = {
   openingJack: 'replace',
   mustCapture: true,
   noSurInLastRound: true,
-  surCap: 50,
   surSarbazPoints: 10,
 };
 
@@ -158,7 +155,6 @@ export function play(s: DealState, cardId: string, captureIds: readonly string[]
   if (!capturing && opts.length > 0 && s.config.mustCapture) throw new Error('capture is compulsory for this card');
 
   const n = s.config.players;
-  const unit = unitOf(n, seat);
   const hands = s.hands.map((h) => [...h]);
   hands[seat] = hands[seat].filter((c) => c.id !== cardId);
   const piles = s.piles.map((p) => [...p]);
@@ -178,8 +174,7 @@ export function play(s: DealState, cardId: string, captureIds: readonly string[]
     lastCapturer = seat;
     if (floor.length === 0) {
       const lastRound = s.round === roundsPerDeal(n) - 1;
-      const allowed =
-        !(s.config.noSurInLastRound && lastRound) && !(s.config.surCap !== null && s.carry[unit] >= s.config.surCap);
+      const allowed = !(s.config.noSurInLastRound && lastRound);
       if (allowed) {
         if (isJack(card)) {
           if (wasLoneJack) {

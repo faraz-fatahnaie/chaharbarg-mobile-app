@@ -127,7 +127,7 @@ npm run typecheck -w @chaharbarg/mobile          # types
 ```
 
 What the tests guard (see [rules-spec.md](rules-spec.md) §8 for the full list T1–T32):
-capture generation for numerics, Queen/King, Jack · compulsory capture · sur rules (Jack, last round, 50-point cap, Sur Sarbaz) · deal sizes for 2/3/4 players · card conservation and exactly 20 base points over random self-play · clubs scoring (7–6 split, 3-player tie, 4-player teams) · match target · bots return only legal moves · bot levels are ordered by strength · ledger tamper detection and rollback · idempotent purchases, ad cooldown and cap, daily streaks, challenges, payouts.
+capture generation for numerics, Queen/King, Jack · compulsory capture · sur rules (Jack, last round, Sur Sarbaz) · deal sizes for 2/3/4 players · card conservation and exactly 20 base points over random self-play · clubs scoring (7–6 split, 3-player tie, 4-player teams) · match target · bots return only legal moves · bot levels are ordered by strength · ledger tamper detection and rollback · idempotent purchases, ad cooldown and cap, daily streaks, challenges, payouts.
 
 ### UI end-to-end (headless Chrome, no extra dependencies)
 
@@ -223,13 +223,14 @@ Both are behind interfaces in `apps/mobile/src/lib/services.ts`, so no screen ch
 
 | Change | Where |
 |---|---|
-| Rule toggle default (target score, sur cap, forced capture, opening Jack, Sur Sarbaz points) | `DEFAULT_RULES` in `packages/engine/src/deal.ts`; user-facing defaults in `DEFAULT_SETTINGS` in `apps/mobile/src/economy/economy.ts`; mapped in `src/lib/match.ts` |
+| Rule toggle default (target score, forced capture, opening Jack, Sur Sarbaz points) | `DEFAULT_RULES` in `packages/engine/src/deal.ts`; user-facing defaults in `DEFAULT_SETTINGS` in `apps/mobile/src/economy/economy.ts`; mapped in `src/lib/match.ts` |
 | A new rule | engine first, with a test in `packages/engine/test/engine.test.ts`, then document in `docs/rules-spec.md` |
 | Add an arena | add an entry to `ARENAS` in `src/data/arenas.ts` (fee and trophy gate must increase: a test enforces it) and a scene function in `src/art/Scene.tsx` keyed by the same `id` |
 | Add a bot persona | `BOTS` in `src/data/bots.ts`, then reference its id in an arena's `botPool` |
 | Change bot strength | `packages/engine/src/bot.ts`; `bot-strength.test.ts` must still show hard > medium > easy |
 | Add a cosmetic | `COSMETICS` (+ `BACK_STYLES` / `TABLE_COLORS`) in `src/data/cosmetics.ts`; deck styles are CSS classes (`.deck-…`) in `styles.css` |
 | Change fees, payouts, rewards, ad limits | constants at the top of `src/economy/economy.ts`; update `economy.test.ts` expectations |
+| Support email, daily reminder time | `SUPPORT_EMAIL` in `src/lib/support.ts`; `REMINDER_HOUR` in `src/lib/reminders.ts` |
 | Add a language string | `tr(fa, en)` inline where used; no catalog |
 | New achievement | `ACHIEVEMENTS` in `economy.ts` + names in `src/data/achievements.ts` |
 
