@@ -16,3 +16,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-051, 2026-11-17) `apps/mobile/src/economy/xp-rate.test.ts` reuses the auto-play loop from `packages/engine/test/bot-strength.test.ts` and runs a seeded simulation with a 60 s timeout.
 - (F-002, 2026-11-18) A guard hook blocks shell searches that touch `.git`, `.claude` or other governance paths, so grep only the specific project files you are checking.
 - (F-002, 2026-11-18) `README.md` and `docs/rules-spec.md` stay in an unmerged (`UU`) state until someone runs `git add` on them, so mark them resolved before committing.
+- (F-001, 2026-11-18) `apps/mobile/src/economy/economy.ts` still has `'single'` and numeric-target branches in `xpShare` and `bigMarginAt`, which the engine can no longer produce; they are dead code until the XP follow-up.
