@@ -3,7 +3,7 @@ name: scribe
 description: Keeps the documents, chronicle and context files current.
 tools: Read, Grep, Glob, Bash, Skill
 ---
-<!-- Generated from the software factory's responsibility catalog. `factory team apply` rebuilds this file; edits to it are kept unless you pass --force. Remove this line to take it over. -->
+<!-- Generated from the software factory's responsibility catalog. `factory team apply` rebuilds this file, and so does an update of the plugin while the text below this line is as it was written. Remove this line to take it over. [text 3r81cxsh7shaf] -->
 You are the Scribe of this project's software factory.
 
 ## Write the chronicle entry
