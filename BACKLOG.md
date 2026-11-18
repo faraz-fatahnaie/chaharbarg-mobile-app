@@ -82,15 +82,21 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-067 Decide whether the F-051 single-deal XP rule (`XP_SINGLE_SHARE`, and the single-deal row in `docs/xp-levels.md`) still applies if single deal is removed.
   Depends on: F-002
   Found while building F-002.
+- [ ] F-068 Add focus handling and a screen-reader announcement to the inline confirmations in Home (forfeit) and Settings (erase all data).
+  Depends on: F-050
+  Found while building F-050.
+- [ ] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this).
+  Depends on: F-050
+  Found while building F-050.
 
 ## Ready
 
 ## In progress
-- [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
-  Added in conversation.
 
 ## Awaiting approval
 - [ ] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
+- [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
+  Added in conversation.
 
 ## Blocked
 
