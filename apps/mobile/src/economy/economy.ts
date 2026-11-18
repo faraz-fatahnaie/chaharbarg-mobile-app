@@ -178,7 +178,7 @@ export function settleMatch(p: Profile, m: MatchSummary, today: string, now: num
   };
   const levelUps = after - before;
   if (levelUps > 0) q = applyDelta(q, 0, levelUps * LEVEL_GOHAR, 'level-up', now);
-  q = recordEvents(q, today, { games: 1, wins: m.outcome === 'win' ? 1 : 0, surs: m.surs + m.sarbaz });
+  q = recordEvents(q, today, { games: m.quit ? 0 : 1, wins: m.outcome === 'win' ? 1 : 0, surs: m.surs + m.sarbaz });
   return { profile: q, payout, trophyDelta, xpGain, levelUps };
 }
 

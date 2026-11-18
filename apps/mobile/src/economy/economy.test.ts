@@ -194,6 +194,31 @@ describe('daily login, ads, relief, challenges', () => {
     expect(r.shahi).toBe(105);
     expect(canClaimRelief({ ...r, shahi: 0 }, NOW + 1000)).toBe(false);
   });
+  it('a forfeit does not advance the games challenge but still records the loss', () => {
+    const today = '2026-10-28';
+    const p = settleMatch(createProfile(NOW), win({ outcome: 'loss', quit: true }), today, NOW).profile;
+    expect(p.daily.progress.games ?? 0).toBe(0);
+    expect(p.stats.games).toBe(1);
+    expect(p.stats.losses).toBe(1);
+    expect(p.stats.streak).toBe(0);
+  });
+
+  it('a completed game still counts toward the games challenge', () => {
+    const today = '2026-10-28';
+    expect(settleMatch(createProfile(NOW), win({ outcome: 'loss' }), today, NOW).profile.daily.progress.games).toBe(1);
+    expect(settleMatch(createProfile(NOW), win(), today, NOW).profile.daily.progress.games).toBe(1);
+  });
+
+  it('forfeits cannot be used to claim the games challenge', () => {
+    const today = '2026-10-28';
+    const c = dailyChallenges(today);
+    let p = createProfile(NOW);
+    for (let i = 0; i < c[0].goal; i++) p = settleMatch(p, win({ outcome: 'loss', quit: true }), today, NOW).profile;
+    const after = claimChallenge(p, c[0].id, today, NOW);
+    expect(after.shahi).toBe(p.shahi);
+    expect(after.daily.claimed).not.toContain(c[0].id);
+  });
+
   it('challenges are deterministic per day and claimable once', () => {
     const c = dailyChallenges('2026-10-28');
     expect(c.map((x) => x.kind)).toEqual(['games', 'wins', 'surs']);
