@@ -13,3 +13,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-052, 2026-11-17) The mobile suite was recorded as 27 tests in earlier notes but runs 20 now, so check the test count against `apps/mobile/src/economy/economy.test.ts` before trusting old totals.
 - (F-051, 2026-11-17) The simulation's "unscaled" XP divides the already-rounded scaled XP by 0.2, so each per-match figure can be off by about ±2.5 XP; the assertions still hold because the margins are much larger.
 - (F-001, 2026-11-18) No automated test covers the Home target row, so it needs a manual check in the running app at 390×844 with 2, 3 and 4 players, in Persian and English.
+- (F-050, 2026-11-18) The mobile app has no DOM testing library, so the Home and Settings confirmations are verified only by manual checks, not by tests.

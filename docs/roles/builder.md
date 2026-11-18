@@ -17,3 +17,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-002, 2026-11-18) A guard hook blocks shell searches that touch `.git`, `.claude` or other governance paths, so grep only the specific project files you are checking.
 - (F-002, 2026-11-18) `README.md` and `docs/rules-spec.md` stay in an unmerged (`UU`) state until someone runs `git add` on them, so mark them resolved before committing.
 - (F-001, 2026-11-18) `apps/mobile/src/economy/economy.ts` still has `'single'` and numeric-target branches in `xpShare` and `bigMarginAt`, which the engine can no longer produce; they are dead code until the XP follow-up.
+- (F-050, 2026-11-18) `toBe` treats `-0` and `0` as different, so compare a negated gain with `0 - x` or use `toEqual` when a forfeit loss is zero.
