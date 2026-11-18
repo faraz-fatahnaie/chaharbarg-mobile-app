@@ -4,8 +4,8 @@ import { sha256 } from './sha256';
 import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
-  loginPreview, payFee, settleMatch, verifyProfile, type MatchSummary,
-  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel,
+  loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
+  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare,
 } from './economy';
 
 const NOW = 1_700_000_000_000;
@@ -98,6 +98,30 @@ describe('arena entry and match settlement', () => {
       expect(ARENAS[i].fee).toBeGreaterThan(ARENAS[i - 1].fee);
       expect(ARENAS[i].minTrophies).toBeGreaterThan(ARENAS[i - 1].minTrophies);
     }
+  });
+});
+
+describe('single-deal XP (F-051)', () => {
+  const single = (over: Partial<MatchSummary> = {}) => win({ target: 'single', ...over });
+  it('single-deal loss and win earn 0.2x, rounded', () => {
+    expect(settleMatch(createProfile(NOW), single({ outcome: 'loss' }), 'd', NOW).xpGain).toBe(4);
+    expect(settleMatch(createProfile(NOW), single({ surs: 1, sarbaz: 1 }), 'd', NOW).xpGain).toBe(13);
+  });
+  it('62 and 100 matches are unchanged', () => {
+    expect(settleMatch(createProfile(NOW), win({ surs: 1 }), 'd', NOW).xpGain).toBe(55);
+    expect(settleMatch(createProfile(NOW), win({ surs: 1, target: 100 }), 'd', NOW).xpGain).toBe(55);
+  });
+  it('xpShare', () => {
+    expect([xpShare(35), xpShare(100), xpShare('single')]).toEqual([1, 1, 0.2]);
+  });
+  it('the forfeit penalty is not scaled', () => {
+    expect(matchXp(single({ quit: true }))).toBe(matchXp(win({ quit: true })));
+  });
+  it('a single deal cannot buy a level', () => {
+    const p = { ...createProfile(NOW), xp: 90 };
+    const r = settleMatch(p, single({ outcome: 'loss' }), 'd', NOW);
+    expect([r.profile.xp, r.levelUps, r.profile.gohar]).toEqual([94, 0, p.gohar]);
+    expect(settleMatch(p, win({ outcome: 'loss' }), 'd', NOW).levelUps).toBe(1);
   });
 });
 
@@ -194,6 +218,31 @@ describe('daily login, ads, relief, challenges', () => {
     expect(r.shahi).toBe(105);
     expect(canClaimRelief({ ...r, shahi: 0 }, NOW + 1000)).toBe(false);
   });
+  it('a forfeit does not advance the games challenge but still records the loss', () => {
+    const today = '2026-10-28';
+    const p = settleMatch(createProfile(NOW), win({ outcome: 'loss', quit: true }), today, NOW).profile;
+    expect(p.daily.progress.games ?? 0).toBe(0);
+    expect(p.stats.games).toBe(1);
+    expect(p.stats.losses).toBe(1);
+    expect(p.stats.streak).toBe(0);
+  });
+
+  it('a completed game still counts toward the games challenge', () => {
+    const today = '2026-10-28';
+    expect(settleMatch(createProfile(NOW), win({ outcome: 'loss' }), today, NOW).profile.daily.progress.games).toBe(1);
+    expect(settleMatch(createProfile(NOW), win(), today, NOW).profile.daily.progress.games).toBe(1);
+  });
+
+  it('forfeits cannot be used to claim the games challenge', () => {
+    const today = '2026-10-28';
+    const c = dailyChallenges(today);
+    let p = createProfile(NOW);
+    for (let i = 0; i < c[0].goal; i++) p = settleMatch(p, win({ outcome: 'loss', quit: true }), today, NOW).profile;
+    const after = claimChallenge(p, c[0].id, today, NOW);
+    expect(after.shahi).toBe(p.shahi);
+    expect(after.daily.claimed).not.toContain(c[0].id);
+  });
+
   it('challenges are deterministic per day and claimable once', () => {
     const c = dailyChallenges('2026-10-28');
     expect(c.map((x) => x.kind)).toEqual(['games', 'wins', 'surs']);
@@ -233,5 +282,28 @@ describe('shop and purchases', () => {
     p = grantPurchase(p, 'gohar_20', 'tok-A', NOW + 1);
     expect(p.gohar).toBe(20);
     expect(grantPurchase(p, 'bogus', 'tok-B', NOW).gohar).toBe(20);
+  });
+});
+
+describe('settings migration', () => {
+  it('splits an old sound=false into music and effects', () => {
+    const s = migrateSettings({ sound: false, lang: 'en' });
+    expect(s).toMatchObject({ music: false, effects: false, notifications: false, lang: 'en' });
+    expect('sound' in s).toBe(false);
+  });
+  it('splits sound=true', () => {
+    expect(migrateSettings({ sound: true })).toMatchObject({ music: true, effects: true });
+  });
+  it('keeps music and effects independent', () => {
+    expect(migrateSettings({ music: false, effects: true })).toMatchObject({ music: false, effects: true });
+  });
+  it('returns defaults for non-objects', () => {
+    for (const raw of [undefined, null, 'garbage']) expect(migrateSettings(raw)).toEqual(DEFAULT_SETTINGS);
+  });
+  it('rejects non-boolean values', () => {
+    expect(migrateSettings({ music: 'yes' }).music).toBe(true);
+  });
+  it('new profiles have notifications off', () => {
+    expect(createProfile(NOW).settings.notifications).toBe(false);
   });
 });

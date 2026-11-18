@@ -8,16 +8,22 @@
     "npm run typecheck -w @chaharbarg/mobile"
   ],
   "graph": true,
+  "vcs": {
+    "autoPush": true
+  },
+  "manager": {
+    "autonomy": "assist"
+  },
   "team": {
     "preset": "balanced"
   },
   "roles": {
-    "planner": {
+    "technical-manager": {
       "runner": "claude",
-      "model": "haiku",
-      "effort": "low",
+      "model": "sonnet",
+      "effort": "medium",
       "fallback": [
-        "sonnet"
+        "haiku"
       ]
     },
     "architect": {

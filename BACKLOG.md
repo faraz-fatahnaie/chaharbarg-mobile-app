@@ -61,24 +61,32 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-060 Manual check: the result screen should show the scaled `xpGain` after a single-deal match. The gate commands do not cover the result screen.
   Depends on: F-051
   Found while building F-051.
+- [ ] F-061 `xpShare`, `XP_SINGLE_SHARE` and `bigMarginAt` in `economy.ts` still handle `'single'` and numeric targets, which main's engine can't produce now. The XP value of the new short and long targets (35, 6
+  Depends on: F-001
+  Found while building F-001.
+- [ ] F-062 Check every field of saved settings against its allowed values in `migrateSettings`: `openingJack`, `mustCapture`, `noSurInLastRound`, `surSarbazPoints`, `timeOfDay`, `lang`, `hints`.
+  Depends on: F-001
+  Found while building F-001.
+- [ ] F-063 Check the shape of a saved match in `loadMatch` before resuming it, not just rely on the `try/catch`.
+  Depends on: F-001
+  Found while building F-001.
+- [ ] F-064 Set XP pay for the short and long targets (35/65 and 65/112). Short matches now earn about 1.3–1.7× more XP per deal than long ones, which partly undoes F-051. Then bring back an XP-per-deal guard in 
+  Depends on: F-001
+  Found while building F-001.
 
 ## Ready
 
 ## In progress
+- [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
+  Added in conversation.
 
 ## Awaiting approval
 
 ## Blocked
-- [ ] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
-  Added in conversation.
 
 ## Done
-- [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
-- [x] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)
-- [x] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
 - [x] F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in
-- [x] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
 - [x] F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for 
 - [x] F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should.
   Added in conversation.
@@ -86,3 +94,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Added in conversation.
 - [x] F-051 Single-deal matches are the fastest way to earn XP (found in F-005 review). Check whether XP for single deals should be reduced.
   Added in conversation.
+- [x] F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions
+- [x] F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player
+- [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
+- [x] F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6)

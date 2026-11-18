@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  captureOptions, chooseMove, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
+  captureOptions, chooseMove, liveScore, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
   type Card, type MatchState,
 } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
@@ -57,9 +57,9 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
   }, [mc, ctx]);
 
   useEffect(() => {
-    if (profile.settings.sound) startAmbient(arena.ambient);
+    if (profile.settings.music) startAmbient(arena.ambient);
     return () => stopAmbient();
-  }, [arena.ambient, profile.settings.sound]);
+  }, [arena.ambient, profile.settings.music]);
 
   const say = (seat: number, text: string) => {
     setBubbles((b) => ({ ...b, [seat]: text }));
@@ -188,6 +188,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
   const last = mc.history[mc.history.length - 1];
   const lastId = mc.lastResult?.card.id;
   const floorCls = deal.floor.length > 14 ? 'lots' : deal.floor.length > 9 ? 'many' : '';
+  const live = liveScore(deal);
   const hint = !myTurn
     ? ''
     : !card
@@ -217,6 +218,21 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
           <span className="stockinfo">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Rd')} {n(deal.round + 1)}</span>
         </div>
         {ctx.mode === 'bots' && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label="chat">💬</button>}
+      </div>
+      <div className="live">
+        <table>
+          <thead>
+            <tr><th />{[tr('خاج', '♣'), tr('امتیاز', 'Pts'), tr('سور', 'Sur'), tr('جمع', 'Total')].map((h) => <th key={h}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {live.map((l, u) => (
+              <tr key={u} className={u === u0 ? 'me' : ''}>
+                <td className="nm">{unitName(u)}</td>
+                <td>{n(l.clubCount)}</td><td>{n(l.points)}</td><td>{n(l.surs)}</td><td>{n(l.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {chat && ctx.mode === 'bots' && (
         <div className="emotes">
