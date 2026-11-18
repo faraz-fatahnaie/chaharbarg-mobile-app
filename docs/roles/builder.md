@@ -14,3 +14,5 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-049, 2026-11-16) On `factory/F-005`, the `quit` field and forfeit XP penalty exist only on that branch, so the F-005 merge needs its `quit?: boolean` and `quit: true` kept alongside `games: m.quit ? 0 : 1`.
 - (F-052, 2026-11-17) Gate commands are `npm test`, `npm run typecheck -w @chaharbarg/engine` and `npm run typecheck -w @chaharbarg/mobile`; run all three.
 - (F-051, 2026-11-17) `apps/mobile/src/economy/xp-rate.test.ts` reuses the auto-play loop from `packages/engine/test/bot-strength.test.ts` and runs a seeded simulation with a 60 s timeout.
+- (F-002, 2026-11-18) A guard hook blocks shell searches that touch `.git`, `.claude` or other governance paths, so grep only the specific project files you are checking.
+- (F-002, 2026-11-18) `README.md` and `docs/rules-spec.md` stay in an unmerged (`UU`) state until someone runs `git add` on them, so mark them resolved before committing.
