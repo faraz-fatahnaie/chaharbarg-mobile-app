@@ -20,3 +20,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-050, 2026-11-18) `toBe` treats `-0` and `0` as different, so compare a negated gain with `0 - x` or use `toEqual` when a forfeit loss is zero.
 - (F-002, 2026-11-18) `git add` needs approval in this environment, so a merge-conflict fix can leave the file unmerged (`UU`) until someone stages it.
 - (F-054, 2026-11-19) The spec asks for a manual 360×640 check of the Home forfeit dialog in fa and en, and the gates do not render screens, so this check is the only layout verification.
+- (F-056, 2026-11-19) `build.md` is blocked for agents, so the manual on-device check for UI copy changes has to be recorded by a person.
