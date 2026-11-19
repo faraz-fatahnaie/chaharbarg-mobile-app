@@ -104,7 +104,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Blocked
@@ -125,3 +124,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
 - [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
+- [x] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
