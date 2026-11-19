@@ -18,3 +18,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-054, 2026-11-19) Existing `economy.test.ts` forfeit tests cover the behaviour the Home copy describes; no test fails if that copy changes.
 - (F-056, 2026-11-19) The forfeit-warning behaviour is covered by the `economy.test.ts` forfeit tests, not by any component test, because the mobile app has no component-test setup.
 - (F-054, 2026-11-19) Games-challenge forfeit behaviour is tested in `apps/mobile/src/economy/economy.test.ts` (around lines 235–258), so copy-only changes there need no new tests.
+- (F-035, 2026-11-19) Stubbed tests cannot show real browser memory use for image decoding, so a manual check in Settings with a picture over 24 MP and a normal one is needed.
