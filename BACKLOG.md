@@ -96,12 +96,12 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
+- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Awaiting approval
 - [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Blocked
-- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Done
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
