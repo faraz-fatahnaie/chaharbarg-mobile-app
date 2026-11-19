@@ -76,8 +76,8 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial }: {
           {saved.mode === 'bots' && confirmQuit ? (
             <>
               <span className="mute">{loss > 0
-                ? tr(`با انصراف، این بازی باخت حساب می‌شود و ${n(loss)} XP از دست می‌دهی.`, `Forfeiting counts as a loss and costs you ${loss} XP.`)
-                : tr('با انصراف، این بازی باخت حساب می‌شود.', 'Forfeiting counts as a loss.')}</span>
+                ? tr(`با انصراف، این بازی باخت حساب می‌شود و ${n(loss)} XP از دست می‌دهی. این بازی در چالش روزانهٔ «بازی انجام بده» حساب نمی‌شود.`, `Forfeiting counts as a loss and costs you ${loss} XP. It doesn't count toward the daily "play matches" challenge.`)
+                : tr('با انصراف، این بازی باخت حساب می‌شود. این بازی در چالش روزانهٔ «بازی انجام بده» حساب نمی‌شود.', "Forfeiting counts as a loss. It doesn't count toward the daily \"play matches\" challenge.")}</span>
               <div className="row">
                 <button className="btn danger grow" onClick={() => { setConfirmQuit(false); onForfeit(); }}>{tr('مطمئنم، انصراف', 'Yes, forfeit')}</button>
                 <button className="btn ghost" onClick={() => setConfirmQuit(false)}>{tr('ادامهٔ بازی', 'Keep playing')}</button>
