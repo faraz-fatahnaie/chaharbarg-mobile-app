@@ -92,14 +92,20 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-071 F-056 duplicates F-054. A person should close it once F-054 lands.
   Depends on: F-054
   Found while building F-054.
+- [ ] F-072 Close either F-054 or F-056 as a duplicate before merging, since both change `Home.tsx` lines 78–80 in the same way.
+  Depends on: F-056
+  Found while building F-056.
+- [ ] F-073 Close either F-054 or F-056 as a duplicate before merging, since both change `Home.tsx` lines 78–80 in the same way.
+  Depends on: F-056
+  Found while building F-056.
 
 ## Ready
 
 ## In progress
-- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Awaiting approval
 - [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
+- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Blocked
 
