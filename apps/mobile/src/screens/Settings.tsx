@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
 import { useLang } from '../lib/i18n';
-import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
+import { MAX_PHOTO_PIXELS, NAME_MAX, checkName, readPhoto } from '../lib/identity';
 import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
 import type { Settings as S } from '../economy/economy';
 import { Header } from './Home';
@@ -34,7 +34,10 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
     try {
       setPicErr(setPhoto(await readPhoto(file)) ? '' : tr('ذخیرهٔ تصویر ممکن نشد.', "Couldn't save the picture."));
     } catch (err) {
-      setPicErr((err as Error).message === 'too-big' ? tr('تصویر بزرگ‌تر از ۱۰ مگابایت است.', 'Picture is larger than 10 MB.')
+      const m = (err as Error).message;
+      const mp = MAX_PHOTO_PIXELS / 1_000_000;
+      setPicErr(m === 'too-big' ? tr('تصویر بزرگ‌تر از ۱۰ مگابایت است.', 'Picture is larger than 10 MB.')
+        : m === 'too-many-pixels' ? tr(`ابعاد تصویر بیش از ${n(mp)} مگاپیکسل است.`, `Picture is larger than ${mp} megapixels.`)
         : tr('این فایل تصویر نیست یا باز نشد.', "That file isn't a picture we can open."));
     }
     input.value = '';
