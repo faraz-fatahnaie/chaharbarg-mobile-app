@@ -17,3 +17,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-002, 2026-11-18) `git diff MERGE_HEAD -- docs/rules-spec.md README.md` shows the branch's own change against main, which is the quickest way to check a docs merge.
 - (F-054, 2026-11-19) Existing `economy.test.ts` forfeit tests cover the behaviour the Home copy describes; no test fails if that copy changes.
 - (F-056, 2026-11-19) The forfeit-warning behaviour is covered by the `economy.test.ts` forfeit tests, not by any component test, because the mobile app has no component-test setup.
+- (F-054, 2026-11-19) Games-challenge forfeit behaviour is tested in `apps/mobile/src/economy/economy.test.ts` (around lines 235–258), so copy-only changes there need no new tests.
