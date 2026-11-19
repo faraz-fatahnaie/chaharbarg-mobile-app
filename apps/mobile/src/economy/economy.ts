@@ -172,6 +172,9 @@ export function matchXp(m: MatchSummary): number {
     + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz)));
 }
 
+/** XP a forfeit would cost at this XP total: XP_QUIT, but never below the current level's start (same clamp as settleMatch). */
+export const forfeitXpLoss = (xp: number) => xp - Math.max(xpForLevel(levelOf(xp)), xp - XP_QUIT);
+
 export function settleMatch(p: Profile, m: MatchSummary, today: string, now: number) {
   const winners = m.players === 4 ? 2 : 1;
   const payout = !m.paid ? 0 : m.outcome === 'win' ? Math.round((m.fee * m.players * POT_RAKE) / winners) : m.outcome === 'draw' ? m.fee : 0;
