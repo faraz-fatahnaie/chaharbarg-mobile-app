@@ -106,9 +106,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-035.
 
 ## Ready
-- [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 
 ## In progress
+- [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 
 ## Awaiting approval
 - [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
