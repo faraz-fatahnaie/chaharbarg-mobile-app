@@ -1,4 +1,4 @@
-import { DEFAULT_RULES, mulberry32, newMatch, type RulesConfig } from '@chaharbarg/engine';
+import { DEFAULT_RULES, mulberry32, newMatch, targetOptions, type RulesConfig } from '@chaharbarg/engine';
 import { timeOfDayFor, type Arena } from '../data/arenas';
 import { BOTS, botById } from '../data/bots';
 import type { Profile } from '../economy/economy';
@@ -9,11 +9,28 @@ export function rulesFrom(p: Profile, players: 2 | 3 | 4): RulesConfig {
   return {
     ...DEFAULT_RULES,
     players,
-    target: s.target,
+    target: targetOptions(players)[s.target === 'long' ? 1 : 0],
     openingJack: s.openingJack,
     mustCapture: s.mustCapture,
     noSurInLastRound: s.noSurInLastRound,
     surSarbazPoints: s.surSarbazPoints,
+  };
+}
+
+/** Saved matches from older builds may hold a target that is no longer allowed (62 / 100 / 'single'): map it to the nearest option. */
+export function fixMatchTarget(c: MatchCtx): MatchCtx {
+  const players = c.match.config.players;
+  const opts = targetOptions(players);
+  const old: unknown = c.match.config.target;
+  if ((opts as readonly unknown[]).includes(old)) return c;
+  const target = old === 100 ? opts[1] : old === 62 ? 65 : opts[0];
+  return {
+    ...c,
+    match: {
+      ...c.match,
+      config: { ...c.match.config, target },
+      deal: { ...c.match.deal, config: { ...c.match.deal.config, target } },
+    },
   };
 }
 

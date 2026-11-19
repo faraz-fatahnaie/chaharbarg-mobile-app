@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { MatchState } from '@chaharbarg/engine';
 import { createProfile, migrateSettings, verifyProfile, type Profile } from '../economy/economy';
+import { fixMatchTarget } from './match';
 import { isPhotoDataUrl } from './identity';
 
 // ponytail: localStorage is enough for a profile + 40-entry ledger; move to SQLite (Capacitor) if saves grow or the OS evicts it.
@@ -12,7 +13,11 @@ function load(): Profile {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const p = JSON.parse(raw) as Profile;
-      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, settings: migrateSettings(p.settings) }, Date.now());
+      const settings = migrateSettings(p.settings);
+      // old builds stored 62 / 100 / 'single'; storage may also hold edited values
+      const t: unknown = settings.target;
+      settings.target = t === 'long' || t === 100 ? 'long' : 'short';
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, settings }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */
@@ -98,7 +103,7 @@ export function saveMatch(c: MatchCtx | null) {
 export function loadMatch(): MatchCtx | null {
   try {
     const raw = localStorage.getItem(MATCH_KEY);
-    return raw ? (JSON.parse(raw) as MatchCtx) : null;
+    return raw ? fixMatchTarget(JSON.parse(raw) as MatchCtx) : null;
   } catch {
     return null;
   }

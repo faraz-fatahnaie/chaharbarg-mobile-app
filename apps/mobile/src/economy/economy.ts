@@ -24,7 +24,7 @@ export interface Settings {
   notifications: boolean;
   hints: boolean;
   timeOfDay: 'auto' | 'day' | 'dusk' | 'night';
-  target: 62 | 100 | 'single';
+  target: 'short' | 'long';
   noSurInLastRound: boolean;
   mustCapture: boolean;
   openingJack: 'replace' | 'allow';
@@ -75,7 +75,7 @@ export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'fa', music: true, effects: true, notifications: false, hints: true, timeOfDay: 'auto',
-  target: 62, noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
+  target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
 };
 
 /** Load-time migration of saved settings: old `sound` becomes music + effects; bad booleans fall back to defaults. */

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { targetOptions } from '@chaharbarg/engine';
 import { Scene } from '../art/Scene';
 import { ARENAS, timeOfDayFor, type Arena } from '../data/arenas';
 import {
@@ -116,6 +117,14 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial }: {
           {([2, 3, 4] as const).map((k) => (
             <button key={k} className={players === k ? 'on' : ''} onClick={() => setPlayers(k)}>
               {n(k)} {tr('نفره', 'players')}{k === 4 ? ` (${tr('تیمی', 'teams')})` : ''}
+            </button>
+          ))}
+        </div>
+        <div className="seg">
+          {targetOptions(players).map((t, i) => (
+            <button key={t} className={(p.settings.target === 'long' ? 1 : 0) === i ? 'on' : ''}
+              onClick={() => update((q) => ({ ...q, settings: { ...q.settings, target: i ? 'long' : 'short' } }))}>
+              {tr('هدف', 'Goal')} {n(t)}
             </button>
           ))}
         </div>
