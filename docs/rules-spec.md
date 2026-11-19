@@ -10,7 +10,7 @@ Terms: **deal** (دست) = one full pass through the 52 cards; **round** (نوب
 ## 1. Setup
 - R1 [docx] 52-card deck. 2, 3 or 4 players. 4 players = two teams, partners opposite (seats 0&2 vs 1&3). Points are per team.
 - R2 [docx] Shuffle. 4 cards face-up to the floor, then 4 to each player. Remaining cards stay in the stock; after everyone has played all 4 cards, 4 more are dealt to each player (floor is not re-dealt). Rounds per deal: 2p=6, 3p=4, 4p=3. Stock after first deal: 40 / 36 / 32 (matches docx tables).
-- R3 [docx] First starter of the match is random. [call] Later deals: dealer rotates one seat in play direction; the player after the dealer plays first.
+- R3 [docx] The first player of the match is chosen at random (user confirmed 2026-11-15, brief Decision 6). [call] Later deals, pending the user's open question in the brief: dealer rotates one seat in play direction; the player after the dealer plays first.
 - R4 [src] Play direction is counter-clockwise (Pagat, Jahanshiri; Wikipedia says clockwise — conflict). In the RTL UI this is natural: turn passes to the player on the right.
 - R5 [src] Opening floor: a single Jack is buried in the stock and replaced by the top stock card; if the floor then has >1 Jack, >2 Queens or >2 Kings, reshuffle and redeal (Pagat, Wikipedia, Jahanshiri agree). *Overrides the "no redeal" default in the brief.* Setting `openingJack: 'replace' | 'allow'`.
 
@@ -50,7 +50,7 @@ Each turn a player must play exactly one card (no passing) [src].
 - R20 [docx] Base points per deal always total 20 (invariant under test).
 
 ## 7. Match
-- R21 [src] A match is played over successive deals until a unit reaches the **target score**; default 62 (Pagat, Wikipedia, Jahanshiri agree; 100 is a common variant). Ties at the top continue to another deal. Option `target: 'single'` plays one deal only. Settings: `target` ∈ {62, 100, 'single'}. A single-deal match earns XP at `XP_SINGLE_SHARE` (0.2, rounded) of the normal match XP, so it is not a faster way to level (F-051).
+- R21 [call] A match is played over successive deals until a unit reaches the **target score**. The players choose the target before the match: **35 or 65** with 2 or 3 players, **65 or 112** with 4 players (brief Decision 5; the sources' traditional target is different, so this is not [src]). Ties at the top continue to another deal. Setting: `target` ∈ {35, 65} for 2 and 3 players, {65, 112} for 4 players.
 - R22 [call] The mid-deal "per shodam" early finish (Pagat) is not implemented in v1.
 
 ## 8. Test list (engine)
@@ -58,5 +58,5 @@ Capture generation: T1 sum-11 pairs and triples; T2 A counts 1 (10+A); T3 Q/K on
 Turn: T10 played card moves to pile on capture; T11 no capture → floor; T12 mustCapture forbids dropping a capturing card; T13 can drop a non-capturing card while holding capturing cards; T14 turn order ccw and teams alternate in 4p.
 Deal flow: T15 deal counts 2/3/4p (stock 40/36/32, rounds 6/4/3); T16 redeal at round end only when all hands empty; T17 opening-jack replace/redeal; T18 all 52 cards conserved at every step.
 Sur: T19 clearing floor = sur; T20 jack clear = no sur; T21 last-round clear = no sur (and toggle); T22 sur scores at any match score (no cap); T23 Sur Sarbaz = 10; T24 lone jack captured by jack on a later (non-adjacent) turn = plain, no Sarbaz.
-End/score: T25 last capturer takes leftovers; T26 base points total 20 for 2/3/4p over random games; T27 clubs ≥7 (7–6 split); T28 3p clubs tie → third gets 7; T29 4p team aggregation; T30 target 62 ends match, tie continues.
+End/score: T25 last capturer takes leftovers; T26 base points total 20 for 2/3/4p over random games; T27 clubs ≥7 (7–6 split); T28 3p clubs tie → third gets 7; T29 4p team aggregation; T30 chosen target (35/65/112) ends match, tie continues.
 Bots: T31 bots only return legal moves; T32 full random self-play for 2/3/4p terminates and conserves cards.
