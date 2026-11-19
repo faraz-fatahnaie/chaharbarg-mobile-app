@@ -40,7 +40,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-043 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands, because it still has R16 and `surCap` nodes.
 - [ ] F-044 Close F-022 and F-026, which no longer apply.
 - [ ] F-045 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en). Look for overlap with the floor cards, the `pos-tr`, `pos-top` and `pos-right` seats, and the turn glow.
-- [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 - [ ] F-047 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en) and confirm long 3p names in `.live td.nm` end in "…".
 - [ ] F-048 Have a person confirm that "Total" means this deal's total so far, not the match score (the spec's open question).
 - [ ] F-053 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep `games: m.quit ? 0 : 1` in `settleMatch`.
@@ -107,6 +106,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-035.
 
 ## Ready
+- [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 
 ## In progress
 
