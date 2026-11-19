@@ -94,9 +94,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-054.
 
 ## Ready
-- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## In progress
+- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Awaiting approval
 - [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
