@@ -127,7 +127,7 @@ h2 { font-size: 18px; } h3 { font-size: 15px; }
 .live th, .live td { padding: 0 4px; text-align: center; white-space: nowrap; }
 .live th { color: var(--mute); font-weight: normal; }
 .live tr.me { color: var(--gold); }
-.live td.nm { max-width: 72px; overflow: hidden; text-overflow: ellipsis; }
+.live td.nm span { display: block; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scroll > * { flex-shrink: 0; }
 .hud { display: flex; align-items: center; gap: 6px; padding: 8px 10px 0; }
 .score { flex: 1; display: flex; gap: 6px; }
