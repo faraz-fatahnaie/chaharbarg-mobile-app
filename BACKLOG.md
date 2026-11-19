@@ -87,13 +87,19 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this).
   Depends on: F-050
   Found while building F-050.
+- [ ] F-070 F-056 duplicates F-054, so a person should close it now that F-054 is done.
+  Depends on: F-054
+  Found while building F-054.
+- [ ] F-071 F-056 duplicates F-054. A person should close it once F-054 lands.
+  Depends on: F-054
+  Found while building F-054.
 
 ## Ready
 
 ## In progress
-- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Awaiting approval
+- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Blocked
 
