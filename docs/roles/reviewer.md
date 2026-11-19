@@ -15,3 +15,5 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-001, 2026-11-18) No automated test covers the Home target row, so it needs a manual check in the running app at 390×844 with 2, 3 and 4 players, in Persian and English.
 - (F-050, 2026-11-18) The mobile app has no DOM testing library, so the Home and Settings confirmations are verified only by manual checks, not by tests.
 - (F-002, 2026-11-18) `git diff MERGE_HEAD -- docs/rules-spec.md README.md` shows the branch's own change against main, which is the quickest way to check a docs merge.
+- (F-054, 2026-11-19) Existing `economy.test.ts` forfeit tests cover the behaviour the Home copy describes; no test fails if that copy changes.
+- (F-056, 2026-11-19) The forfeit-warning behaviour is covered by the `economy.test.ts` forfeit tests, not by any component test, because the mobile app has no component-test setup.

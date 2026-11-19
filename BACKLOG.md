@@ -92,14 +92,18 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-071 F-056 duplicates F-054. A person should close it once F-054 lands.
   Depends on: F-054
   Found while building F-054.
+- [ ] F-072 Close either F-054 or F-056 as a duplicate before merging, since both change `Home.tsx` lines 78–80 in the same way.
+  Depends on: F-056
+  Found while building F-056.
+- [ ] F-073 Close either F-054 or F-056 as a duplicate before merging, since both change `Home.tsx` lines 78–80 in the same way.
+  Depends on: F-056
+  Found while building F-056.
 
 ## Ready
 
 ## In progress
-- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Awaiting approval
-- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Blocked
 
@@ -119,3 +123,5 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
 - [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
+- [x] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
+- [x] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
