@@ -46,7 +46,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-047 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en) and confirm long 3p names in `.live td.nm` end in "…".
 - [ ] F-048 Have a person confirm that "Total" means this deal's total so far, not the match score (the spec's open question).
 - [ ] F-053 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep `games: m.quit ? 0 : 1` in `settleMatch`.
-- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [ ] F-055 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep this branch's `games: m.quit ? 0 : 1` in `settleMatch`.
 - [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [ ] F-057 The project notes from F-005 say the mobile suite had 27 tests, but it now runs 20. This change did not touch any test file, so the drop happened before this run. Someone should check whether tests in
@@ -90,6 +89,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-050.
 
 ## Ready
+- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## In progress
 
