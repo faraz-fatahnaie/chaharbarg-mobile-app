@@ -102,9 +102,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-054.
 
 ## Ready
-- [ ] F-040 Close F-022 and F-026, which are moot now.
 
 ## In progress
+- [ ] F-040 Close F-022 and F-026, which are moot now.
 
 ## Awaiting approval
 
