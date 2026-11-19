@@ -24,7 +24,7 @@ export interface Settings {
   notifications: boolean;
   hints: boolean;
   timeOfDay: 'auto' | 'day' | 'dusk' | 'night';
-  target: 62 | 100 | 'single';
+  target: 'short' | 'long';
   noSurInLastRound: boolean;
   mustCapture: boolean;
   openingJack: 'replace' | 'allow';
@@ -75,7 +75,7 @@ export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'fa', music: true, effects: true, notifications: false, hints: true, timeOfDay: 'auto',
-  target: 62, noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
+  target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
 };
 
 /** Load-time migration of saved settings: old `sound` becomes music + effects; bad booleans fall back to defaults. */
@@ -171,6 +171,9 @@ export function matchXp(m: MatchSummary): number {
   return Math.round(xpShare(m.target) * (XP_FINISH + (win ? XP_WIN : 0) + (win && m.margin >= bigMarginAt(m.target) ? XP_BIG_MARGIN : 0)
     + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz)));
 }
+
+/** XP a forfeit would cost at this XP total: XP_QUIT, but never below the current level's start (same clamp as settleMatch). */
+export const forfeitXpLoss = (xp: number) => xp - Math.max(xpForLevel(levelOf(xp)), xp - XP_QUIT);
 
 export function settleMatch(p: Profile, m: MatchSummary, today: string, now: number) {
   const winners = m.players === 4 ? 2 : 1;

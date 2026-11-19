@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { targetOptions } from '@chaharbarg/engine';
 import { Scene } from '../art/Scene';
 import { ARENAS, timeOfDayFor, type Arena } from '../data/arenas';
 import {
   AD_REWARD, adStatus, canClaimRelief, claimChallenge, claimLogin, claimRelief, dailyChallenges, grantAd,
-  levelOf, loginPreview, todayKey, xpForLevel, LOGIN_SHAHI,
+  forfeitXpLoss, levelOf, loginPreview, todayKey, xpForLevel, LOGIN_SHAHI,
 } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { adProvider } from '../lib/services';
@@ -48,6 +49,8 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial }: {
   const [mode, setMode] = useState<'bots' | 'pnp'>('bots');
   const [msg, setMsg] = useState('');
   const [adBusy, setAdBusy] = useState(false);
+  const [confirmQuit, setConfirmQuit] = useState(false);
+  const loss = forfeitXpLoss(p.xp);
   const arena = ARENAS.find((a) => a.id === sel)!;
   const locked = p.trophies < arena.minTrophies;
   const broke = mode === 'bots' && p.shahi < arena.fee;
@@ -70,11 +73,23 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial }: {
       {saved && (
         <div className="panel col" style={{ margin: '0 14px' }}>
           <b>{tr('بازی نیمه‌تمام داری', 'You have a match in progress')}</b>
-          <div className="row">
-            <button className="btn primary grow" onClick={onResume}>{tr('ادامه', 'Resume')}</button>
-            {saved.mode === 'bots' && <button className="btn ghost" onClick={onForfeit}>{tr('انصراف (باخت)', 'Forfeit (loss)')}</button>}
-            {saved.mode === 'pnp' && <button className="btn ghost" onClick={onForfeit}>{tr('لغو', 'Discard')}</button>}
-          </div>
+          {saved.mode === 'bots' && confirmQuit ? (
+            <>
+              <span className="mute">{loss > 0
+                ? tr(`با انصراف، این بازی باخت حساب می‌شود و ${n(loss)} XP از دست می‌دهی.`, `Forfeiting counts as a loss and costs you ${loss} XP.`)
+                : tr('با انصراف، این بازی باخت حساب می‌شود.', 'Forfeiting counts as a loss.')}</span>
+              <div className="row">
+                <button className="btn danger grow" onClick={() => { setConfirmQuit(false); onForfeit(); }}>{tr('مطمئنم، انصراف', 'Yes, forfeit')}</button>
+                <button className="btn ghost" onClick={() => setConfirmQuit(false)}>{tr('ادامهٔ بازی', 'Keep playing')}</button>
+              </div>
+            </>
+          ) : (
+            <div className="row">
+              <button className="btn primary grow" onClick={onResume}>{tr('ادامه', 'Resume')}</button>
+              {saved.mode === 'bots' && <button className="btn ghost" onClick={() => setConfirmQuit(true)}>{tr('انصراف (باخت)', 'Forfeit (loss)')}</button>}
+              {saved.mode === 'pnp' && <button className="btn ghost" onClick={onForfeit}>{tr('لغو', 'Discard')}</button>}
+            </div>
+          )}
         </div>
       )}
 
@@ -102,6 +117,14 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial }: {
           {([2, 3, 4] as const).map((k) => (
             <button key={k} className={players === k ? 'on' : ''} onClick={() => setPlayers(k)}>
               {n(k)} {tr('نفره', 'players')}{k === 4 ? ` (${tr('تیمی', 'teams')})` : ''}
+            </button>
+          ))}
+        </div>
+        <div className="seg">
+          {targetOptions(players).map((t, i) => (
+            <button key={t} className={(p.settings.target === 'long' ? 1 : 0) === i ? 'on' : ''}
+              onClick={() => update((q) => ({ ...q, settings: { ...q.settings, target: i ? 'long' : 'short' } }))}>
+              {tr('هدف', 'Goal')} {n(t)}
             </button>
           ))}
         </div>

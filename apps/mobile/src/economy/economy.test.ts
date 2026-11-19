@@ -5,7 +5,7 @@ import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
-  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare,
+  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare, forfeitXpLoss, XP_QUIT,
 } from './economy';
 
 const NOW = 1_700_000_000_000;
@@ -167,6 +167,20 @@ describe('levels and XP', () => {
     expect([b.profile.xp, b.levelUps]).toEqual([520, 0]);
     const c = settleMatch({ ...createProfile(NOW), xp: 650 }, win({ quit: true, surs: 3, margin: 99 }), 'd', NOW);
     expect(c.xpGain).toBeLessThanOrEqual(0);
+  });
+  it('forfeitXpLoss: full penalty mid-level, clamped near level start', () => {
+    expect(forfeitXpLoss(650)).toBe(XP_QUIT);
+    expect(forfeitXpLoss(530)).toBe(10);
+  });
+  it('forfeitXpLoss: nothing to lose at 0 or at a level start', () => {
+    expect(forfeitXpLoss(0)).toBe(0);
+    expect(forfeitXpLoss(xpForLevel(5))).toBe(0);
+  });
+  it('forfeitXpLoss matches the real settlement', () => {
+    for (const xp of [0, 99, 530, 650, 5000]) {
+      const r = settleMatch({ ...createProfile(NOW), xp }, win({ outcome: 'loss', quit: true }), 'd', NOW);
+      expect(forfeitXpLoss(xp)).toBe(0 - r.xpGain);
+    }
   });
   it('level-up Gohar on the new curve', () => {
     const r = settleMatch({ ...createProfile(NOW), xp: 210 }, win(), 'd', NOW);

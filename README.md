@@ -46,7 +46,7 @@ npm run android:apk -w @chaharbarg/mobile  # debug APK (needs JDK 21 + Android S
 ## What is in the game
 
 - **Modes:** 2, 3 and 4 players; against bots (3 difficulty levels) or pass-and-play with a hand-off screen.
-- **Rules:** capture by summing to 11, Jack / Queen / King rules, Sur and Sur Sarbaz, clubs scoring, last-capturer takes the leftovers, match to 62 / 100 / single deal. House rules are in Settings.
+- **Rules:** capture by summing to 11, Jack / Queen / King rules, Sur and Sur Sarbaz, clubs scoring, last-capturer takes the leftovers, match to 35 or 65 points (2–3 players) or 65 or 112 points (4 players), chosen before play; random first player. House rules are in Settings.
 - **10 arenas** (Persepolis, Si-o-se-pol, Naqsh-e Jahan, Yazd wind-towers, Chehel Sotoun, Eram Garden, Golestan Palace, Tabriz Bazaar, Chogha Zanbil, Arg-e Bam), each with an original vector landmark scene in day, dusk and night, its own table colours, ambient sound, bot pool, entry fee and trophy gate. Secular heritage sites only.
 - **Economy:** Shahi (soft coin) and Gohar (premium, cosmetics only); trophies, XP and levels; daily login streak; three daily challenges; achievements; rewarded video (capped); a relief gift so nobody is locked out. No cash-out, no real-money stakes.
 - **Customisation:** 3 decks (classic, large-index for accessibility, Ganjifeh-inspired), 4 card backs, 4 tables.
@@ -110,7 +110,7 @@ Primary source: the project's `چهاربرگ.docx`; gaps filled from Pagat, Wik
 - A numeric card (A=1 … 10) captures floor cards that, with it, sum to **11**. A **Queen** takes a Queen, a **King** a King. A **Jack** takes every floor card except Queens and Kings (including other Jacks).
 - A card that *can* capture must capture (you choose the card and the combination). A card with no capture is dropped on the floor.
 - **Sur** = emptying the floor: 5 points; not with a Jack, not in the last round. **Sur Sarbaz** = a lone Jack on the floor taken by the next player's Jack: 10 points.
-- Deal scoring: 7 clubs or more = 7, each Ace and Jack = 1, 10♦ = 3, 2♣ = 2 (20 points per deal plus surs). A match runs to 62 points by default.
+- Deal scoring: 7 clubs or more = 7, each Ace and Jack = 1, 10♦ = 3, 2♣ = 2 (20 points per deal plus surs). The players choose the match target: 35 or 65 points with 2 or 3 players, 65 or 112 with 4 players. The first player is chosen at random, and play goes counter-clockwise.
 - Calls where I overrode your brief's defaults because all sources agreed are listed in [docs/plan.md](docs/plan.md).
 
 ## Economy in brief

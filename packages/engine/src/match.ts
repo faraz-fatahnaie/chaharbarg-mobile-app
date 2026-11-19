@@ -1,5 +1,5 @@
 import type { Rng } from './cards';
-import { type DealState, type PlayResult, type RulesConfig, play, startDeal, unitCount } from './deal';
+import { type DealState, type PlayResult, type RulesConfig, play, startDeal, targetOptions, unitCount } from './deal';
 import { type UnitScore, scoreDeal } from './score';
 
 export interface MatchState {
@@ -9,7 +9,7 @@ export interface MatchState {
   deal: DealState;
   dealNo: number;
   phase: 'playing' | 'dealOver' | 'matchOver';
-  /** unit index; null while undecided or on a drawn single deal */
+  /** unit index; null only while the match is undecided */
   winner: number | null;
   history: UnitScore[][];
   lastResult: PlayResult | null;
@@ -17,6 +17,7 @@ export interface MatchState {
 
 export function newMatch(config: RulesConfig, rng: Rng, firstDealer?: number): MatchState {
   const n = config.players;
+  if (!targetOptions(n).includes(config.target)) throw new Error(`target ${config.target} not allowed for ${n} players`);
   const scores = new Array(unitCount(n)).fill(0);
   const dealer = firstDealer ?? Math.floor(rng() * n); // random starter (docx)
   return {
@@ -38,10 +39,7 @@ export function matchPlay(m: MatchState, cardId: string, captureIds: readonly st
   const target = m.config.target;
   let phase: MatchState['phase'] = 'dealOver';
   let winner: number | null = null;
-  if (target === 'single') {
-    phase = 'matchOver';
-    winner = leaders.length === 1 ? leaders[0] : null;
-  } else if (max >= target && leaders.length === 1) {
+  if (max >= target && leaders.length === 1) {
     phase = 'matchOver';
     winner = leaders[0];
   }

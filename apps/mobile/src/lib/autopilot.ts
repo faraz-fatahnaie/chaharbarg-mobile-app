@@ -32,7 +32,7 @@ export async function run(spec: string) {
   await sleep(slow ? 2500 : 1500);
 
   if (slow) {
-    // ---- tour: tabs, settings (single-deal target so the recorded match is short), tutorial, daily reward ----
+    // ---- tour: tabs, settings (default short target keeps the recorded match short), tutorial, daily reward ----
     show('tour: shop · stats · settings');
     for (const t of ['فروشگاه', 'آمار', 'تنظیمات']) {
       clickText(t, '.tabs button');
@@ -40,8 +40,6 @@ export async function run(spec: string) {
       tabs.push(`${t}:${(q('.scroll')?.textContent ?? '').length > 50 ? 'ok' : 'EMPTY'}`);
       if (t === 'فروشگاه') { clickText('پشت کارت'); await wait(1200); clickText('رومیزی'); await wait(1200); }
       if (t === 'تنظیمات') {
-        const sel = qa<HTMLSelectElement>('select').find((s) => [...s.options].some((o) => o.value === 'single'));
-        if (sel) { sel.value = 'single'; sel.dispatchEvent(new Event('change', { bubbles: true })); await wait(1200); }
         q('.scroll')?.scrollTo({ top: 400, behavior: 'smooth' });
         await wait(1500);
       }
