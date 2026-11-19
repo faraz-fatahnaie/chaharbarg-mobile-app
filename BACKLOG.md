@@ -47,7 +47,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-048 Have a person confirm that "Total" means this deal's total so far, not the match score (the spec's open question).
 - [ ] F-053 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep `games: m.quit ? 0 : 1` in `settleMatch`.
 - [ ] F-055 When `factory/F-005` merges, keep its `quit?: boolean` and `quit: true`, and keep this branch's `games: m.quit ? 0 : 1` in `settleMatch`.
-- [ ] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [ ] F-057 The project notes from F-005 say the mobile suite had 27 tests, but it now runs 20. This change did not touch any test file, so the drop happened before this run. Someone should check whether tests in
   Depends on: F-052
   Found while building F-052.
@@ -87,11 +86,22 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this).
   Depends on: F-050
   Found while building F-050.
+- [ ] F-070 F-056 duplicates F-054, so a person should close it now that F-054 is done.
+  Depends on: F-054
+  Found while building F-054.
+- [ ] F-071 F-056 duplicates F-054. A person should close it once F-054 lands.
+  Depends on: F-054
+  Found while building F-054.
+- [ ] F-072 Close either F-054 or F-056 as a duplicate before merging, since both change `Home.tsx` lines 78–80 in the same way.
+  Depends on: F-056
+  Found while building F-056.
+- [ ] F-073 Close either F-054 or F-056 as a duplicate before merging, since both change `Home.tsx` lines 78–80 in the same way.
+  Depends on: F-056
+  Found while building F-056.
 
 ## Ready
 
 ## In progress
-- [ ] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 
 ## Awaiting approval
 
@@ -113,3 +123,5 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-050 The Forfeit button does not warn the player about the -40 XP penalty (found in F-005 review).
   Added in conversation.
 - [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
+- [x] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
+- [x] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
