@@ -104,11 +104,11 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
-- [ ] F-040 Close F-022 and F-026, which are moot now.
 
 ## Awaiting approval
 
 ## Blocked
+- [ ] F-040 Close F-022 and F-026, which are moot now.
 
 ## Done
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
