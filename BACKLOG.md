@@ -101,9 +101,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-054.
 
 ## Ready
-- [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 
 ## In progress
+- [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 
 ## Awaiting approval
 
