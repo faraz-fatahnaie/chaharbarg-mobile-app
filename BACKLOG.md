@@ -99,13 +99,19 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-074 Close the duplicate-tracking items F-070, F-071, F-072 and F-073 in the backlog once F-054 lands, since F-056 is already merged on main and this merge has settled the wording.
   Depends on: F-054
   Found while building F-054.
+- [ ] F-075 F-037 asks for the same pixel limit and can be closed as a duplicate of F-035.
+  Depends on: F-035
+  Found while building F-035.
+- [ ] F-076 F-037 asks for the same pixel limit and can be closed as a duplicate of F-035.
+  Depends on: F-035
+  Found while building F-035.
 
 ## Ready
 
 ## In progress
-- [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 
 ## Awaiting approval
+- [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 
 ## Blocked
 - [ ] F-040 Close F-022 and F-026, which are moot now.
