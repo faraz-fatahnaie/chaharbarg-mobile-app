@@ -119,12 +119,12 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
 
 ## In progress
-- [ ] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels
 
 ## Awaiting approval
 
 ## Blocked
 - [ ] F-040 Close F-022 and F-026, which are moot now.
+- [ ] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels
 
 ## Done
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
