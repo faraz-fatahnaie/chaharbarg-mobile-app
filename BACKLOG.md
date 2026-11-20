@@ -153,9 +153,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Depends on: F-091
 
 ## In progress
-- [ ] F-088 Staged solo mode from beginner to advanced with guided tutorial and a (part 1: Stage data and progress)
-  Define the stage list (beginner to advanced) in `apps/mobile/src/data/`. Each stage reuses an existing arena and bot level from `arenas.ts` and `bots.ts` and has a coin prize. Add a saved progress field (stages cleared, prize claimed) with load-time validation in `store.ts`, and unit tests.
-  Split from F-008: part 1 of 5.
 
 ## Awaiting approval
 
@@ -163,6 +160,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-040 Close F-022 and F-026, which are moot now.
 - [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
+- [ ] F-088 Staged solo mode from beginner to advanced with guided tutorial and a (part 1: Stage data and progress)
+  Define the stage list (beginner to advanced) in `apps/mobile/src/data/`. Each stage reuses an existing arena and bot level from `arenas.ts` and `bots.ts` and has a coin prize. Add a saved progress field (stages cleared, prize claimed) with load-time validation in `store.ts`, and unit tests.
+  Split from F-008: part 1 of 5.
 
 ## Done
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
