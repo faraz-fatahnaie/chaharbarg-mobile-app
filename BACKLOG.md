@@ -112,15 +112,36 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-080 The `BACKLOG.md` text for F-046 stops mid-word after "overf" and needs fixing.
   Depends on: F-046
   Found while building F-046.
+- [ ] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`.
+  Depends on: F-009
+  Found while building F-009.
+- [ ] F-082 Announce newly reached honors on the match-end screen in `Game.tsx`.
+  Depends on: F-009
+  Found while building F-009.
+- [ ] F-083 The employer should confirm the `[review]` thresholds and the fa names.
+  Depends on: F-009
+  Found while building F-009.
+- [ ] F-084 Make the level boundary test in `economy.test.ts` use `xpForLevel(at) - 1` for the locked case, as spec test 1 says.
+  Depends on: F-009
+  Found while building F-009.
+- [ ] F-085 Let the player pick a title from the unlocked honors (needs a stored `title` field, checked on load in `store.ts`).
+  Depends on: F-009
+  Found while building F-009.
+- [ ] F-086 Announce newly reached honors on the match-end screen in `Game.tsx`.
+  Depends on: F-009
+  Found while building F-009.
+- [ ] F-087 The person should confirm the `[review]` thresholds and the Persian names.
+  Depends on: F-009
+  Found while building F-009.
 
 ## Ready
 - [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
 
 ## In progress
-- [ ] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
 
 ## Awaiting approval
+- [ ] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
 
 ## Blocked
 - [ ] F-040 Close F-022 and F-026, which are moot now.
