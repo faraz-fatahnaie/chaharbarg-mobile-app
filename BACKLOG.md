@@ -122,7 +122,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 - [ ] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 
 ## Blocked
@@ -146,3 +145,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player
 - [x] F-056 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [x] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
+- [x] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
