@@ -21,3 +21,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-035, 2026-11-19) Stubbed tests cannot show real browser memory use for image decoding, so a manual check in Settings with a picture over 24 MP and a normal one is needed.
 - (F-035, 2026-11-20) The Settings screen and the Persian message wrapping are not covered by the gate commands, so they need a manual check on a device.
 - (F-046, 2026-11-20) The mobile Vitest setup has no DOM, so layout fixes can only be checked in the browser through the CDP harness at `apps/mobile/e2e/cdp.mjs`.
+- (F-009, 2026-11-20) The level boundary test in `economy.test.ts` checks `xpForLevel(at - 1)`, not the exact XP edge `xpForLevel(at) - 1` that the spec asks for.
