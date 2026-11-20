@@ -5,7 +5,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 
 ## Inbox
 - [ ] F-007 [Employer #4, offline P5] Avatar creator, shown on the left during play; leave room for later taunt moments. Depends on avatar art (plan: v2)
-- [ ] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels
 - [ ] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
 - [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [ ] F-011 [Employer #5, offline P9] Quick-chat messages during play: polish the existing bot sticker chat; online delivery later
@@ -118,6 +117,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-046.
 
 ## Ready
+- [ ] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels
 
 ## In progress
 
