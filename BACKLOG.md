@@ -135,6 +135,25 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-009.
 
 ## Ready
+- [ ] F-088 Staged solo mode from beginner to advanced with guided tutorial and a (part 1: Stage data and progress)
+  Define the stage list (beginner to advanced) in `apps/mobile/src/data/`. Each stage reuses an existing arena and bot level from `arenas.ts` and `bots.ts` and has a coin prize. Add a saved progress field (stages cleared, prize claimed) with load-time validation in `store.ts`, and unit tests.
+  Split from F-008: part 1 of 5.
+- [ ] F-089 Staged solo mode from beginner to advanced with guided tutorial and a (part 2: Stage prize and unlock logic)
+  Add an `economy.ts` function that pays each stage's coin prize once, on the first win only. A stage unlocks when the one before it is cleared. Add tests in `economy.test.ts`.
+  Split from F-008: part 2 of 5.
+  Depends on: F-088
+- [ ] F-090 Staged solo mode from beginner to advanced with guided tutorial and a (part 3: Stage select screen)
+  Add a Home entry and a stage list screen. It shows locked, open and cleared stages and the prize, with fa and en text. Starting a stage launches a solo match with that stage's arena and bot.
+  Split from F-008: part 3 of 5.
+  Depends on: F-089
+- [ ] F-091 Staged solo mode from beginner to advanced with guided tutorial and a (part 4: Stage result and prize)
+  Detect a stage win or loss on the result screen in `Game.tsx`. Pay the prize through the logic from part 2 and mark the stage cleared. Add a retry option and a "next stage" option.
+  Split from F-008: part 4 of 5.
+  Depends on: F-090
+- [ ] F-092 Staged solo mode from beginner to advanced with guided tutorial and a (part 5: Guided tutorial)
+  Extend `Tutorial.tsx` into a guided walkthrough in the first stages, with fa and en text. Show it first, and let the player skip it and replay it.
+  Split from F-008: part 5 of 5.
+  Depends on: F-091
 
 ## In progress
 
@@ -145,7 +164,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-040 Close F-022 and F-026, which are moot now.
 - [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
-- [ ] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels
 
 ## Done
 - [x] F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar)
@@ -167,3 +185,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-054 F-050's forfeit warning could also say that a forfeit doesn't count toward the daily games challenge.
 - [x] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 - [x] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
+- [x] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels (split into F-088, F-089, F-090, F-091, F-092)
