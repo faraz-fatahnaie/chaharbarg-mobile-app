@@ -1,5 +1,6 @@
 import { type Arena } from '../data/arenas';
 import { COSMETICS, GOHAR_PACKS, type CosmeticKind } from '../data/cosmetics';
+import { HONORS, type Honor, type HonorKind } from '../data/honors';
 import { sha256 } from './sha256';
 
 /*
@@ -246,6 +247,16 @@ export const claimRelief = (p: Profile, now: number): Profile =>
   canClaimRelief(p, now) ? { ...applyDelta(p, RELIEF_AMOUNT, 0, 'relief', now), reliefAt: now } : p;
 
 // ---- challenges and achievements ----
+export function honorValue(p: Profile, kind: HonorKind): number {
+  const v = kind === 'level' ? levelOf(p.xp) : kind === 'wins' ? p.stats?.wins : p.stats?.surs;
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0;
+}
+export const honorUnlocked = (p: Profile, h: Honor): boolean => honorValue(p, h.kind) >= h.at;
+export function currentTitle(p: Profile): Honor | null {
+  let best: Honor | null = null;
+  for (const h of HONORS) if (h.kind === 'level' && honorUnlocked(p, h) && (!best || h.at > best.at)) best = h;
+  return best;
+}
 export type ChallengeKind = 'games' | 'wins' | 'surs';
 export interface Challenge { id: string; kind: ChallengeKind; goal: number; shahi: number }
 const POOL: Record<ChallengeKind, Challenge[]> = {

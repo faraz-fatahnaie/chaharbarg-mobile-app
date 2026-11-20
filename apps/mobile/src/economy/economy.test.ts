@@ -6,7 +6,9 @@ import {
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
   LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare, forfeitXpLoss, XP_QUIT,
+  honorUnlocked, currentTitle,
 } from './economy';
+import { HONORS } from '../data/honors';
 
 const NOW = 1_700_000_000_000;
 const win = (over: Partial<MatchSummary> = {}): MatchSummary => ({ arenaId: 'persepolis', players: 2, outcome: 'win', surs: 0, sarbaz: 0, paid: true, fee: 20, margin: 0, target: 62, ...over });
@@ -319,5 +321,65 @@ describe('settings migration', () => {
   });
   it('new profiles have notifications off', () => {
     expect(createProfile(NOW).settings.notifications).toBe(false);
+  });
+});
+
+describe('honors', () => {
+  const base = () => createProfile(NOW);
+  const withStats = (over: Record<string, unknown>) => { const b = base(); return { ...b, stats: { ...b.stats, ...over } }; };
+  const maxed = () => ({ ...withStats({ wins: 1000, surs: 1000 }), xp: xpForLevel(60) });
+
+  it('unlocks exactly at each threshold', () => {
+    for (const h of HONORS) {
+      const mk = (v: number) => h.kind === 'level' ? { ...base(), xp: xpForLevel(v) } : withStats({ [h.kind]: v });
+      expect(honorUnlocked(mk(h.at - 1), h), h.id).toBe(false);
+      expect(honorUnlocked(mk(h.at), h), h.id).toBe(true);
+    }
+  });
+  it('title is the highest level honor', () => {
+    expect(currentTitle({ ...base(), xp: xpForLevel(5) - 1 })).toBeNull();
+    expect(currentTitle({ ...base(), xp: xpForLevel(5) })?.id).toBe('lvl-5');
+    expect(currentTitle({ ...base(), xp: xpForLevel(60) })?.id).toBe('lvl-50');
+    expect(currentTitle(withStats({ wins: 500 }))).toBeNull();
+  });
+  it('pays nothing and is not an achievement', () => {
+    const p = maxed();
+    const before = JSON.stringify([p.shahi, p.gohar, p.ledger, p.achievements]);
+    HONORS.forEach((h) => honorUnlocked(p, h));
+    currentTitle(p);
+    expect(JSON.stringify([p.shahi, p.gohar, p.ledger, p.achievements])).toBe(before);
+    const ids = HONORS.map((h) => h.id);
+    expect(checkAchievements(p, NOW).unlocked.some((id: string) => ids.includes(id))).toBe(false);
+  });
+  it('existing player keeps earned honors', () => {
+    const p = withStats({ wins: 120, surs: 30 });
+    const got = HONORS.filter((h) => honorUnlocked(p, h)).map((h) => h.id);
+    expect(got).toEqual(expect.arrayContaining(['wins-25', 'wins-50', 'wins-100', 'surs-10', 'surs-25']));
+    expect(got).not.toContain('wins-250');
+    expect(got).not.toContain('surs-50');
+  });
+  it('bad saved data locks everything and does not throw', () => {
+    const bad = [
+      { ...withStats({ wins: undefined, surs: 'x' }), xp: NaN },
+      { ...withStats({ wins: NaN, surs: -3 }), xp: NaN },
+      { ...withStats({ wins: -3 }), xp: NaN },
+      { ...base(), stats: undefined, xp: NaN },
+    ] as any[];
+    for (const p of bad) {
+      expect(HONORS.some((h) => honorUnlocked(p, h))).toBe(false);
+      expect(currentTitle(p)).toBeNull();
+    }
+  });
+  it('data is sane', () => {
+    expect(new Set(HONORS.map((h) => h.id)).size).toBe(HONORS.length);
+    for (const h of HONORS) {
+      expect(Number.isInteger(h.at) && h.at > 0).toBe(true);
+      expect(h.fa && h.en).toBeTruthy();
+    }
+    for (const k of ['level', 'wins', 'surs']) {
+      const at = HONORS.filter((h) => h.kind === k).map((h) => h.at);
+      expect(at).toEqual([...at].sort((a, b) => a - b));
+      expect(new Set(at).size).toBe(at.length);
+    }
   });
 });

@@ -4,7 +4,7 @@ import { Scene } from '../art/Scene';
 import { ARENAS, timeOfDayFor, type Arena } from '../data/arenas';
 import {
   AD_REWARD, adStatus, canClaimRelief, claimChallenge, claimLogin, claimRelief, dailyChallenges, grantAd,
-  forfeitXpLoss, levelOf, loginPreview, todayKey, xpForLevel, LOGIN_SHAHI,
+  forfeitXpLoss, levelOf, loginPreview, todayKey, xpForLevel, LOGIN_SHAHI, currentTitle,
 } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { adProvider } from '../lib/services';
@@ -12,10 +12,11 @@ import { sfx } from '../lib/sound';
 import { update, usePhoto, useProfile, type MatchCtx } from '../lib/store';
 
 export function Header() {
-  const { n } = useLang();
+  const { n, lang } = useLang();
   const p = useProfile();
   const photo = usePhoto();
   const lvl = levelOf(p.xp);
+  const title = currentTitle(p);
   const pct = ((p.xp - xpForLevel(lvl)) / (xpForLevel(lvl + 1) - xpForLevel(lvl))) * 100;
   return (
     <div className="topbar">
@@ -24,6 +25,7 @@ export function Header() {
         : <div className="avatar" style={{ background: 'hsl(45 55% 38%)' }}>{n(lvl)}</div>}
       <div className="grow">
         <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name || 'چهاربرگ'}</div>
+        {title && <div className="mute" style={{ fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lang === 'fa' ? title.fa : title.en}</div>}
         <div className="xpbar"><i style={{ width: `${pct}%` }} /></div>
       </div>
       <span className="chip shahi"><span className="coin" />{n(p.shahi)}</span>
