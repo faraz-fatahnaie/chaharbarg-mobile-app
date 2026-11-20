@@ -1,6 +1,7 @@
 import { ACH_NAMES } from '../data/achievements';
 import { ARENAS } from '../data/arenas';
-import { ACHIEVEMENTS, levelOf } from '../economy/economy';
+import { HONORS } from '../data/honors';
+import { ACHIEVEMENTS, honorUnlocked, honorValue, levelOf } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { useProfile } from '../lib/store';
 import { Header } from './Home';
@@ -33,6 +34,23 @@ export function Stats() {
               <span>{done ? '🏅' : '🔒'}</span>
               <div className="grow"><b>{lang === 'fa' ? t.fa : t.en}</b><div className="mute">{lang === 'fa' ? t.descFa : t.descEn}</div></div>
               <span className="chip gohar"><span className="gem" />{n(a.gohar)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('افتخارات', 'Honors')}</h3>
+        {HONORS.map((h) => {
+          const done = honorUnlocked(p, h);
+          const desc = h.kind === 'level' ? tr(`به سطح ${n(h.at)} برس`, `Reach level ${n(h.at)}`)
+            : h.kind === 'wins' ? tr(`${n(h.at)} بازی ببر`, `Win ${n(h.at)} matches`)
+            : tr(`${n(h.at)} سور بزن`, `Score ${n(h.at)} surs`);
+          return (
+            <div key={h.id} className="row" style={{ opacity: done ? 1 : 0.55 }}>
+              <span>{done ? '🏆' : '🔒'}</span>
+              <div className="grow"><b>{lang === 'fa' ? h.fa : h.en}</b><div className="mute">{desc}</div></div>
+              <span className="mute">{n(Math.min(honorValue(p, h.kind), h.at))} / {n(h.at)}</span>
             </div>
           );
         })}
