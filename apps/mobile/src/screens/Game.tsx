@@ -227,7 +227,7 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
           <tbody>
             {live.map((l, u) => (
               <tr key={u} className={u === u0 ? 'me' : ''}>
-                <td className="nm">{unitName(u)}</td>
+                <td className="nm"><span title={unitName(u)}>{unitName(u)}</span></td>
                 <td>{n(l.clubCount)}</td><td>{n(l.points)}</td><td>{n(l.surs)}</td><td>{n(l.total)}</td>
               </tr>
             ))}
