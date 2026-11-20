@@ -34,7 +34,9 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
     try {
       setPicErr(setPhoto(await readPhoto(file)) ? '' : tr('ذخیرهٔ تصویر ممکن نشد.', "Couldn't save the picture."));
     } catch (err) {
-      setPicErr((err as Error).message === 'too-big' ? tr('تصویر بزرگ‌تر از ۱۰ مگابایت است.', 'Picture is larger than 10 MB.')
+      const m = (err as Error).message;
+      setPicErr(m === 'too-big' ? tr('تصویر بزرگ‌تر از ۱۰ مگابایت است.', 'Picture is larger than 10 MB.')
+        : m === 'too-large' ? tr('ابعاد تصویر خیلی بزرگ است (بیش از ۵۰ مگاپیکسل).', 'Picture is too large (over 50 megapixels).')
         : tr('این فایل تصویر نیست یا باز نشد.', "That file isn't a picture we can open."));
     }
     input.value = '';
