@@ -158,7 +158,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
 
 ## Blocked
 - [ ] F-040 Close F-022 and F-026, which are moot now.
@@ -186,3 +185,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-035 Check the picture's pixel size (or shrink it while opening it) in `readPhoto`, so a huge image can't use up memory and crash the app.
 - [x] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 - [x] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels (split into F-088, F-089, F-090, F-091, F-092)
+- [x] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
