@@ -24,3 +24,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-054, 2026-11-19) Strings live next to the UI as `tr(fa, en)` in `apps/mobile/src/screens/Home.tsx`; there is no separate translation table, and screens have no component-test setup.
 - (F-035, 2026-11-19) In the mobile app, `readPhoto` tests in `apps/mobile/src/lib/identity.test.ts` run in Node with no DOM, so stub `Image`, `document` and `URL` with `vi.stubGlobal` and call `vi.unstubAllGlobals()` in `afterEach`.
 - (F-035, 2026-11-20) Vitest runs in Node with no DOM, so image and canvas behaviour in `identity.test.ts` must be stubbed with `vi.stubGlobal` and `vi.spyOn`.
+- (F-046, 2026-11-20) `max-width` on a `<td>` does nothing in the auto-layout table, so put the width limit on a block-level child such as a span inside the cell.

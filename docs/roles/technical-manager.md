@@ -4,3 +4,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 
 - (F-056, 2026-11-19) F-054 and F-056 edit the same lines of `apps/mobile/src/screens/Home.tsx` (lines 78–80), so only one should be merged.
 - (F-054, 2026-11-19) After a merge conflict, the builder cannot run `git add` in this environment, so the conflicted file stays `UU` until someone stages it.
+- (F-046, 2026-11-20) Browser layout checks at phone width are not covered by the gate commands and need a person or the `run` skill before merge.
