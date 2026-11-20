@@ -15,11 +15,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-019 `docs/plan.md` line 20 still says the match is played to 62, and line 21 doesn't mention the random first player. Update both.
 - [ ] F-020 `docs/features.md` line 8 still says "match to 62/100/single deal".
 - [ ] F-021 Once F-001 lands, check its target choices (single deal kept or dropped, any default) against these docs.
-- [ ] F-022 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether it should scale with the target.
 - [ ] F-023 `docs/plan.md` line 20 still says the match is played to 62, and line 21 doesn't mention the random first player.
 - [ ] F-024 `docs/features.md` line 8 still says "match to 62/100/single deal".
 - [ ] F-025 When F-001 lands, check that its target choices match these docs: whether it keeps or drops the single-deal option, and any default target it sets.
-- [ ] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target.
 - [ ] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes.
 - [ ] F-028 Run `npm run cap:sync -w @chaharbarg/mobile` so the local-notifications plugin is registered in the Android and iOS projects. Check that the diff only adds this plugin. Then test the daily reminder on
 - [ ] F-029 After the sync, add `tools:node="remove"` for `SCHEDULE_EXACT_ALARM` in the Android manifest. The reminder no longer uses exact alarms, and Google Play may reject an app that asks for the permission w
@@ -34,7 +32,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes.
 - [ ] F-042 Check whether F-001's 35/65/112 targets reached this branch. The code and README here still use 62/100/single.
 - [ ] F-043 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands, because it still has R16 and `surCap` nodes.
-- [ ] F-044 Close F-022 and F-026, which no longer apply.
 - [ ] F-045 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en). Look for overlap with the floor cards, the `pos-tr`, `pos-top` and `pos-right` seats, and the turn glow.
 - [ ] F-047 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en) and confirm long 3p names in `.live td.nm` end in "…".
 - [ ] F-048 Have a person confirm that "Total" means this deal's total so far, not the match score (the spec's open question).
@@ -157,7 +154,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Awaiting approval
 
 ## Blocked
-- [ ] F-040 Close F-022 and F-026, which are moot now.
 - [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
 - [ ] F-088 Staged solo mode from beginner to advanced with guided tutorial and a (part 1: Stage data and progress)
@@ -186,3 +182,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-046 During that check, confirm long 3p names are cut off with "…" in `.live td.nm` (`apps/mobile/src/styles.css:129`). If they aren't, put the name in a `<span>` with `display:block; max-width:72px; overf
 - [x] F-008 [Employer #2 offline half, offline P6] Staged solo mode from beginner to advanced with guided tutorial and a coin prize per stage; reuse arenas and bot levels (split into F-088, F-089, F-090, F-091, F-092)
 - [x] F-009 [Employer #12, offline P7] More trophies and titles from level, wins and sur counts (non-cash)
+- [x] F-022 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether it should scale with the target. (closed: moot: F-039 removed the 50-point sur cap)
+- [x] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target. (closed: moot: F-039 removed the 50-point sur cap)
+- [x] F-040 Close F-022 and F-026, which are moot now. (closed: moot: F-039 removed the 50-point sur cap)
+- [x] F-044 Close F-022 and F-026, which no longer apply. (closed: moot: F-039 removed the 50-point sur cap)
