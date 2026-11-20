@@ -135,9 +135,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Found while building F-009.
 
 ## Ready
-- [ ] F-088 Staged solo mode from beginner to advanced with guided tutorial and a (part 1: Stage data and progress)
-  Define the stage list (beginner to advanced) in `apps/mobile/src/data/`. Each stage reuses an existing arena and bot level from `arenas.ts` and `bots.ts` and has a coin prize. Add a saved progress field (stages cleared, prize claimed) with load-time validation in `store.ts`, and unit tests.
-  Split from F-008: part 1 of 5.
 - [ ] F-089 Staged solo mode from beginner to advanced with guided tutorial and a (part 2: Stage prize and unlock logic)
   Add an `economy.ts` function that pays each stage's coin prize once, on the first win only. A stage unlocks when the one before it is cleared. Add tests in `economy.test.ts`.
   Split from F-008: part 2 of 5.
@@ -156,6 +153,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Depends on: F-091
 
 ## In progress
+- [ ] F-088 Staged solo mode from beginner to advanced with guided tutorial and a (part 1: Stage data and progress)
+  Define the stage list (beginner to advanced) in `apps/mobile/src/data/`. Each stage reuses an existing arena and bot level from `arenas.ts` and `bots.ts` and has a coin prize. Add a saved progress field (stages cleared, prize claimed) with load-time validation in `store.ts`, and unit tests.
+  Split from F-008: part 1 of 5.
 
 ## Awaiting approval
 
