@@ -23,3 +23,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-056, 2026-11-19) `build.md` is blocked for agents, so the manual on-device check for UI copy changes has to be recorded by a person.
 - (F-054, 2026-11-19) Strings live next to the UI as `tr(fa, en)` in `apps/mobile/src/screens/Home.tsx`; there is no separate translation table, and screens have no component-test setup.
 - (F-035, 2026-11-19) In the mobile app, `readPhoto` tests in `apps/mobile/src/lib/identity.test.ts` run in Node with no DOM, so stub `Image`, `document` and `URL` with `vi.stubGlobal` and call `vi.unstubAllGlobals()` in `afterEach`.
+- (F-035, 2026-11-20) Vitest runs in Node with no DOM, so image and canvas behaviour in `identity.test.ts` must be stubbed with `vi.stubGlobal` and `vi.spyOn`.
