@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { MatchState } from '@chaharbarg/engine';
-import { createProfile, migrateSettings, verifyProfile, type Profile } from '../economy/economy';
+import { cleanByPlayers, createProfile, migrateSettings, verifyProfile, type Profile } from '../economy/economy';
 import { fixMatchTarget } from './match';
 import { isPhotoDataUrl } from './identity';
 import { cleanStages } from '../data/stages';
@@ -18,7 +18,7 @@ function load(): Profile {
       // old builds stored 62 / 100 / 'single'; storage may also hold edited values
       const t: unknown = settings.target;
       settings.target = t === 'long' || t === 100 ? 'long' : 'short';
-      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), stats: { ...p.stats, byPlayers: p.stats?.byPlayers ?? {} }, settings }, Date.now());
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), stats: { ...p.stats, byPlayers: cleanByPlayers(p.stats?.byPlayers) }, settings }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */

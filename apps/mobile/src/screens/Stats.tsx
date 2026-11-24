@@ -1,7 +1,7 @@
 import { ACH_NAMES } from '../data/achievements';
 import { ARENAS } from '../data/arenas';
 import { HONORS } from '../data/honors';
-import { ACHIEVEMENTS, honorUnlocked, honorValue, levelOf } from '../economy/economy';
+import { ACHIEVEMENTS, honorUnlocked, honorValue, levelOf, winRate } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { useProfile } from '../lib/store';
 import { Header } from './Home';
@@ -10,7 +10,7 @@ export function Stats() {
   const { tr, n, lang } = useLang();
   const p = useProfile();
   const s = p.stats;
-  const rate = s.games ? Math.round((s.wins / s.games) * 100) : 0;
+  const rate = winRate(s.wins, s.games);
   return (
     <div className="scroll col" style={{ padding: 0, gap: 12 }}>
       <Header />
@@ -61,7 +61,7 @@ export function Stats() {
         {([2, 3, 4] as const).map((k) => {
           const r = s.byPlayers[k] ?? { games: 0, wins: 0, surs: 0 };
           return <div key={k} className="row"><span className="grow">{n(k)} {tr('نفره', 'players')}</span>
-            <span className="mute">{n(r.games)} {tr('بازی', 'games')} · {n(r.wins)} {tr('برد', 'wins')} · {n(r.games ? Math.round((r.wins / r.games) * 100) : 0)}% · {n(r.surs)} {tr('سور', 'sur')}</span></div>;
+            <span className="mute">{n(r.games)} {tr('بازی', 'games')} · {n(r.wins)} {tr('برد', 'wins')} · {n(winRate(r.wins, r.games))}% · {n(r.surs)} {tr('سور', 'sur')}</span></div>;
         })}
       </div>
 

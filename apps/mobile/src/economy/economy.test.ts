@@ -6,7 +6,7 @@ import {
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
   LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare, forfeitXpLoss, XP_QUIT,
-  honorUnlocked, currentTitle, stageUnlocked, clearStage,
+  honorUnlocked, currentTitle, stageUnlocked, clearStage, winRate, cleanByPlayers,
 } from './economy';
 import { HONORS } from '../data/honors';
 import { STAGES } from '../data/stages';
@@ -414,8 +414,27 @@ describe('stats by player count', () => {
     let p = createProfile(NOW);
     p = settleMatch(p, win({ players: 2, surs: 2 }), '2025-01-01', NOW).profile;
     p = settleMatch(p, win({ players: 2, outcome: 'loss', surs: 1 }), '2025-01-01', NOW).profile;
+    p = settleMatch(p, win({ players: 3, outcome: 'loss', surs: 2 }), '2025-01-01', NOW).profile;
     p = settleMatch(p, win({ players: 4, surs: 3 }), '2025-01-01', NOW).profile;
-    expect(p.stats.byPlayers).toEqual({ 2: { games: 2, wins: 1, surs: 3 }, 4: { games: 1, wins: 1, surs: 3 } });
-    expect(p.stats.games).toBe(3);
+    expect(p.stats.byPlayers).toEqual({ 2: { games: 2, wins: 1, surs: 3 }, 3: { games: 1, wins: 0, surs: 2 }, 4: { games: 1, wins: 1, surs: 3 } });
+    expect(p.stats.games).toBe(4);
+  });
+
+  it('a quit match leaves the split unchanged', () => {
+    const p = settleMatch(createProfile(NOW), win({ players: 3, outcome: 'loss', quit: true }), '2025-01-01', NOW).profile;
+    expect(p.stats.byPlayers).toEqual({});
+    expect(p.daily.progress.games ?? 0).toBe(0);
+  });
+
+  it('winRate is 0 with no games', () => {
+    expect(winRate(0, 0)).toBe(0);
+    expect(winRate(1, 3)).toBe(33);
+    expect(winRate(2, 2)).toBe(100);
+  });
+
+  it('cleanByPlayers sanitises saved data', () => {
+    for (const bad of [undefined, null, 'x', []]) expect(cleanByPlayers(bad)).toEqual({});
+    expect(cleanByPlayers({ 2: { games: 'a', wins: -1, surs: NaN }, 5: { games: 1, wins: 1, surs: 0 } })).toEqual({ 2: { games: 0, wins: 0, surs: 0 } });
+    expect(cleanByPlayers({ 3: { games: 2, wins: 9, surs: 1.7 } })).toEqual({ 3: { games: 2, wins: 2, surs: 1 } });
   });
 });
