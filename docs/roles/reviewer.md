@@ -23,3 +23,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-046, 2026-11-20) The mobile Vitest setup has no DOM, so layout fixes can only be checked in the browser through the CDP harness at `apps/mobile/e2e/cdp.mjs`.
 - (F-009, 2026-11-20) The level boundary test in `economy.test.ts` checks `xpForLevel(at - 1)`, not the exact XP edge `xpForLevel(at) - 1` that the spec asks for.
 - (F-010, 2026-11-24) The gate commands don't render screens, so the phone-width check of the stats screen in fa and en needs a person.
+- (F-010, 2026-11-24) The gate commands do not render screens, so the `Stats.tsx` layout needs a manual check at phone width in fa and en.

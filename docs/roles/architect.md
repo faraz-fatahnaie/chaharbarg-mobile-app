@@ -8,3 +8,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-001, 2026-11-18) `targetOptions` in `packages/engine/src/deal.ts` is the single source of allowed match targets, and the mobile app maps its stored `'short'`/`'long'` setting onto it.
 - (F-002, 2026-11-18) The match-target values still live in `packages/engine/src/deal.ts`, `apps/mobile/src/economy/economy.ts` and `Settings.tsx`, and they must change before the docs' 35/65/65/112 targets apply in play.
 - (F-010, 2026-11-24) Old saves start the player-count groups at zero and do not backfill them, so the groups can add up to fewer games than the totals.
+- (F-010, 2026-11-24) `settleMatch` totals (`games`, `losses`, `streak`) still count a quit as a played loss, while daily challenges and the player-count groups skip quits.
