@@ -24,13 +24,19 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`.
   Depends on: F-009
   Found while building F-009.
+- [ ] F-097 Clean the saved `stats` totals (`games`, `wins`, `losses`, `streak`, …) in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object.
+  Depends on: F-010
+  Found while building F-010.
+- [ ] F-098 Clean the saved `stats` totals in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object.
+  Depends on: F-010
+  Found while building F-010.
 
 ## Ready
 
 ## In progress
-- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Awaiting approval
+- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Blocked
 
