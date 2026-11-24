@@ -1,4 +1,5 @@
 import { type Arena } from '../data/arenas';
+import { STAGES } from '../data/stages';
 import { COSMETICS, GOHAR_PACKS, type CosmeticKind } from '../data/cosmetics';
 import { HONORS, type Honor, type HonorKind } from '../data/honors';
 import { sha256 } from './sha256';
@@ -157,6 +158,19 @@ export function levelOf(xp: number): number {
   while (xpForLevel(L + 1) <= xp) L++;
   while (L > 1 && xpForLevel(L) > xp) L--;
   return L;
+}
+
+/** A stage is open when it is the first or the one before it is cleared. */
+export function stageUnlocked(p: Profile, id: string): boolean {
+  const i = STAGES.findIndex((s) => s.id === id);
+  return i === 0 || (i > 0 && p.stages.includes(STAGES[i - 1].id));
+}
+
+/** Marks a stage cleared and pays its prize, once. Locked, unknown or already-cleared stages change nothing. */
+export function clearStage(p: Profile, id: string, now: number): Profile {
+  const st = STAGES.find((s) => s.id === id);
+  if (!st || !stageUnlocked(p, id) || p.stages.includes(id)) return p;
+  return applyDelta({ ...p, stages: [...p.stages, id] }, st.prize, 0, `stage:${id}`, now);
 }
 
 export const canEnter = (p: Profile, a: Arena) => p.trophies >= a.minTrophies && p.shahi >= a.fee;

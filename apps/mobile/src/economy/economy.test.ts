@@ -6,9 +6,10 @@ import {
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
   LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare, forfeitXpLoss, XP_QUIT,
-  honorUnlocked, currentTitle,
+  honorUnlocked, currentTitle, stageUnlocked, clearStage,
 } from './economy';
 import { HONORS } from '../data/honors';
+import { STAGES } from '../data/stages';
 
 const NOW = 1_700_000_000_000;
 const win = (over: Partial<MatchSummary> = {}): MatchSummary => ({ arenaId: 'persepolis', players: 2, outcome: 'win', surs: 0, sarbaz: 0, paid: true, fee: 20, margin: 0, target: 62, ...over });
@@ -381,5 +382,29 @@ describe('honors', () => {
       expect(at).toEqual([...at].sort((a, b) => a - b));
       expect(new Set(at).size).toBe(at.length);
     }
+  });
+});
+
+describe('solo stages', () => {
+  it('only the first stage is open at the start; clearing one opens the next', () => {
+    let p = createProfile(NOW);
+    expect(STAGES.map((s) => stageUnlocked(p, s.id)).filter(Boolean)).toHaveLength(1);
+    p = clearStage(p, STAGES[0].id, NOW);
+    expect(stageUnlocked(p, STAGES[1].id)).toBe(true);
+    expect(stageUnlocked(p, STAGES[2].id)).toBe(false);
+    expect(stageUnlocked(p, 'nope')).toBe(false);
+  });
+  it('pays the prize once, to the ledger', () => {
+    const p0 = createProfile(NOW);
+    const p1 = clearStage(p0, STAGES[0].id, NOW);
+    expect(p1.shahi).toBe(p0.shahi + STAGES[0].prize);
+    expect(p1.stages).toEqual([STAGES[0].id]);
+    expect(clearStage(p1, STAGES[0].id, NOW)).toBe(p1);
+    expect(verifyProfile(p1, NOW)).toBe(p1);
+  });
+  it('pays nothing for a locked or unknown stage', () => {
+    const p = createProfile(NOW);
+    expect(clearStage(p, STAGES[3].id, NOW)).toBe(p);
+    expect(clearStage(p, 'nope', NOW)).toBe(p);
   });
 });
