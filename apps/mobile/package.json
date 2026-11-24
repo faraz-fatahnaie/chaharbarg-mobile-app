@@ -20,6 +20,7 @@
     "@capacitor/ios": "^8.6.0",
     "@capacitor/local-notifications": "^8.3.1",
     "@chaharbarg/engine": "*",
+    "@fontsource/lalezar": "^5.3.0",
     "@fontsource/vazirmatn": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

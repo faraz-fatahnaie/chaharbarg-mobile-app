@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  captureOptions, chooseMove, liveScore, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
+  captureOptions, chooseMove, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
   type Card, type MatchState,
 } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
+import { Scoreboard, scoreRows, type ScoreUnit } from './Scoreboard';
 import { Scene } from '../art/Scene';
 import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
@@ -20,7 +21,6 @@ import { sfx, startAmbient, stopAmbient } from '../lib/sound';
 import { saveMatch, update, useProfile, type MatchCtx } from '../lib/store';
 
 const FAST = (!!import.meta.env.VITE_AUTOPILOT && !String(import.meta.env.VITE_AUTOPILOT).endsWith(':slow')) ||(typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast')); // test hook: quick bots
-const POS: Record<number, string[]> = { 2: ['top'], 3: ['tr', 'tl'], 4: ['right', 'top', 'left'] };
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
 const byRank = (a: Card, b: Card) => a.rank - b.rank || a.suit.localeCompare(b.suit);
 const label = (c: Card) => `${({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[c.rank] ?? c.rank}${{ S: '♠', H: '♥', D: '♦', C: '♣' }[c.suit]}`;
@@ -263,8 +263,6 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   const adOk = adStatus(profile, now, todayKey()).ok;
   const last = mc.history[mc.history.length - 1];
   const lastId = mc.lastResult?.card.id;
-  const floorCls = deal.floor.length > 14 ? 'lots' : deal.floor.length > 9 ? 'many' : '';
-  const live = liveScore(deal);
   const hint = !myTurn
     ? ''
     : !card
@@ -275,124 +273,125 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
           ? tr('دوباره بزن تا برداشته شود', 'Tap again to capture')
           : tr('یک ترکیب را انتخاب کن (یا کارت‌های زمین را بزن)', 'Choose a combination (or tap floor cards)');
 
+  // fixed floor slots: a card that stays never moves; new cards take the lowest free slot (centre-out)
+  const slots = useRef<Record<string, number>>({});
+  {
+    const ids = new Set(deal.floor.map((c) => c.id));
+    const used = new Set<number>();
+    for (const id of Object.keys(slots.current)) { if (ids.has(id)) used.add(slots.current[id]); else delete slots.current[id]; }
+    for (const c of deal.floor) {
+      if (slots.current[c.id] != null) continue;
+      let i = 0;
+      while (used.has(i) && i < 20) i++;
+      slots.current[c.id] = i; used.add(i);
+    }
+  }
+  const units: ScoreUnit[] = Array.from({ length: unitCount(players) }, (_, u) => {
+    const seats = Array.from({ length: players }, (_, s) => s).filter((s) => unitOf(players, s) === u);
+    const av = (s: number) => ({ hue: ctx.seats[s].hue, glyph: ctx.seats[s].glyph || [...ctx.seats[s].name][0] });
+    return { name: unitName(u), avatars: seats.map(av), me: u === u0 };
+  });
+  const cols = { 2: [2], 3: [3, 1], 4: [3, 2, 1] }[players as 2 | 3 | 4];
+  const hasOpts = myTurn && !!card && opts.length > 1;
+  const pileOf = (seat: number) => deal.piles[seat].length;
+
   return (
     <div className="game" style={{ ['--felt' as string]: table.felt, ['--rim' as string]: table.rim }}>
       <div className="scene"><Scene id={arena.id} tod={ctx.tod} /></div>
 
-      <div className="hud">
-        <button className="iconbtn" onClick={() => setMenu(true)} aria-label="menu">☰</button>
-        <div className="score">
-          {Array.from({ length: unitCount(players) }, (_, u) => (
-            <div key={u} className={`u ${u === u0 ? 'me' : ''}`}>
-              <small>{unitName(u)}</small>
-              <b>{n(mc.scores[u])}</b>
-            </div>
-          ))}
-        </div>
-        <div className="col" style={{ gap: 0, alignItems: 'center' }}>
-          <span className="chip" style={{ fontSize: 11 }}>{tr('هدف', 'Goal')} {targetLabel}</span>
-          <span className="stockinfo">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Rd')} {n(deal.round + 1)}</span>
-        </div>
-        {ctx.mode === 'bots' && !online && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label={tr('پیام سریع', 'Quick chat')}>💬</button>}
-      </div>
-      <div className="live">
-        <table>
-          <thead>
-            <tr><th />{[tr('خاج', '♣'), tr('امتیاز', 'Pts'), tr('سور', 'Sur'), tr('جمع', 'Total')].map((h) => <th key={h}>{h}</th>)}</tr>
-          </thead>
-          <tbody>
-            {live.map((l, u) => (
-              <tr key={u} className={u === u0 ? 'me' : ''}>
-                <td className="nm"><span title={unitName(u)}>{unitName(u)}</span></td>
-                <td>{n(l.clubCount)}</td><td>{n(l.points)}</td><td>{n(l.surs)}</td><td>{n(l.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {chat && ctx.mode === 'bots' && !online && (
-        <div className="emotes">
-          {EMOTES.map((e) => (
-            <button key={e.en} onClick={() => {
-              if (Date.now() - lastChat.current < CHAT_GAP_MS) return;
-              lastChat.current = Date.now();
-              say(0, tr(e.fa, e.en)); setChat(false);
-              if (Math.random() < 0.5) { const s = 1 + Math.floor(Math.random() * (players - 1)); const b = ctx.seats[s].botId; if (b) setTimeout(() => say(s, botById(b).lines.big[0]), 900); }
-            }}>{tr(e.fa, e.en)}</button>
-          ))}
-        </div>
-      )}
+      <Scoreboard mc={mc} units={units} onMenu={() => setMenu(true)} />
 
-      <div className="arena">
-        <div className="felt" />
-        {deal.floor.length === 0 && <div className="center-tag">{tr('زمین خالی است', 'Floor is empty')}</div>}
-        <div className={`floor ${floorCls}`}>
-          {deal.floor.map((c) => (
-            <CardView key={c.id} card={c} deck={profile.equipped.deck} back={profile.equipped.back}
-              className={c.id === lastId ? 'new' : pick.includes(c.id) ? 'pick' : ''}
-              glow={hintIds.has(c.id) && !pick.includes(c.id)} dim={!!card && opts.length > 0 && profile.settings.hints && !hintIds.has(c.id)}
-              onClick={() => tapFloor(c)} />
-          ))}
-        </div>
+      <div className="opps">
         {Array.from({ length: players - 1 }, (_, i) => {
           const seat = (view + i + 1) % players;
           const info = ctx.seats[seat];
           const mate = players === 4 && unitOf(4, seat) === u0;
           return (
-            <div key={seat} className={`seat pos-${POS[players][i]} ${deal.turn === seat && mc.phase === 'playing' ? 'turn' : ''}`}>
-              {bubbles[seat] && <div className="bubble">{bubbles[seat]}</div>}
-              <div className="avatar" style={{ background: `hsl(${info.hue} 55% 38%)` }}>{[...info.name][0]}</div>
-              <div className="nm">{info.name}{mate ? ` · ${tr('هم‌تیمی', 'partner')}` : ''}</div>
+            <div key={seat} className={`seat ${deal.turn === seat && mc.phase === 'playing' ? 'turn' : ''}`} style={{ gridColumn: cols[i], gridRow: 1 }}>
+              <div className="avatar" data-seat={seat} style={{ background: `hsl(${info.hue} 55% 38%)` }}>{info.glyph || [...info.name][0]}</div>
+              <div className="nm"><bdi>{info.name}</bdi>{mate ? ` · ${tr('هم‌تیمی', 'partner')}` : ''}</div>
               <div className="hand">
-                {deal.hands[seat].map((_, k) => <CardView key={k} faceDown back={profile.equipped.back} />)}
+                {deal.hands[seat].slice(0, 6).map((_, k) => <CardView key={k} faceDown back={profile.equipped.back} />)}
               </div>
-              <div className="got">{n(deal.piles[seat].length)} {tr('برگ', 'cards')}</div>
+              <span className="chip2" data-pile={seat}><i />{n(pileOf(seat))}</span>
+              {bubbles[seat] && <div className="bubble">{bubbles[seat]}</div>}
             </div>
           );
         })}
       </div>
 
-      <div className="myzone">
-        {ctx.mode === 'bots' && (
-          <div className="me-av">
-            {bubbles[0] && <div className="bubble">{bubbles[0]}</div>}
-            <div className="avatar" style={{ background: `hsl(${ctx.seats[view].hue} 55% 38%)` }}>{ctx.seats[view].glyph || [...ctx.seats[view].name][0]}</div>
-          </div>
-        )}
+      <div className="floor" data-zone="floor">
+        <div className="felt" />
+        {deal.floor.length === 0 && <div className="center-tag">{tr('زمین خالی است', 'Floor is empty')}</div>}
+        {deal.floor.map((c) => {
+          const si = slots.current[c.id];
+          const row = [1, 0, 2][Math.floor(si / 7)], col = [3, 2, 4, 1, 5, 0, 6][si % 7];
+          return (
+            <div key={c.id} className="fslot" style={{ ['--c' as string]: col, ['--r' as string]: row }}>
+              <CardView card={c} deck={profile.equipped.deck} back={profile.equipped.back}
+                className={c.id === lastId ? 'new' : pick.includes(c.id) ? 'pick' : ''}
+                glow={hintIds.has(c.id) && !pick.includes(c.id)} dim={!!card && opts.length > 0 && profile.settings.hints && !hintIds.has(c.id)}
+                onClick={() => tapFloor(c)} />
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="action" data-zone="action">
         <div className="hint-line">{((online ? serverLeft > 0 : limit > 0) && myTurn) && <b>⏱ {n(online ? serverLeft : Math.max(left, 0))}{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}{hint}</div>
-        {myTurn && card && opts.length > 1 && (
-          <div className="opts">
-            {opts.map((o, i) => {
-              const oi = o.map((x) => x.id);
-              return (
-                <button key={i} className={`optchip ${sameSet(oi, pick) ? 'on' : ''}`} onClick={() => { sfx('click'); setPick(oi); }}>
-                  {o.map(label).join(' + ')}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <div className={`opts ${hasOpts ? '' : 'off'}`}>
+          {hasOpts && opts.map((o, i) => {
+            const oi = o.map((x) => x.id);
+            return (
+              <button key={i} className={`optchip ${sameSet(oi, pick) ? 'on' : ''}`} onClick={() => { sfx('click'); setPick(oi); }}>
+                {o.map(label).join(' + ')}
+              </button>
+            );
+          })}
+        </div>
         <div className="actions">
-          {myTurn && card && (
+          {myTurn && card ? (
             <>
-              {opts.length > 0 && (
+              {dropAllowed ? <button className="btn" onClick={() => play(card.id, [])}>{tr('بینداز', 'Drop')}</button> : <span />}
+              {opts.length > 0 ? (
                 <button className="btn good" disabled={!matched} onClick={() => matched && play(card.id, matched.map((c) => c.id))}>
                   {tr('بردار', 'Capture')}{matched ? ` (${n(matched.length + 1)})` : ''}
                 </button>
-              )}
-              {dropAllowed && <button className="btn" onClick={() => play(card.id, [])}>{tr('بینداز', 'Drop')}</button>}
+              ) : <span />}
             </>
-          )}
-          {!myTurn && mc.phase === 'playing' && !handoff && (
-            <span className="mute">{tr(`نوبت ${ctx.seats[deal.turn].name}…`, `${ctx.seats[deal.turn].name}'s turn…`)}</span>
+          ) : (
+            !myTurn && mc.phase === 'playing' && !handoff && <span className="mute wait">{tr(`نوبت ${ctx.seats[deal.turn].name}…`, `${ctx.seats[deal.turn].name}'s turn…`)}</span>
           )}
         </div>
-        <div className="myhand">
-          {!handoff && hand.map((c) => (
-            <CardView key={c.id} card={c} deck={profile.equipped.deck} selected={sel === c.id} dim={!myTurn} onClick={() => tapHand(c)} />
-          ))}
-        </div>
-        <div className="stockinfo">{tr('باقی‌ماندهٔ دسته', 'Stock')}: {n(deal.stock.length)}</div>
+      </div>
+
+      <div className="hand-zone" data-zone="hand">
+        {!handoff && hand.map((c, i) => (
+          <div key={c.id} className="hslot" style={{ ['--d' as string]: i - (hand.length - 1) / 2, zIndex: sel === c.id ? 5 : i }}>
+            <CardView card={c} deck={profile.equipped.deck} selected={sel === c.id} dim={!myTurn} onClick={() => tapHand(c)} />
+          </div>
+        ))}
+      </div>
+
+      <div className={`foot ${myTurn ? 'turn' : ''}`}>
+        <div className="avatar" data-seat={view} style={{ background: `hsl(${ctx.seats[view].hue} 55% 38%)` }}>{ctx.seats[view].glyph || [...ctx.seats[view].name][0]}</div>
+        <span className="chip2" data-pile={view}>{tr('برداشته', 'Won')} {n(pileOf(view))}</span>
+        <span className="chip2"><i />{tr('دسته', 'Stock')} {n(deal.stock.length)}</span>
+        <span className="sp" />
+        {bubbles[0] && <div className="bubble">{bubbles[0]}</div>}
+        {ctx.mode === 'bots' && !online && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label={tr('پیام سریع', 'Quick chat')}>💬</button>}
+        {chat && ctx.mode === 'bots' && !online && (
+          <div className="emotes">
+            {EMOTES.map((e) => (
+              <button key={e.en} onClick={() => {
+                if (Date.now() - lastChat.current < CHAT_GAP_MS) return;
+                lastChat.current = Date.now();
+                say(0, tr(e.fa, e.en)); setChat(false);
+                if (Math.random() < 0.5) { const s = 1 + Math.floor(Math.random() * (players - 1)); const b = ctx.seats[s].botId; if (b) setTimeout(() => say(s, botById(b).lines.big[0]), 900); }
+              }}>{tr(e.fa, e.en)}</button>
+            ))}
+          </div>
+        )}
       </div>
 
       {banner && <div className="banner"><b>{banner.a}{banner.b && <small>{banner.b}</small>}</b></div>}
@@ -428,15 +427,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
                 <tr><th />{last.map((_, u) => <th key={u}>{unitName(u)}</th>)}</tr>
               </thead>
               <tbody>
-                {([
-                  [tr('خاج (۷ برگ یا بیشتر)', 'Clubs (7+)'), (s: typeof last[0]) => `${n(s.clubCount)} ← ${n(s.clubs)}`],
-                  [tr('آس‌ها', 'Aces'), (s: typeof last[0]) => n(s.aces)],
-                  [tr('سرباز‌ها', 'Jacks'), (s: typeof last[0]) => n(s.jacks)],
-                  [tr('ده خشت', '10 ♦'), (s: typeof last[0]) => n(s.tenD)],
-                  [tr('دو خاج', '2 ♣'), (s: typeof last[0]) => n(s.twoC)],
-                  [tr('سور', 'Sur'), (s: typeof last[0]) => n(s.sur)],
-                  [tr('سور سرباز', 'Sur Sarbaz'), (s: typeof last[0]) => n(s.sarbaz)],
-                ] as [string, (s: typeof last[0]) => string][]).map(([label, f]) => (
+                {scoreRows(tr, n).map(([label, f]) => (
                   <tr key={label}><td>{label}</td>{last.map((s, u) => <td key={u}>{f(s)}</td>)}</tr>
                 ))}
                 <tr className="tot"><td>{tr('امتیاز این دست', 'This deal')}</td>{last.map((s, u) => <td key={u}>{n(s.total)}</td>)}</tr>

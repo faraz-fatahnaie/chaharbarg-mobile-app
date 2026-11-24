@@ -6,6 +6,7 @@ import { useLang } from './lib/i18n';
 import { registerAdUI, registerPayUI } from './lib/services';
 import { setEffectsEnabled, setMusicEnabled } from './lib/sound';
 import { getProfile, loadMatch, saveMatch, update, useProfile, type MatchCtx } from './lib/store';
+import { SuitSprite } from './art/CardView';
 import { Game } from './screens/Game';
 import { Home } from './screens/Home';
 import { Settings } from './screens/Settings';
@@ -141,6 +142,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <SuitSprite />
       {onlineOpen ? (
         <Online onClose={() => setOnlineOpen(false)} />
       ) : playing ? (
