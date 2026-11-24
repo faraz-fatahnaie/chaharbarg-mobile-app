@@ -49,6 +49,9 @@ Legend: **✅ built in this branch** · v1 = release scope · v2 = next · later
 | Procedural sound + per-arena ambient bed (no audio files) | v1 | ✅ |
 | Recorded Persian-instrument music and sfx (santur, daf) | v2 | |
 | Seasonal arena skins: Nowruz, Yalda night, Mehregan (secular, cultural) | v2 | |
+| Online play (2/3/4 players, rooms by code, bots fill empty seats) | v2 | ✅ server tests + live two-tab check |
+| Friends (code, request, accept, block), direct messages, moderated public chat | v2 | ✅ |
+| Weekly and monthly rankings, prizes announced at app start | v2 | ✅ |
 
 ## Things the brief did not list (Iran/real-world gaps I found)
 1. **Low-end Android.** Many devices are 2 GB RAM, Android 7–10. The web build is ~94 KB gzip JS plus bundled Vazirmatn (about 27 KB per weight); no video/3D. Keep it that way. (Profile on a real low-end device — not done here.)

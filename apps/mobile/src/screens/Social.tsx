@@ -22,7 +22,7 @@ function Thread({ me, peer, bus, onBack }: { me: string; peer: Person; bus: Bus;
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { getDms(peer.id).then((r) => setMsgs(r.messages)).catch(() => {}); }, [peer.id]);
   useEffect(() => bus.on((e) => { if (e.type === 'dm' && e.msg.from === peer.id) setMsgs((m) => [...m, e.msg]); }), [bus, peer.id]);
-  useEffect(() => end.current?.scrollIntoView?.({ block: 'end' }), [msgs]);
+  useEffect(() => { end.current?.scrollIntoView?.({ block: 'end' }); }, [msgs]);
   const send = () => run(async () => { const t = text.trim(); if (!t) return; const m = await sendDm(peer.id, t); setMsgs((x) => [...x, m]); setText(''); });
   return (
     <div className="panel col">
@@ -48,7 +48,7 @@ export function Friends({ me, bus }: { me: string; bus: Bus }) {
   const [unread, setUnread] = useState<Record<string, number>>({});
   const { err, run } = useAction();
   const reload = useCallback(() => { getFriends().then(setList).catch(() => {}); }, []);
-  useEffect(reload, [reload]);
+  useEffect(() => { reload(); }, [reload]);
   useEffect(() => bus.on((e) => {
     if (e.type === 'friend-request' || e.type === 'friend-accepted') reload();
     if (e.type === 'dm' && e.msg.from !== peer?.id) setUnread((u) => ({ ...u, [e.msg.from]: (u[e.msg.from] ?? 0) + 1 }));

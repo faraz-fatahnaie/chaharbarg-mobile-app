@@ -37,3 +37,16 @@ All are toggles or constants in `RulesConfig`.
 - UI tests are an end-to-end smoke test only (random play); there are no component tests.
 - `ui-ux-pro-max` / `claude-design` skills not installed; framework-specific skill search not run (I was told not to ask, and installing needs your OK).
 - Graph: see `docs/graph/` (graphify output).
+
+## Online mode (server)
+
+Decision (the docs named no stack, so this was chosen): a small Node server in `packages/server`, no new dependencies. HTTP + server-sent events for transport (works in a browser and a Capacitor WebView, no WebSocket library), `node:sqlite` for storage, and the same `@chaharbarg/engine` that the app uses, run authoritatively. Clients send only `{cardId, captureIds}`; the server owns shuffles, turns and timers and sends each seat a view in which other hands and the stock are same-length placeholders.
+
+- Accounts are guests: the server issues `{id, token}` and keeps only a hash of the token. Friends find each other with a 6-character friend code.
+- Rooms: create with 2/3/4 players, a goal and a turn timer (off, 15 s, 5 s); join by a 5-character code; the host may fill empty seats with bots. After 3 turn timeouts in a row a bot takes the seat and the player is marked as having abandoned (no win coins).
+- Online matches carry no Shahi fee and no trophies: the local ledger cannot be verified by the server, and the server cannot trust the client. The server counts wins and "coins" (25 per player in the room, for a win) for rankings only.
+- Rankings: weekly (weeks start on Saturday, UTC) and monthly, built only from results the server recorded. Prizes for the top 3 of each finished period (weekly 500/300/150 Shahi; monthly 2000/1200/600 Shahi plus 3/2/1 Gohar), granted once; the client adds a claimed prize to its wallet. **[review]**: all amounts.
+- Public chat moderation plan **[review]**: 200-character cap, one message per 2 s, a small word filter (extend it for Persian and English), per-player block, and a report button. Three reports from different players hide the message and mute the sender for 10 minutes. Direct messages are friends-only, 500 characters, one per 0.5 s, and blocked either way means no messages and no requests.
+- Run it: `npm run server` (port 8787, data in `packages/server/data/server.db`), then `npm run dev`. The app finds the server at `VITE_SERVER_URL`, else port 8787 on the host that served the app, so a phone on the same Wi-Fi works. To play against yourself on one device, open two tabs with `?as=alice` and `?as=bob`: each gets its own online identity.
+- Tests: `npm test -w @chaharbarg/server` drives full 2, 3 and 4 player matches through the real HTTP API and checks that no client ever receives another player's cards.
+- Known limits: no matchmaking queue (room codes only), no rematch button, no reconnect UI beyond automatic stream reconnection, one server process, guest tokens are not recoverable if the device storage is cleared.

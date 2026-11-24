@@ -4,12 +4,6 @@ The software factory's intake queue. `factory run` takes the top item under Read
 Add ideas to Inbox and promote them to Ready; the factory moves items after that.
 
 ## Inbox
-- [ ] F-013 [Employer #2 online half, NEEDS SERVER, do not promote] Online play for 2, 3 and 4 players
-- [ ] F-014 [Employer #6, NEEDS SERVER, do not promote] Friend requests: send, accept, reject, remove, block
-- [ ] F-015 [Employer #15, NEEDS SERVER, do not promote] Friends list with a chat button per friend
-- [ ] F-016 [Employer #9, NEEDS SERVER, do not promote] Public text chat room (needs moderation plan)
-- [ ] F-017 [Employer #10, NEEDS SERVER, do not promote] Weekly and monthly rankings by wins and coins won
-- [ ] F-018 [Employer #13, NEEDS SERVER, do not promote] Prize announcement at app start and weekly/monthly winner prizes
 
 ## Ready
 
@@ -116,3 +110,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-029 After the sync, add `tools:node="remove"` for `SCHEDULE_EXACT_ALARM` in the Android manifest. The reminder no longer uses exact alarms, and Google Play may reject an app that asks for the permission w (closed: done: SCHEDULE_EXACT_ALARM removed in the Android manifest)
 - [x] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes. (closed: done: graph rebuilt)
 - [x] F-007 [Employer #4, offline P5] Avatar creator, shown on the left during play; leave room for later taunt moments. Depends on avatar art (plan: v2) (closed: done without art: colour slider plus emoji avatar, shown left of the play area with the player's chat bubble; real art can replace the emoji list later)
+- [x] F-013 [Employer #2 online half, server built] Online play for 2, 3 and 4 players (closed: done: online rooms for 2, 3 and 4 players, tested live in two tabs)
+- [x] F-014 [Employer #6, server built] Friend requests: send, accept, reject, remove, block (closed: done: friend code, request, accept, reject, remove, block)
+- [x] F-015 [Employer #15, server built] Friends list with a chat button per friend (closed: done: friends list with a message button per friend)
+- [x] F-016 [Employer #9, server built] Public text chat room (needs moderation plan) (closed: done: public chat with the moderation plan in docs/plan.md [review])
+- [x] F-017 [Employer #10, server built] Weekly and monthly rankings by wins and coins won (closed: done: weekly and monthly rankings from server-recorded results)
+- [x] F-018 [Employer #13, server built] Prize announcement at app start and weekly/monthly winner prizes (closed: done: prize announcement at app start and granted weekly and monthly prizes [review amounts])
