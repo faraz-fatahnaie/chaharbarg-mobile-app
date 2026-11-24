@@ -4,7 +4,6 @@ The software factory's intake queue. `factory run` takes the top item under Read
 Add ideas to Inbox and promote them to Ready; the factory moves items after that.
 
 ## Inbox
-- [ ] F-007 [Employer #4, offline P5] Avatar creator, shown on the left during play; leave room for later taunt moments. Depends on avatar art (plan: v2)
 - [ ] F-013 [Employer #2 online half, NEEDS SERVER, do not promote] Online play for 2, 3 and 4 players
 - [ ] F-014 [Employer #6, NEEDS SERVER, do not promote] Friend requests: send, accept, reject, remove, block
 - [ ] F-015 [Employer #15, NEEDS SERVER, do not promote] Friends list with a chat button per friend
@@ -116,3 +115,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-028 Run `npm run cap:sync -w @chaharbarg/mobile` so the local-notifications plugin is registered in the Android and iOS projects. Check that the diff only adds this plugin. Then test the daily reminder on (closed: done: plugin registered in Android and iOS, diff adds only that plugin; a real-device reminder test is still the owner's)
 - [x] F-029 After the sync, add `tools:node="remove"` for `SCHEDULE_EXACT_ALARM` in the Android manifest. The reminder no longer uses exact alarms, and Google Play may reject an app that asks for the permission w (closed: done: SCHEDULE_EXACT_ALARM removed in the Android manifest)
 - [x] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes. (closed: done: graph rebuilt)
+- [x] F-007 [Employer #4, offline P5] Avatar creator, shown on the left during play; leave room for later taunt moments. Depends on avatar art (plan: v2) (closed: done without art: colour slider plus emoji avatar, shown left of the play area with the player's chat bubble; real art can replace the emoji list later)

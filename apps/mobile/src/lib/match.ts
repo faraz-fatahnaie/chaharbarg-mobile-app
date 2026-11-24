@@ -47,7 +47,7 @@ export function buildCtx(p: Profile, arena: Arena, players: 2 | 3 | 4, mode: 'bo
   } else {
     const pool = [...arena.botPool].sort(() => rng() - 0.5);
     seats = [
-      { name: p.name || (lang === 'fa' ? 'شما' : 'You'), botId: null, hue: 45 },
+      { name: p.name || (lang === 'fa' ? 'شما' : 'You'), botId: null, hue: p.avatar.hue, glyph: p.avatar.glyph },
       ...pool.slice(0, players - 1).map((id) => ({ name: lang === 'fa' ? botById(id).fa : botById(id).en, botId: id, hue: botById(id).hue })),
     ];
   }

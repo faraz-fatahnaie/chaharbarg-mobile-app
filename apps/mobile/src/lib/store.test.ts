@@ -157,3 +157,21 @@ describe('saved stats cleaning (F-097)', () => {
     expect((await fresh()).getProfile().stats.games).toBe(0);
   });
 });
+
+describe('saved avatar (F-007)', () => {
+  it('keeps a valid avatar and repairs bad values', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    expect(base.avatar).toEqual({ hue: 45, glyph: '' });
+    for (const [saved, want] of [
+      [{ hue: 200, glyph: '🦁' }, { hue: 200, glyph: '🦁' }],
+      [{ hue: 999.4, glyph: '<script>' }, { hue: 359, glyph: '' }],
+      [{ hue: 'x' }, { hue: 45, glyph: '' }],
+      [null, { hue: 45, glyph: '' }],
+    ] as const) {
+      data.set(PROFILE_KEY, JSON.stringify({ ...base, avatar: saved }));
+      vi.resetModules();
+      expect((await fresh()).getProfile().avatar).toEqual(want);
+    }
+  });
+});

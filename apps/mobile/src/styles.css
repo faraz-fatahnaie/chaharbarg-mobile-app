@@ -151,7 +151,10 @@ h2 { font-size: 18px; } h3 { font-size: 15px; }
 .pos-tr { right: 3%; top: 4%; } .pos-tl { left: 3%; top: 4%; }
 .bubble { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: #fff; color: #222; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 700; white-space: nowrap; animation: pop .25s; z-index: 9; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
 .bubble.low { top: auto; bottom: -22px; }
-.myzone { padding: 0 8px 14px; }
+.myzone { padding: 0 8px 14px; position: relative; }
+.me-av { position: absolute; left: 8px; top: -44px; z-index: 4; display: flex; flex-direction: column; align-items: center; }
+.me-av .avatar { width: 34px; height: 34px; font-size: 15px; }
+.me-av .bubble { top: -26px; left: 0; transform: none; }
 .actions { display: flex; gap: 8px; justify-content: center; min-height: 46px; align-items: center; padding: 4px 0; }
 .myhand { display: flex; justify-content: center; --cw: 66px; padding-top: 14px; }
 .myhand .card { margin-inline-start: -10px; } .myhand .card:first-child { margin-inline-start: 0; }

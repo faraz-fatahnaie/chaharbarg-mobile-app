@@ -66,6 +66,17 @@ export function cleanStats(raw: unknown): Stats {
   };
 }
 
+export const AVATAR_GLYPHS = ['🦁', '🐺', '🦅', '🐉', '🌹', '🏺', '☀️', '🌙'] as const;
+/** In-game avatar: a colour and an optional emoji (empty = first letter of the name). Separate from the profile picture. */
+export interface Avatar { hue: number; glyph: string }
+export const DEFAULT_AVATAR: Avatar = { hue: 45, glyph: '' };
+export function cleanAvatar(raw: unknown): Avatar {
+  const r = isObj(raw) ? raw : {};
+  const hue = typeof r.hue === 'number' && Number.isFinite(r.hue) ? Math.min(359, Math.max(0, Math.round(r.hue))) : DEFAULT_AVATAR.hue;
+  const glyph = (AVATAR_GLYPHS as readonly unknown[]).includes(r.glyph) ? (r.glyph as string) : '';
+  return { hue, glyph };
+}
+
 export interface Profile {
   v: 1;
   name: string;
@@ -88,6 +99,7 @@ export interface Profile {
   stages: string[];
   /** honor id the player chose as title; null = best level honor */
   title: string | null;
+  avatar: Avatar;
   tampered: number;
   ledger: LedgerEntry[];
 }
@@ -150,7 +162,7 @@ export function createProfile(now: number): Profile {
     login: { last: '', streak: 0 },
     daily: { date: '', progress: {}, claimed: [] },
     ads: { day: '', watched: 0, lastAt: 0 },
-    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], title: null, tampered: 0, ledger: [],
+    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], title: null, avatar: { ...DEFAULT_AVATAR }, tampered: 0, ledger: [],
   };
   return applyDelta(blank, START_SHAHI, 0, 'welcome', now);
 }

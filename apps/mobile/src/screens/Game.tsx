@@ -313,6 +313,12 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
       </div>
 
       <div className="myzone">
+        {ctx.mode === 'bots' && (
+          <div className="me-av">
+            {bubbles[0] && <div className="bubble">{bubbles[0]}</div>}
+            <div className="avatar" style={{ background: `hsl(${ctx.seats[0].hue} 55% 38%)` }}>{ctx.seats[0].glyph || [...ctx.seats[0].name][0]}</div>
+          </div>
+        )}
         <div className="hint-line">{limit > 0 && myTurn && <b>⏱ {n(Math.max(left, 0))}{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}{hint}</div>
         {myTurn && card && opts.length > 1 && (
           <div className="opts">

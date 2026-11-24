@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useLang } from '../lib/i18n';
 import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
 import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
-import type { Settings as S } from '../economy/economy';
+import { AVATAR_GLYPHS, type Settings as S } from '../economy/economy';
 import { Header } from './Home';
 import { remindersSupported, setReminder } from '../lib/reminders';
 import { SUPPORT_EMAIL, feedbackHref, supportHref } from '../lib/support';
@@ -68,6 +68,15 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
           <input value={draft} maxLength={40} onChange={(e) => setDraft(e.target.value)}
             style={{ font: 'inherit', background: 'var(--panel2)', color: 'var(--ink)', border: 0, borderRadius: 10, padding: 7, width: 130 }} />
           <button className="btn" onClick={saveName}>{tr('ذخیره', 'Save')}</button>
+        </div>
+        <div className="row" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div className="avatar" style={{ background: `hsl(${p.avatar.hue} 55% 38%)` }}>{p.avatar.glyph || [...p.name][0] || '👤'}</div>
+          <input type="range" min={0} max={359} value={p.avatar.hue} aria-label={tr('رنگ آواتار', 'Avatar colour')}
+            onChange={(e) => update((q) => ({ ...q, avatar: { ...q.avatar, hue: Number(e.target.value) } }))} />
+          {['', ...AVATAR_GLYPHS].map((g) => (
+            <button key={g || 'letter'} className={p.avatar.glyph === g ? 'btn primary' : 'btn ghost'} aria-label={g || tr('حرف اول نام', 'Name initial')}
+              onClick={() => update((q) => ({ ...q, avatar: { ...q.avatar, glyph: g } }))}>{g || 'A'}</button>
+          ))}
         </div>
         {(nameErr || picErr) && <span role="alert">{nameErr || picErr}</span>}
         <span className="mute">{tr('تصویر پروفایل فقط روی همین گوشی ذخیره می‌شود و با آواتار بازی فرق دارد.', 'Your profile picture stays on this device and is separate from your in-game avatar.')}</span>
