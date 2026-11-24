@@ -88,11 +88,11 @@
 .actions .wait { grid-column: 1 / -1; text-align: center; }
 
 /* hand fan */
-.hand-zone { grid-row: 5; position: relative; container-type: size; --cw: min(66px, 17cqw); padding-top: 20px; }
+.hand-zone { grid-row: 5; position: relative; container-type: size; --cw: min(74px, 20cqw); padding-top: 20px; }
 .hslot { position: absolute; left: 50%; bottom: 6px; width: var(--cw); margin-left: calc(var(--cw) / -2);
   transform: translateX(calc(var(--d) * var(--cw) * .92)) translateY(calc(var(--d) * var(--d) * 2px)) rotate(calc(var(--d) * 5deg)); transition: transform .25s cubic-bezier(.2,.8,.2,1); }
 .hslot .card { --cw: inherit; }
-@media (max-height: 700px) { .hand-zone { --cw: min(56px, 17cqw); } }
+@media (max-height: 700px) { .hand-zone { --cw: min(66px, 18cqw); } }
 
 /* footer */
 .foot { grid-row: 6; display: flex; align-items: center; gap: 8px; padding: 0 var(--pad); position: relative; }

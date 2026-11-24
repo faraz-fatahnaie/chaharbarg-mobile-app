@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { liveScore, scoreDeal, type MatchState, type UnitScore } from '@chaharbarg/engine';
 import { useLang } from '../lib/i18n';
+import { Avatar } from '../art/Avatar';
 import { Suit } from '../art/CardView';
 
 export interface ScoreUnit { name: string; avatars: { hue: number; glyph: string }[]; me: boolean; team?: string }
@@ -43,7 +44,7 @@ export function Scoreboard({ mc, units, onMenu }: { mc: MatchState; units: Score
             {i === leader && <span className="crown" aria-hidden="true">♛</span>}
             {showPlace && <span className="place">{n(place(i))}</span>}
             <div className="r1">
-              <span className="avs">{u.avatars.map((a, k) => <span key={k} className="avatar mini" style={{ background: `hsl(${a.hue} 55% 38%)` }}>{a.glyph}</span>)}</span>
+              <span className="avs">{u.avatars.map((a, k) => <Avatar key={k} className="mini" hue={a.hue} glyph={a.glyph} name={u.name} />)}</span>
               <span className="nm"><bdi>{u.name}</bdi></span>
               <span className="pill" key={live[i].total}>+{n(live[i].total)}</span>
             </div>

@@ -5,7 +5,7 @@ import { BACK_STYLES } from '../data/cosmetics';
 const GLYPH = { S: '♠', H: '♥', D: '♦', C: '♣' } as const;
 const RANK = (r: number) => (r === 1 ? 'A' : r === 11 ? 'J' : r === 12 ? 'Q' : r === 13 ? 'K' : String(r));
 
-const L = 26, C = 50, R = 74;
+const L = 28, C = 50, R = 72;
 // classic playing-card layouts: side columns, optional centre column; spacing keeps every pip clear of its neighbours
 const PIPS: Record<number, [number, number][]> = {
   1: [[C, 50]],
@@ -115,7 +115,7 @@ export function CardView({ card, faceDown, deck = 'deck-classic', back = 'back-i
       ) : (
         <div className="pips">
           {PIPS[card.rank].map(([x, y], i) => (
-            <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 9 ? ' sm' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
+            <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 9 ? ' sm' : card.rank >= 6 ? ' md' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
           ))}
         </div>
       )}

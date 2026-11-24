@@ -42,13 +42,13 @@ export function buildCtx(p: Profile, arena: Arena, players: 2 | 3 | 4, mode: 'bo
   let seats: SeatInfo[];
   if (mode === 'pnp') {
     seats = Array.from({ length: players }, (_, i) => ({
-      name: lang === 'fa' ? `بازیکن ${'۱۲۳۴'[i]}` : `Player ${i + 1}`, botId: null, hue: [210, 20, 140, 290][i],
+      name: lang === 'fa' ? `بازیکن ${'۱۲۳۴'[i]}` : `Player ${i + 1}`, botId: null, hue: [210, 20, 140, 290][i], glyph: ['e:hafez', 'e:rostam', 'e:simurgh', 'e:lionsun'][i],
     }));
   } else {
     const pool = [...arena.botPool].sort(() => rng() - 0.5);
     seats = [
       { name: p.name || (lang === 'fa' ? 'شما' : 'You'), botId: null, hue: p.avatar.hue, glyph: p.avatar.glyph },
-      ...pool.slice(0, players - 1).map((id) => ({ name: lang === 'fa' ? botById(id).fa : botById(id).en, botId: id, hue: botById(id).hue })),
+      ...pool.slice(0, players - 1).map((id) => ({ name: lang === 'fa' ? botById(id).fa : botById(id).en, botId: id, hue: botById(id).hue, glyph: botById(id).glyph })),
     ];
   }
   const tod = p.settings.timeOfDay === 'auto' ? timeOfDayFor() : p.settings.timeOfDay;

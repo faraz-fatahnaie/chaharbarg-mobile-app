@@ -66,7 +66,7 @@ export function cleanStats(raw: unknown): Stats {
   };
 }
 
-export const AVATAR_GLYPHS = ['🦁', '🐺', '🦅', '🐉', '🌹', '🏺', '☀️', '🌙'] as const;
+export const AVATAR_GLYPHS = ['🦁', '🐺', '🦅', '🐉', '🌹', '🏺', '☀️', '🌙', ...['hafez', 'ferdowsi', 'khayyam', 'rumi', 'cyrus', 'rostam', 'arash', 'simurgh', 'lionsun', 'boteh', 'persepolis', 'azadi', 'siosepol', 'badgir', 'damavand', 'anar'].map((k) => `e:${k}`)] as const;
 /** In-game avatar: a colour and an optional emoji (empty = first letter of the name). Separate from the profile picture. */
 export interface Avatar { hue: number; glyph: string }
 export const DEFAULT_AVATAR: Avatar = { hue: 45, glyph: '' };

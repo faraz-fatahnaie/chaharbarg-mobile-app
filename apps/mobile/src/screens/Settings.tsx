@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Avatar, emblemName } from '../art/Avatar';
 import { useLang } from '../lib/i18n';
 import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
 import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
@@ -70,12 +71,12 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
           <button className="btn" onClick={saveName}>{tr('ذخیره', 'Save')}</button>
         </div>
         <div className="row" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div className="avatar" style={{ background: `hsl(${p.avatar.hue} 55% 38%)` }}>{p.avatar.glyph || [...p.name][0] || '👤'}</div>
+          <Avatar hue={p.avatar.hue} glyph={p.avatar.glyph} name={p.name || '👤'} />
           <input type="range" min={0} max={359} value={p.avatar.hue} aria-label={tr('رنگ آواتار', 'Avatar colour')}
             onChange={(e) => update((q) => ({ ...q, avatar: { ...q.avatar, hue: Number(e.target.value) } }))} />
           {['', ...AVATAR_GLYPHS].map((g) => (
-            <button key={g || 'letter'} className={p.avatar.glyph === g ? 'btn primary' : 'btn ghost'} aria-label={g || tr('حرف اول نام', 'Name initial')}
-              onClick={() => update((q) => ({ ...q, avatar: { ...q.avatar, glyph: g } }))}>{g || 'A'}</button>
+            <button key={g || 'letter'} className={p.avatar.glyph === g ? 'btn primary' : 'btn ghost'} aria-label={g.startsWith('e:') ? emblemName(g, p.settings.lang === 'fa') : g || tr('حرف اول نام', 'Name initial')}
+              onClick={() => update((q) => ({ ...q, avatar: { ...q.avatar, glyph: g } }))}>{g.startsWith('e:') ? <Avatar hue={p.avatar.hue} glyph={g} name="" style={{ width: 28, height: 28, border: 0 }} /> : g || 'A'}</button>
           ))}
         </div>
         {(nameErr || picErr) && <span role="alert">{nameErr || picErr}</span>}

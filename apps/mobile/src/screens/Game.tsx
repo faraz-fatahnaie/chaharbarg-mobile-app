@@ -4,6 +4,7 @@ import {
   type Card, type MatchState,
 } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
+import { Avatar } from '../art/Avatar';
 import { Confetti, CountUp, FxLayer, reducedMotion, type FlySpec } from '../art/fx';
 import { Scoreboard, scoreRows, type ScoreUnit } from './Scoreboard';
 import { Scene } from '../art/Scene';
@@ -401,7 +402,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
           const mate = players === 4 && unitOf(4, seat) === u0;
           return (
             <div key={seat} className={`seat ${deal.turn === seat && mc.phase === 'playing' ? 'turn' : ''}`} style={{ gridColumn: cols[i], gridRow: 1 }}>
-              <div className="avatar" data-seat={seat} style={{ background: `hsl(${info.hue} 55% 38%)` }}>{info.glyph || [...info.name][0]}</div>
+              <Avatar data-seat={seat} hue={info.hue} glyph={info.glyph} name={info.name} />
               <div className="nm"><bdi>{info.name}</bdi>{mate ? ` · ${tr('هم‌تیمی', 'partner')}` : ''}</div>
               <div className="hand">
                 {!vs && deal.hands[seat].slice(0, 6).map((_, k) => <CardView key={k} faceDown back={profile.equipped.back} style={{ ['--i' as string]: k }} />)}
@@ -467,7 +468,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
       </div>
 
       <div className={`foot ${myTurn ? 'turn' : ''}`}>
-        <div className="avatar" data-seat={view} style={{ background: `hsl(${ctx.seats[view].hue} 55% 38%)` }}>{ctx.seats[view].glyph || [...ctx.seats[view].name][0]}</div>
+        <Avatar data-seat={view} hue={ctx.seats[view].hue} glyph={ctx.seats[view].glyph} name={ctx.seats[view].name} />
         <span className="chip2" data-pile={view}>{tr('برداشته', 'Won')} {n(pileOf(view))}</span>
         <span className="chip2"><i />{tr('دسته', 'Stock')} {n(deal.stock.length)}</span>
         <span className="sp" />
@@ -492,11 +493,11 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
       {vs && (
         <div className="vs-splash" onClick={() => setVs(false)}>
           <div className="half l">
-            <div className="row">{units[0].avatars.map((a, k) => <span key={k} className="avatar" style={{ background: `hsl(${a.hue} 55% 38%)` }}>{a.glyph}</span>)}</div>
+            <div className="row">{units[0].avatars.map((a, k) => <Avatar key={k} hue={a.hue} glyph={a.glyph} name="" />)}</div>
             <div className="pn">{units[0].name}</div>
           </div>
           <div className="half r">
-            <div className="row">{units.slice(1).flatMap((u) => u.avatars).map((a, k) => <span key={k} className="avatar" style={{ background: `hsl(${a.hue} 55% 38%)` }}>{a.glyph}</span>)}</div>
+            <div className="row">{units.slice(1).flatMap((u) => u.avatars).map((a, k) => <Avatar key={k} hue={a.hue} glyph={a.glyph} name="" />)}</div>
             <div className="pn">{units.slice(1).map((u) => u.name).join(' · ')}</div>
           </div>
           <div className="vs">VS</div>
@@ -509,7 +510,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
       {handoff && mc.phase === 'playing' && (
         <div className="handoff">
           <div className="col" style={{ alignItems: 'center', gap: 14 }}>
-            <div className="avatar" style={{ background: `hsl(${ctx.seats[deal.turn].hue} 55% 38%)`, width: 72, height: 72, fontSize: 30 }}>{[...ctx.seats[deal.turn].name][0]}</div>
+            <Avatar hue={ctx.seats[deal.turn].hue} glyph={ctx.seats[deal.turn].glyph} name={ctx.seats[deal.turn].name} style={{ width: 72, height: 72, fontSize: 30 }} />
             <h2>{tr(`گوشی را به ${ctx.seats[deal.turn].name} بدهید`, `Pass the phone to ${ctx.seats[deal.turn].name}`)}</h2>
             <span className="mute">{tr('بقیه نگاه نکنند!', 'Everyone else look away!')}</span>
             <button className="btn primary" onClick={() => setHandoff(false)}>{tr('آماده‌ام', "I'm ready")}</button>
