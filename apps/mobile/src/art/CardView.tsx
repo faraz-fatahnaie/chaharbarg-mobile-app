@@ -48,16 +48,15 @@ export const Suit = ({ s }: { s: Card['suit'] }) => <svg className="suit" viewBo
 /** J/Q/K: a gold-framed bust drawn once and mirrored for the lower half, like a real deck. */
 function FaceArt({ rank, suit }: { rank: number; suit: Card['suit'] }) {
   const half = (
-    <g stroke="var(--outline)" strokeWidth="1.4" strokeLinejoin="round">
-      <use href={`#s-${suit}`} x="5" y="5" width="20" height="20" fill="currentColor" stroke="none" />
-      <path d="M16 68 Q50 36 84 68Z" fill="currentColor" />
+    <g transform="translate(11 14) scale(.78)" stroke="var(--outline)" strokeWidth="1.4" strokeLinejoin="round">
+      <path d="M16 68 Q50 36 84 68Z" fill="#2f6fe0" />
       <path d="M30 56 Q50 44 70 56" fill="none" stroke="var(--gold)" strokeWidth="3" />
       {rank === 12 && <path d="M37 26 Q26 46 30 64 L40 56Z M63 26 Q74 46 70 64 L60 56Z" fill="var(--turq)" opacity=".85" />}
       <circle cx="50" cy="35" r="13" fill="#f3c9a0" />
       <circle cx="45" cy="34" r="1.4" fill="var(--outline)" stroke="none" /><circle cx="55" cy="34" r="1.4" fill="var(--outline)" stroke="none" />
       <path d="M46 41 Q50 44 54 41" fill="none" strokeWidth="1.2" />
       {rank === 13 && <>
-        <path d="M39 38 Q50 58 61 38 Q50 46 39 38Z" fill="currentColor" />
+        <path d="M39 38 Q50 58 61 38 Q50 46 39 38Z" fill="#4a3320" />
         <path d="M36 25 L38 8 L44 17 L50 4 L56 17 L62 8 L64 25Z" fill="var(--gold)" />
         <circle cx="50" cy="14" r="3" fill="var(--turq)" />
         <rect x="79" y="26" width="3" height="34" fill="var(--gold)" /><circle cx="80.5" cy="24" r="4.5" fill="var(--pomegranate)" />
@@ -68,7 +67,7 @@ function FaceArt({ rank, suit }: { rank: number; suit: Card['suit'] }) {
         <circle cx="80" cy="50" r="6" fill="var(--pomegranate)" /><circle cx="80" cy="50" r="2" fill="var(--gold)" stroke="none" />
       </>}
       {rank === 11 && <>
-        <path d="M36 28 Q50 4 64 28Z" fill="currentColor" />
+        <path d="M36 28 Q50 4 64 28Z" fill="#e0263f" />
         <rect x="36" y="25" width="28" height="4" fill="var(--gold)" />
         <path d="M60 18 Q76 10 74 0 Q68 8 58 13Z" fill="var(--turq)" />
         <path d="M78 62 L84 30" stroke="var(--gold)" strokeWidth="3" /><rect x="74" y="58" width="10" height="3" fill="var(--gold)" />
@@ -82,6 +81,8 @@ function FaceArt({ rank, suit }: { rank: number; suit: Card['suit'] }) {
       <defs><linearGradient id="fa-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff0a8" /><stop offset="1" stopColor="#ffd24a" /></linearGradient></defs>
       {half}
       <g transform="rotate(180 50 70)">{half}</g>
+      <use href={`#s-${suit}`} x="5" y="5" width="30" height="30" fill="currentColor" stroke="var(--outline)" strokeWidth="1" />
+      <use href={`#s-${suit}`} x="65" y="105" width="30" height="30" fill="currentColor" stroke="var(--outline)" strokeWidth="1" transform="rotate(180 80 120)" />
     </svg>
   );
 }
@@ -115,7 +116,7 @@ export function CardView({ card, faceDown, deck = 'deck-classic', back = 'back-i
       ) : (
         <div className="pips">
           {PIPS[card.rank].map(([x, y], i) => (
-            <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 9 ? ' sm' : card.rank >= 6 ? ' md' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
+            <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 9 ? ' sm' : card.rank >= 7 ? ' md' : card.rank <= 4 ? ' lg' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
           ))}
         </div>
       )}
