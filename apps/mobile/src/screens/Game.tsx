@@ -5,6 +5,7 @@ import {
 } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
 import { Avatar } from '../art/Avatar';
+import { Sticker } from '../art/Stickers';
 import { Confetti, CountUp, FxLayer, reducedMotion, type FlySpec } from '../art/fx';
 import { Scoreboard, scoreRows, type ScoreUnit } from './Scoreboard';
 import { Scene } from '../art/Scene';
@@ -31,6 +32,8 @@ interface Settled {
   outcome: 'win' | 'loss' | 'draw';
   payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; honors: Honor[]; paid: boolean; bonus: number; stagePrize: number;
 }
+
+const Bubble = ({ text }: { text: string }) => (text[0] === '#' ? <div className="bubble stk-b"><Sticker k={text.slice(1)} /></div> : <div className="bubble">{text}</div>);
 
 /** Online mode: the server owns the match; this screen shows the view it sends and posts moves. */
 export interface OnlineCtl { view: RoomView; move: (cardId: string, captureIds: string[]) => void; ready: () => void; leave: () => void; rematch: () => void; again: () => void }
@@ -93,7 +96,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
 
   const say = (seat: number, text: string) => {
     setBubbles((b) => ({ ...b, [seat]: text }));
-    setTimeout(() => setBubbles((b) => (b[seat] === text ? { ...b, [seat]: '' } : b)), 1800);
+    setTimeout(() => setBubbles((b) => (b[seat] === text ? { ...b, [seat]: '' } : b)), text[0] === '#' ? 2600 : 1800);
   };
 
   function announce(seat: number, r: NonNullable<MatchState['lastResult']>) {
@@ -420,7 +423,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
                 {!vs && deal.hands[seat].slice(0, 6).map((_, k) => <CardView key={k} faceDown back={profile.equipped.back} style={{ ['--i' as string]: k }} />)}
               </div>
               <span className="chip2" data-pile={seat}><i />{n(pileOf(seat))}</span>
-              {bubbles[seat] && <div className="bubble">{bubbles[seat]}</div>}
+              {bubbles[seat] && <Bubble text={bubbles[seat]} />}
             </div>
           );
         })}
@@ -484,17 +487,17 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
         <span className="chip2" data-pile={view}>{tr('برداشته', 'Won')} {n(pileOf(view))}</span>
         <span className="chip2"><i />{tr('دسته', 'Stock')} {n(deal.stock.length)}</span>
         <span className="sp" />
-        {bubbles[0] && <div className="bubble">{bubbles[0]}</div>}
+        {bubbles[0] && <Bubble text={bubbles[0]} />}
         {ctx.mode === 'bots' && !online && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label={tr('پیام سریع', 'Quick chat')}>💬</button>}
         {chat && ctx.mode === 'bots' && !online && (
-          <div className="emotes">
+          <div className="emotes grid">
             {EMOTES.map((e) => (
               <button key={e.en} onClick={() => {
                 if (Date.now() - lastChat.current < CHAT_GAP_MS) return;
                 lastChat.current = Date.now();
-                say(0, tr(e.fa, e.en)); setChat(false);
-                if (Math.random() < 0.5) { const s = 1 + Math.floor(Math.random() * (players - 1)); const b = ctx.seats[s].botId; if (b) setTimeout(() => say(s, botById(b).lines.big[0]), 900); }
-              }}>{tr(e.fa, e.en)}</button>
+                say(0, `#${e.k}`); sfx('sticker'); setChat(false);
+                if (Math.random() < 0.5) { const s = 1 + Math.floor(Math.random() * (players - 1)); const b = ctx.seats[s].botId; if (b) setTimeout(() => { say(s, `#${EMOTES[Math.floor(Math.random() * EMOTES.length)].k}`); sfx('sticker'); }, 900); }
+              }}><Sticker k={e.k} /><small>{tr(e.fa, e.en)}</small></button>
             ))}
           </div>
         )}

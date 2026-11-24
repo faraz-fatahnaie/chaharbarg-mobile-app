@@ -9,6 +9,7 @@ import '@fontsource/lalezar/400.css';
 import './styles.css';
 import './cards.css';
 import './game.css';
+import './stickers.css';
 import App from './App';
 
 createRoot(document.getElementById('root')!).render(

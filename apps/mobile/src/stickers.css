@@ -1,0 +1,38 @@
+/* ---------- animated stickers (art bible section 6): transform/opacity only ---------- */
+.stk { width: 64px; height: 64px; display: block; overflow: visible; }
+.stk .body, .stk .st, .stk .seed, .stk .steam, .stk .note, .stk .beak, .stk .lid, .stk .spark, .stk .drop, .stk .pu, .stk .bub, .stk .puff { transform-box: fill-box; transform-origin: center; }
+.stk-anar .body { animation: stk-bounce .8s cubic-bezier(.3,1.6,.5,1) infinite alternate; }
+.stk-anar .seed { animation: stk-seed 1.2s ease-out infinite; } .stk-anar .s1 { animation-delay: .15s; } .stk-anar .s2 { animation-delay: .3s; } .stk-anar .s3 { animation-delay: .45s; }
+.stk-crocus .body { animation: stk-grow 1s ease-in-out infinite alternate; } .stk-crocus .st { animation: stk-wiggle .4s ease-in-out infinite alternate; }
+.stk-tea .body { animation: stk-tilt 1.2s ease-in-out infinite alternate; transform-origin: 50% 90%; }
+.stk-tea .steam { animation: stk-rise 1.4s ease-out infinite; } .stk-tea .b { animation-delay: .6s; }
+.stk-camel .body { animation: stk-tilt 2s ease-in-out infinite alternate; transform-origin: 30% 90%; --a: 5deg; } .stk-camel .lid { animation: stk-blink 2.4s steps(1) infinite; }
+.stk-bulbul .beak { animation: stk-beak .35s ease-in-out infinite alternate; transform-origin: 0 50%; } .stk-bulbul .body { animation: stk-bounce .5s ease-in-out infinite alternate; --y: -3px; }
+.stk-bulbul .note { animation: stk-rise 1.3s ease-out infinite; } .stk-bulbul .n2 { animation-delay: .6s; }
+.stk-coin .body { animation: stk-flip 1.4s ease-in-out infinite; } .stk-coin .spark { animation: stk-grow .7s ease-in-out infinite alternate; }
+.stk-rose .body { animation: stk-droop 1.6s ease-in-out infinite alternate; transform-origin: 50% 100%; } .stk-rose .drop { animation: stk-drip 1.2s ease-in infinite; }
+.stk-samovar .lid { animation: stk-rattle .18s linear infinite alternate; } .stk-samovar .pu { animation: stk-look 1.6s ease-in-out infinite alternate; }
+.stk-samovar .bub { animation: stk-rise 1.1s ease-out infinite; } .stk-samovar .b1 { animation-delay: .35s; } .stk-samovar .b2 { animation-delay: .7s; }
+.stk-cat .body { animation: stk-shake .12s linear infinite alternate; } .stk-cat .puff { animation: stk-rise .9s ease-out infinite; } .stk-cat .p2 { animation-delay: .4s; }
+@keyframes stk-bounce { to { transform: translateY(var(--y, -8px)) scale(1.06); } }
+@keyframes stk-seed { from { transform: translate(0, 0) scale(.3); opacity: 0; } 30% { opacity: 1; } to { transform: translate(0, -10px) scale(1); opacity: 0; } }
+@keyframes stk-grow { to { transform: scale(1.18); } }
+@keyframes stk-wiggle { from { transform: rotate(-8deg); } to { transform: rotate(8deg); } }
+@keyframes stk-tilt { from { transform: rotate(calc(var(--a, 12deg) * -1)); } to { transform: rotate(var(--a, 12deg)); } }
+@keyframes stk-rise { from { transform: translateY(6px); opacity: 0; } 30% { opacity: .9; } to { transform: translateY(-14px); opacity: 0; } }
+@keyframes stk-blink { 0%, 90% { transform: scaleY(1); } 92%, 100% { transform: scaleY(.2); } }
+@keyframes stk-beak { to { transform: rotate(18deg); } }
+@keyframes stk-flip { 0%, 20% { transform: scaleX(1); } 50% { transform: scaleX(.05); } 80%, 100% { transform: scaleX(1); } }
+@keyframes stk-droop { from { transform: rotate(0); } to { transform: rotate(18deg); } }
+@keyframes stk-drip { from { transform: translateY(0); opacity: 1; } to { transform: translateY(22px); opacity: 0; } }
+@keyframes stk-rattle { to { transform: translateY(-3px); } }
+@keyframes stk-look { to { transform: translate(1px, -2px); } }
+@keyframes stk-shake { from { transform: translateX(-2.5px); } to { transform: translateX(2.5px); } }
+@media (prefers-reduced-motion: reduce) { .stk, .stk * { animation: none !important; } }
+
+/* bubble + picker */
+.bubble.stk-b { background: transparent; box-shadow: none; padding: 0; animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
+.bubble.stk-b .stk { width: 72px; height: 72px; filter: drop-shadow(0 3px 4px rgba(0,0,0,.5)); }
+.emotes.grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; overflow: visible; bottom: calc(100% + 4px); padding: 6px; border: 2px solid var(--outline); }
+.emotes.grid button { display: grid; place-items: center; padding: 4px 0 2px; border-radius: 12px; gap: 0; }
+.emotes.grid .stk { width: 44px; height: 44px; } .emotes.grid small { font-size: 10px; font-weight: 800; line-height: 1.1; }
