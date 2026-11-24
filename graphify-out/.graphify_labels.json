@@ -1,14 +1,14 @@
 {
   "0": "App.tsx",
   "1": "economy.ts",
-  "2": "deal.ts",
+  "2": "lib/match.ts",
   "3": "Chaharbarg runbook",
   "4": "mobile/package.json",
   "5": "چهاربرگ (Chaharbarg / Pasur)",
   "6": "AppDelegate",
   "7": "Game.tsx",
   "8": "Communities (14 total, 0 thin omitted)",
-  "9": "lib/match.ts",
+  "9": "store.ts",
   "10": "engine/package.json",
   "11": "cdp.mjs",
   "12": "compilerOptions",
@@ -57,5 +57,7 @@
   "55": "roles/architect.md",
   "56": "roles/builder.md",
   "57": "roles/planner.md",
-  "58": "roles/reviewer.md"
+  "58": "roles/reviewer.md",
+  "59": "roles/security-performance.md",
+  "60": "roles/technical-manager.md"
 }

@@ -1,6 +1,6 @@
 # Knowledge graph (graphify)
 
-`graph.json` + `GRAPH_REPORT.md`: 318 nodes, 832 edges, 14 communities over `docs/`, `packages/engine/src` and `apps/mobile/src` (code via AST, docs via one semantic-extraction pass).
+`graph.json` + `GRAPH_REPORT.md`: 702 nodes, 1444 edges, rebuilt 2026-11-24 with `graphify update .` from the repo root (code via AST; docs as of the last semantic pass). Copied from `graphify-out/`.
 Edges: 93% extracted, 6% inferred (avg confidence 0.82), 0% ambiguous at build time.
 
 Honest notes

@@ -1,147 +1,228 @@
-# Graph Report - gcorpus  (2026-10-28)
+# Graph Report - v1-offline-game  (2026-11-24)
 
 ## Corpus Check
-- Corpus is ~21,256 words - fits in a single context window. You may not need a graph.
+- 118 files · ~187,076 words
+- Verdict: corpus is large enough that graph structure adds value.
+- Unclassified: 32 file(s) not represented in the graph (top: .xml 10, (none) 7, .properties 2)
 
 ## Summary
-- 318 nodes · 832 edges · 14 communities
-- Extraction: 93% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 52 edges (avg confidence: 0.82)
+- 702 nodes · 1444 edges · 61 communities (28 shown, 33 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 20 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
+## Graph Freshness
+- Built from commit: `981307c1`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
+
 ## Community Hubs (Navigation)
-- App shell and navigation
-- Economy and arena data
-- Bots and move choice
-- Rules spec and decisions
-- Profile, ledger, achievements
-- Arena scene art
-- Design principles and economy
-- Card rendering
-- Framework decision
-- Offline architecture
-- Iran distribution and regulation
-- Data model and tamper model
-- UX features and known gaps
-- Deal setup rules
+- App.tsx
+- economy.ts
+- lib/match.ts
+- Chaharbarg runbook
+- mobile/package.json
+- چهاربرگ (Chaharbarg / Pasur)
+- AppDelegate
+- Game.tsx
+- Communities (14 total, 0 thin omitted)
+- store.ts
+- engine/package.json
+- cdp.mjs
+- compilerOptions
+- compilerOptions
+- ExampleInstrumentedTest.java
+- package.json
+- Backlog
+- autopilot.ts
+- gradlew
+- android-apk.sh
+- MainActivity.java
+- ios-sim.sh
+- AGENTS.md
+- Package.swift
+- CapApp-SPM/README.md
+- graph/README.md
+- docs/README.md
+- Shop.tsx
+- Chaharbarg — Design
+- Chronicle 2026-11
+- Chaharbarg (Pasur): product brief
+- Verification Before Completion
+- security-performance.md
+- technical-manager.md
+- Quality bar
+- agents/builder.md
+- scribe.md
+- agents/architect.md
+- agents/planner.md
+- agents/reviewer.md
+- roles/architect.md
+- roles/builder.md
+- roles/planner.md
+- roles/reviewer.md
+- roles/security-performance.md
+- roles/technical-manager.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `Game()` - 24 edges
-2. `update()` - 21 edges
-3. `useLang()` - 20 edges
-4. `useProfile()` - 18 edges
-5. `App()` - 17 edges
-6. `sfx` - 17 edges
-7. `Home()` - 17 edges
-8. `applyDelta()` - 15 edges
-9. `todayKey()` - 12 edges
-10. `Shop()` - 12 edges
+1. `Game()` - 37 edges
+2. `Chronicle 2026-11` - 24 edges
+3. `update()` - 23 edges
+4. `useLang()` - 22 edges
+5. `Home()` - 21 edges
+6. `App()` - 20 edges
+7. `useProfile()` - 20 edges
+8. `sfx` - 19 edges
+9. `applyDelta()` - 16 edges
+10. `Shop()` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Chaharbarg (Pasur) offline Persian card game` --conceptually_related_to--> `Arena system (10 arenas)`  [EXTRACTED]
-  README.md → docs/design.md
-- `Valid-capture hints and combination chips` --conceptually_related_to--> `R12 Capture compulsory for a capturing card (mustCapture)`  [INFERRED]
-  docs/features.md → docs/rules-spec.md
-- `Low-end Android constraint (2 GB, Android 7-10)` --rationale_for--> `Framework decision (most consequential call)`  [INFERRED]
-  docs/features.md → docs/design.md
-- `Next steps (playtest, store policy, APK, iOS, assets, replays)` --references--> `Replays and shareable highlights (v2, needs move log)`  [INFERRED]
-  docs/plan.md → docs/features.md
-- `Deal summary table and Sur banner` --shares_data_with--> `Deal scoring table (clubs 7, Ace 1, Jack 1, 10 of diamonds 3, 2 of clubs 2, Sur 5, Sur Sarbaz 10)`  [INFERRED]
-  docs/features.md → docs/rules-spec.md
+- `CardViewProps` --references--> `Card`  [EXTRACTED]
+  apps/mobile/src/art/CardView.tsx → packages/engine/src/cards.ts
+- `buildCtx()` --calls--> `mulberry32()`  [EXTRACTED]
+  apps/mobile/src/lib/match.ts → packages/engine/src/cards.ts
+- `buildCtx()` --calls--> `newMatch()`  [EXTRACTED]
+  apps/mobile/src/lib/match.ts → packages/engine/src/match.ts
+- `Game()` --calls--> `chooseMove()`  [EXTRACTED]
+  apps/mobile/src/screens/Game.tsx → packages/engine/src/bot.ts
+- `Game()` --calls--> `mulberry32()`  [EXTRACTED]
+  apps/mobile/src/screens/Game.tsx → packages/engine/src/cards.ts
 
 ## Import Cycles
 - None detected.
 
-## Hyperedges (group relationships)
-- **Capture rules by card type (numeric, Queen/King, Jack)** — docs_rules_spec_r7_numeric_capture, docs_rules_spec_r8_queen_king_capture, docs_rules_spec_r9_jack_capture, docs_rules_spec_r10_single_capture_group [EXTRACTED 1.00]
-- **Two-currency economy (Shahi soft, Gohar premium, ledger, rake)** — docs_design_shahi, docs_design_gohar, docs_design_pot_rake, docs_design_tamper_ledger [INFERRED 0.85]
-- **Distribution channels (Bazaar, Myket, iOS PWA, third-party iOS stores)** — docs_research_cafe_bazaar, docs_research_myket, docs_research_ios_pwa, docs_research_third_party_ios [INFERRED 0.85]
+## Communities (61 total, 33 thin omitted)
 
-## Communities (14 total, 0 thin omitted)
+### Community 0 - "App.tsx"
+Cohesion: 0.10
+Nodes (36): AdModal(), App(), start(), startStage(), ICONS, PayModal(), Tab, LANDMARKS (+28 more)
 
-### Community 0 - "App shell and navigation"
+### Community 1 - "economy.ts"
+Cohesion: 0.07
+Nodes (59): timeOfDayFor(), HonorKind, HONORS, Achievement, ACHIEVEMENTS, AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD (+51 more)
+
+### Community 2 - "lib/match.ts"
+Cohesion: 0.10
+Nodes (54): Arena, createProfile(), measure(), botCount, fixMatchTarget(), MAX_TIMEOUTS, rulesFrom(), ctxWith() (+46 more)
+
+### Community 3 - "Chaharbarg runbook"
+Cohesion: 0.10
+Nodes (21): 10. Wiring real ads and payments, 11. Common changes (recipes), 12. Data, storage and reset, 13. Troubleshooting, 14. Working in Iran: tooling notes, 1. Prerequisites, 2. First-time setup, 3. Run in a browser (fastest loop) (+13 more)
+
+### Community 4 - "mobile/package.json"
+Cohesion: 0.05
+Nodes (43): dependencies, @capacitor/android, @capacitor/core, @capacitor/ios, @capacitor/local-notifications, @chaharbarg/engine, @fontsource/vazirmatn, react (+35 more)
+
+### Community 5 - "چهاربرگ (Chaharbarg / Pasur)"
+Cohesion: 0.04
+Nodes (43): Customisation and social-lite, Features and priorities, Gameplay, Persian-first, Progression and economy, Things the brief did not list (Iran/real-world gaps I found), Built (all on branch `worktree-v1-offline-game`), Known gaps (+35 more)
+
+### Community 6 - "AppDelegate"
 Cohesion: 0.09
-Nodes (42): AdModal(), App(), forfeit(), start(), ICONS, PayModal(), Tab, arenaById() (+34 more)
+Nodes (20): Any, AppDelegate, UIScene, UISceneSession, UIWindow, SceneDelegate, UIScene, UISceneSession (+12 more)
 
-### Community 1 - "Economy and arena data"
-Cohesion: 0.09
-Nodes (43): ARENAS, Achievement, ACHIEVEMENTS, AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus(), applyDelta() (+35 more)
+### Community 7 - "Game.tsx"
+Cohesion: 0.11
+Nodes (37): forfeit(), ACH_NAMES, botById(), BotPersona, BOTS, CHAT_GAP_MS, EMOTES, L() (+29 more)
 
-### Community 2 - "Bots and move choice"
-Cohesion: 0.12
-Nodes (35): cardWorth(), chooseMove(), Level, moveGain(), threat(), Card, isJack(), isKing() (+27 more)
+### Community 8 - "Communities (14 total, 0 thin omitted)"
+Cohesion: 0.07
+Nodes (26): Ambiguous Edges - Review These, Communities (14 total, 0 thin omitted), Community 0 - "App shell and navigation", Community 10 - "Iran distribution and regulation", Community 11 - "Data model and tamper model", Community 12 - "UX features and known gaps", Community 13 - "Deal setup rules", Community 1 - "Economy and arena data" (+18 more)
 
-### Community 3 - "Rules spec and decisions"
-Cohesion: 0.16
-Nodes (29): Deal summary table and Sur banner, House rules screen, Later variants (per shodam, sur-cancel), Rule calls to overrule (8 decisions), Rules sources gaps (Sur Sarbaz, multi-group capture), چهاربرگ.docx (primary rules source), Engine test list T1-T32, Jahanshiri (jahanshiri.ir Pasur) (+21 more)
+### Community 9 - "store.ts"
+Cohesion: 0.07
+Nodes (42): cleanStages(), cleanStats(), count(), isObj(), migrateSettings(), Settings, checkName(), isPhotoDataUrl() (+34 more)
 
-### Community 4 - "Profile, ledger, achievements"
-Cohesion: 0.18
-Nodes (20): ACH_NAMES, createProfile(), DEFAULT_SETTINGS, levelOf(), verifyProfile(), Lang, toFa(), useLang() (+12 more)
+### Community 10 - "engine/package.json"
+Cohesion: 0.13
+Nodes (14): devDependencies, typescript, vitest, typescript, vitest, main, name, private (+6 more)
 
-### Community 5 - "Arena scene art"
-Cohesion: 0.12
-Nodes (16): LANDMARKS, Pal, Scene(), STARS, Arena, TimeOfDay, timeOfDayFor(), botById() (+8 more)
+### Community 11 - "cdp.mjs"
+Cohesion: 0.26
+Nodes (11): chrome, clickText(), connect(), errors, ev(), go(), pending, send() (+3 more)
 
-### Community 6 - "Design principles and economy"
-Cohesion: 0.12
-Nodes (22): AdProvider / ads policy (Home and Result only, mock), Arena system (10 arenas), Flow and screens (Home, Game, tabs), Gohar (گوهر) premium currency, Pot and 10% rake sink, Principles and anti-goals, Shahi (شاهی) soft currency, Trophy/XP progression (+25/-12, level-up 2 Gohar) (+14 more)
-
-### Community 7 - "Card rendering"
+### Community 12 - "compilerOptions"
 Cohesion: 0.17
-Nodes (18): backStyle(), CardView(), CardViewProps, GLYPH, PIPS, RANK(), BACK_STYLES, Cosmetic (+10 more)
+Nodes (11): compilerOptions, jsx, lib, module, moduleResolution, noEmit, skipLibCheck, strict (+3 more)
 
-### Community 8 - "Framework decision"
-Cohesion: 0.16
-Nodes (17): Flutter (option), Framework decision (most consequential call), Godot / Defold (option), React Native (option), StoreProvider and idempotent grantPurchase, Unity (option), No FCM push (local notifications first), Real Tapsell/Adivery and Bazaar/Myket adapters (not built) (+9 more)
+### Community 13 - "compilerOptions"
+Cohesion: 0.20
+Nodes (9): compilerOptions, module, moduleResolution, noEmit, skipLibCheck, strict, target, types (+1 more)
 
-### Community 9 - "Offline architecture"
-Cohesion: 0.32
-Nodes (8): Capacitor + React/TS (chosen), packages/engine (pure TS rules engine + bots), apps/mobile (React 19 + Vite + Capacitor 8), Offline architecture (engine + mobile + Capacitor), Ponytail process (minimal dependencies), Online play, seasons, leaderboards (later, needs server), Rules engine feature (2/3/4p, 35 tests), Built slices 1-5 (rules spec, engine, economy, app, native shell)
+### Community 14 - "ExampleInstrumentedTest.java"
+Cohesion: 0.33
+Nodes (5): androidx.test.ext.junit.runners.AndroidJUnit4, ExampleInstrumentedTest, ExampleUnitTest, org.junit.runner.RunWith, org.junit.Test
 
-### Community 10 - "Iran distribution and regulation"
-Cohesion: 0.29
-Nodes (10): iOS via PWA / sideload, Regulatory sensitivity and ESRA age rating, Next steps (playtest, store policy, APK, iOS, assets, replays), Apple removed Iranian apps (2017 sanctions), Capacitor Poolakey plugins (capacitor-poolakey, cordova-plugin-android-iab), Card-game sensitivity (Wikishia, store policy unknown), ESRA/ERSA age rating, Installable PWA as iOS channel (+2 more)
+### Community 15 - "package.json"
+Cohesion: 0.22
+Nodes (8): name, private, scripts, build, dev, test, version, workspaces
 
-### Community 11 - "Data model and tamper model"
-Cohesion: 0.29
-Nodes (7): Data model (Profile, MatchCtx, DealState), Persistence (localStorage profile.v1 / match.v1), Hash-chained ledger tamper model, Cheating surface (editable offline coins), Data safety (local only, erase all data, no analytics), Replays and shareable highlights (v2, needs move log), Resume unfinished match
+### Community 16 - "Backlog"
+Cohesion: 0.25
+Nodes (7): Awaiting approval, Backlog, Blocked, Done, In progress, Inbox, Ready
 
-### Community 12 - "UX features and known gaps"
-Cohesion: 0.40
-Nodes (5): Valid-capture hints and combination chips, Low-end Android constraint (2 GB, Android 7-10), Tutorial (slides built, guided live v2), docs/graph (graphify output), Known gaps
-
-### Community 13 - "Deal setup rules"
+### Community 17 - "autopilot.ts"
 Cohesion: 0.67
-Nodes (3): R1 Players and teams (2/3/4, partners opposite), R2 Deal structure (4 floor, 4 each; rounds 6/4/3), R3 Starter random, dealer rotates
+Nodes (5): clickText(), q(), qa(), run(), sleep()
 
-## Ambiguous Edges - Review These
-- `Wikipedia: Pasur (card game)` → `R19 Clubs scoring (>=7, 3p tie gives third)`  [AMBIGUOUS]
-  docs/rules-spec.md · relation: references
-- `Wikipedia: Pasur (card game)` → `R4 Play direction counter-clockwise`  [AMBIGUOUS]
-  docs/rules-spec.md · relation: references
-- `R17 Sur Sarbaz (lone Jack capture, 10 points)` → `Deal scoring table (clubs 7, Ace 1, Jack 1, 10 of diamonds 3, 2 of clubs 2, Sur 5, Sur Sarbaz 10)`  [AMBIGUOUS]
-  docs/rules-spec.md · relation: shares_data_with
-- `Rules engine feature (2/3/4p, 35 tests)` → `Built slices 1-5 (rules spec, engine, economy, app, native shell)`  [AMBIGUOUS]
-  docs/features.md · relation: shares_data_with
+### Community 18 - "gradlew"
+Cohesion: 0.83
+Nodes (3): gradlew script, die(), warn()
+
+### Community 19 - "android-apk.sh"
+Cohesion: 0.50
+Nodes (3): ANDROID_HOME, JAVA_HOME, android-apk.sh script
+
+### Community 42 - "Shop.tsx"
+Cohesion: 0.11
+Nodes (26): backStyle(), CardView(), CardViewProps, GLYPH, PIPS, RANK(), BACK_STYLES, Cosmetic (+18 more)
+
+### Community 43 - "Chaharbarg — Design"
+Cohesion: 0.11
+Nodes (16): 1. Principles and anti-goals, 2. Flow and screens (all built), 3. Arena system, 4. Economy, 5. Offline architecture, 6. Data model (see `economy.ts`), 7. Visual direction, 8. Framework decision **[review — most consequential call]** (+8 more)
+
+### Community 44 - "Chronicle 2026-11"
+Cohesion: 0.08
+Nodes (24): 2026-11-15 · F-001 Change match targets to 35/65 (2-3 players) and 65/112 (4 players), chosen by players; pick the first player at random (docs/product/brief.md Decisions 5 and 6), 2026-11-15 · F-002 Update docs/rules-spec.md and README to the new match targets (35/65, 65/112) and random first player, 2026-11-15 · F-003 [Employer #1, offline P1] Settings screen: separate music and effects toggles, notifications toggle (local reminders only, no push service), contact support link, send feedback/suggestions, 2026-11-15 · F-004 [Employer #3, offline P2] Live in-game score panel top right: club count, points so far, sur count, total, for every player, 2026-11-15 · F-006 [Employer #7, offline P4] Local profile: change name and profile picture (separate from the avatar), 2026-11-15 · F-039 Remove the 50-point sur cap completely (rule R16, the 'surCap' house-rule toggle in Settings, the engine setting, tests, and mentions in docs/rules-spec.md, docs/plan.md, README). Sur always scores in, 2026-11-16 · F-005 [Employer #14, offline P3] Rebalance levels (1 to unlimited, slow growth): XP for finishing, winning, big margin, sur; penalty for quitting. Deliver a written report of the XP formula to the user for, 2026-11-16 · F-049 A forfeit still counts toward the daily 'play N games' challenge (found in F-005 review). Decide whether it should. (+16 more)
+
+### Community 45 - "Chaharbarg (Pasur): product brief"
+Cohesion: 0.18
+Nodes (10): Chaharbarg (Pasur): product brief, Constraints, Decisions, Goals and success criteria, Key scenarios, Non-goals, Open questions, Problem (+2 more)
+
+### Community 46 - "Verification Before Completion"
+Cohesion: 0.20
+Nodes (9): Common Failures, Key Patterns, Overview, Rationalization Prevention, Red Flags - STOP, The Gate Function, The Iron Law, Verification Before Completion (+1 more)
+
+### Community 47 - "security-performance.md"
+Cohesion: 0.50
+Nodes (3): Review configuration and infrastructure, Review the change for performance, Review the change for security
+
+### Community 48 - "technical-manager.md"
+Cohesion: 0.50
+Nodes (3): Hold a retrospective, Track milestones, Triage an item
+
+### Community 49 - "Quality bar"
+Cohesion: 0.50
+Nodes (3): Always, Quality bar, This project's bars
 
 ## Knowledge Gaps
-- **58 isolated node(s):** `Tab`, `ICONS`, `GLYPH`, `PIPS`, `CardViewProps` (+53 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 70 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **299 isolated node(s):** `chrome`, `ws`, `pending`, `errors`, `PackageDescription` (+294 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 360 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **33 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **What is the exact relationship between `Wikipedia: Pasur (card game)` and `R19 Clubs scoring (>=7, 3p tie gives third)`?**
-  _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **What is the exact relationship between `Wikipedia: Pasur (card game)` and `R4 Play direction counter-clockwise`?**
-  _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **What is the exact relationship between `R17 Sur Sarbaz (lone Jack capture, 10 points)` and `Deal scoring table (clubs 7, Ace 1, Jack 1, 10 of diamonds 3, 2 of clubs 2, Sur 5, Sur Sarbaz 10)`?**
-  _Edge tagged AMBIGUOUS (relation: shares_data_with) - confidence is low._
-- **What is the exact relationship between `Rules engine feature (2/3/4p, 35 tests)` and `Built slices 1-5 (rules spec, engine, economy, app, native shell)`?**
-  _Edge tagged AMBIGUOUS (relation: shares_data_with) - confidence is low._
-- **Why does `Rule calls to overrule (8 decisions)` connect `Rules spec and decisions` to `Offline architecture`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `Next steps (playtest, store policy, APK, iOS, assets, replays)` connect `Iran distribution and regulation` to `Framework decision`, `Offline architecture`, `Data model and tamper model`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Why does `react` connect `App.tsx` to `economy.ts`, `mobile/package.json`, `Game.tsx`, `store.ts`, `Shop.tsx`?**
+  _High betweenness centrality (0.059) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `Game()` (e.g. with `byRank()` and `label()`) actually correct?**
   _`Game()` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `chrome`, `ws`, `pending` to the rest of the system?**
+  _299 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `App.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.10083256244218317 - nodes in this community are weakly interconnected._
+- **Should `economy.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.06993006993006994 - nodes in this community are weakly interconnected._
+- **Should `lib/match.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.09859791949344188 - nodes in this community are weakly interconnected._
+- **Should `Chaharbarg runbook` be split into smaller, more focused modules?**
+  _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
