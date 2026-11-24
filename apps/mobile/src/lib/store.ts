@@ -3,6 +3,7 @@ import type { MatchState } from '@chaharbarg/engine';
 import { createProfile, migrateSettings, verifyProfile, type Profile } from '../economy/economy';
 import { fixMatchTarget } from './match';
 import { isPhotoDataUrl } from './identity';
+import { cleanStages } from '../data/stages';
 
 // ponytail: localStorage is enough for a profile + 40-entry ledger; move to SQLite (Capacitor) if saves grow or the OS evicts it.
 const KEY = 'chaharbarg.profile.v1';
@@ -17,7 +18,7 @@ function load(): Profile {
       // old builds stored 62 / 100 / 'single'; storage may also hold edited values
       const t: unknown = settings.target;
       settings.target = t === 'long' || t === 100 ? 'long' : 'short';
-      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, settings }, Date.now());
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), settings }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */

@@ -81,3 +81,28 @@ describe('profile + photo storage', () => {
     expect(data.has(PHOTO_KEY)).toBe(false);
   });
 });
+
+describe('solo stage progress', () => {
+  it('starts empty and survives a restart', async () => {
+    const s = await fresh();
+    expect(s.getProfile().stages).toEqual([]);
+    s.update((q) => ({ ...q, stages: ['stage-1'] }));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stages).toEqual(['stage-1']);
+  });
+
+  it('drops unknown, duplicate and non-string entries; old saves get []', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    data.set(PROFILE_KEY, JSON.stringify({ ...base, stages: ['stage-2', 'stage-2', 'nope', 7, null] }));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stages).toEqual(['stage-2']);
+    delete base.stages;
+    data.set(PROFILE_KEY, JSON.stringify(base));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stages).toEqual([]);
+    data.set(PROFILE_KEY, JSON.stringify({ ...base, stages: 'stage-1' }));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stages).toEqual([]);
+  });
+});

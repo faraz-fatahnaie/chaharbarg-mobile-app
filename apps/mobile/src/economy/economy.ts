@@ -56,6 +56,8 @@ export interface Profile {
   achievements: string[];
   purchases: string[];
   tutorialDone: boolean;
+  /** cleared solo stage ids (data/stages.ts) */
+  stages: string[];
   tampered: number;
   ledger: LedgerEntry[];
 }
@@ -112,7 +114,7 @@ export function createProfile(now: number): Profile {
     login: { last: '', streak: 0 },
     daily: { date: '', progress: {}, claimed: [] },
     ads: { day: '', watched: 0, lastAt: 0 },
-    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, tampered: 0, ledger: [],
+    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], tampered: 0, ledger: [],
   };
   return applyDelta(blank, START_SHAHI, 0, 'welcome', now);
 }
