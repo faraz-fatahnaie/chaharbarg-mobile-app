@@ -28,7 +28,7 @@ Rules of thumb: (1) every interactive object has a dark outline, a top highlight
   --bevel:inset 0 2px 0 rgba(255,255,255,.45),inset 0 -4px 0 rgba(0,0,0,.28);
 }
 ```
-Four-colour suits (spade navy, club green, heart red, diamond orange) so suits read at 24px without relying on shape alone; this also serves colour-blind players. Never use pure `#000`/`#fff`.
+Traditional two-colour suits (hearts and diamonds red, spades and clubs black), as players expect. Never use pure `#000`/`#fff`.
 
 ## 2. Typography
 
