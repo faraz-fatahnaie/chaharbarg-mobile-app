@@ -13,6 +13,7 @@ import { adStatus, checkAchievements, clearStage, grantAd, honorUnlocked, LEVEL_
 import { STAGES } from '../data/stages';
 import { HONORS, type Honor } from '../data/honors';
 import { useLang } from '../lib/i18n';
+import type { RoomView } from '../lib/online';
 import { MAX_TIMEOUTS, TURN_SECONDS, timeoutMove } from '../lib/match';
 import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
@@ -29,10 +30,14 @@ interface Settled {
   payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; honors: Honor[]; paid: boolean; bonus: number; stagePrize: number;
 }
 
-export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void; onForfeit: () => void }) {
+/** Online mode: the server owns the match; this screen shows the view it sends and posts moves. */
+export interface OnlineCtl { view: RoomView; move: (cardId: string, captureIds: string[]) => void; ready: () => void; leave: () => void }
+
+export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void; onForfeit: () => void; online?: OnlineCtl }) {
   const { tr, n, lang } = useLang();
   const profile = useProfile();
-  const [mc, setMc] = useState<MatchState>(ctx.match);
+  const [mcLocal, setMc] = useState<MatchState>(ctx.match);
+  const mc = online ? online.view.match! : mcLocal;
   const [sel, setSel] = useState<string | null>(null);
   const [pick, setPick] = useState<string[]>([]);
   const [banner, setBanner] = useState<{ a: string; b?: string } | null>(null);
@@ -50,13 +55,14 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
   const arena = arenaById(ctx.arenaId);
   const players = mc.config.players;
   const deal = mc.deal;
-  const isBot = (seat: number) => ctx.seats[seat].botId !== null;
-  const view = ctx.mode === 'pnp' ? deal.turn : 0;
-  const myTurn = mc.phase === 'playing' && !isBot(deal.turn) && !handoff && !summary && !result;
+  const isBot = (seat: number) => !online && ctx.seats[seat].botId !== null;
+  const view = online ? online.view.mySeat : ctx.mode === 'pnp' ? deal.turn : 0;
+  const myTurn = mc.phase === 'playing' && (online ? deal.turn === view : !isBot(deal.turn)) && !handoff && !summary && !result;
   const table = TABLE_COLORS[profile.equipped.table] ?? { felt: arena.felt, rim: arena.rim };
 
   // persist for resume; clear when the match is finished
   useEffect(() => {
+    if (online) return;
     saveMatch(mc.phase === 'matchOver' ? null : { ...ctx, match: mc });
   }, [mc, ctx]);
 
@@ -70,13 +76,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
     setTimeout(() => setBubbles((b) => (b[seat] === text ? { ...b, [seat]: '' } : b)), 1800);
   };
 
-  function commit(cardId: string, ids: string[]) {
-    const seat = deal.turn;
-    const m2 = matchPlay(mc, cardId, ids);
-    setMc(m2);
-    setSel(null);
-    setPick([]);
-    const r = m2.lastResult!;
+  function announce(seat: number, r: NonNullable<MatchState['lastResult']>) {
     sfx(r.captured.length ? 'capture' : 'card');
     if (r.sur) {
       sfx('sur');
@@ -89,15 +89,25 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
     } else if (r.captured.length >= 4 && ctx.seats[seat].botId) {
       say(seat, botById(ctx.seats[seat].botId!).lines.big[0]);
     }
+  }
+
+  function commit(cardId: string, ids: string[]) {
+    if (online) { online.move(cardId, ids); setSel(null); setPick([]); return; }
+    const seat = deal.turn;
+    const m2 = matchPlay(mc, cardId, ids);
+    setMc(m2);
+    setSel(null);
+    setPick([]);
+    announce(seat, m2.lastResult!);
     if (m2.phase !== 'playing') {
-      setTimeout(() => setSummary(true), r.sur ? 1300 : 700);
+      setTimeout(() => setSummary(true), m2.lastResult!.sur ? 1300 : 700);
     } else if (ctx.mode === 'pnp') {
       setTimeout(() => setHandoff(true), 450);
     }
   }
 
   // turn timer (vs bots only): 3 timeouts in a row forfeit the match
-  const limit = ctx.mode === 'bots' ? TURN_SECONDS[profile.settings.turnTimer] : 0;
+  const limit = ctx.mode === 'bots' && !online ? TURN_SECONDS[profile.settings.turnTimer] : 0;
   const [left, setLeft] = useState(0);
   const timeouts = useRef(0);
   const play = (cardId: string, ids: string[]) => { timeouts.current = 0; commit(cardId, ids); };
@@ -117,6 +127,27 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit, myTurn, menu, mc]);
+
+  // online: announce each new play, follow the deal summary, and tick the server's turn clock
+  const [clock, setClock] = useState(() => Date.now());
+  const playKey = online ? `${mc.dealNo}:${mc.deal.hands.reduce((a, h) => a + h.length, 0)}:${mc.deal.stock.length}` : '';
+  useEffect(() => {
+    if (online && mc.lastResult && mc.phase === 'playing') announce(mc.lastResult.seat, mc.lastResult);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playKey]);
+  useEffect(() => {
+    if (!online) return;
+    if (mc.phase === 'playing') { setSummary(false); return; }
+    const t = setTimeout(() => setSummary(true), 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online && mc.phase, online && mc.dealNo]);
+  useEffect(() => {
+    if (!online?.view.deadline) return;
+    const id = setInterval(() => setClock(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [online?.view.deadline]);
+  const serverLeft = online?.view.deadline ? Math.max(0, Math.ceil((online.view.deadline - clock) / 1000)) : 0;
 
   // bots take their turn
   useEffect(() => {
@@ -166,6 +197,15 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
 
   // ---- finishing ----
   function finish() {
+    if (online) {
+      if (mc.phase === 'dealOver') { online.ready(); return; }
+      if (settled.current) return;
+      settled.current = true;
+      const hu = unitOf(players, view);
+      setSummary(false);
+      setResult({ outcome: mc.winner === null ? 'draw' : mc.winner === hu ? 'win' : 'loss', payout: 0, trophyDelta: 0, xpGain: 0, levelUps: 0, unlocked: [], honors: [], paid: false, bonus: 0, stagePrize: 0 });
+      return;
+    }
     if (mc.phase === 'dealOver') {
       setMc(matchNextDeal(mc, rng));
       setSummary(false);
@@ -174,7 +214,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
     }
     if (settled.current) return;
     settled.current = true;
-    const hu = unitOf(players, 0);
+    const hu = unitOf(players, view);
     const outcome: Settled['outcome'] = mc.winner === null ? 'draw' : mc.winner === hu ? 'win' : 'loss';
     let surs = 0;
     let sarbaz = 0;
@@ -253,7 +293,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
           <span className="chip" style={{ fontSize: 11 }}>{tr('هدف', 'Goal')} {targetLabel}</span>
           <span className="stockinfo">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Rd')} {n(deal.round + 1)}</span>
         </div>
-        {ctx.mode === 'bots' && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label={tr('پیام سریع', 'Quick chat')}>💬</button>}
+        {ctx.mode === 'bots' && !online && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label={tr('پیام سریع', 'Quick chat')}>💬</button>}
       </div>
       <div className="live">
         <table>
@@ -270,7 +310,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
           </tbody>
         </table>
       </div>
-      {chat && ctx.mode === 'bots' && (
+      {chat && ctx.mode === 'bots' && !online && (
         <div className="emotes">
           {EMOTES.map((e) => (
             <button key={e.en} onClick={() => {
@@ -316,10 +356,10 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
         {ctx.mode === 'bots' && (
           <div className="me-av">
             {bubbles[0] && <div className="bubble">{bubbles[0]}</div>}
-            <div className="avatar" style={{ background: `hsl(${ctx.seats[0].hue} 55% 38%)` }}>{ctx.seats[0].glyph || [...ctx.seats[0].name][0]}</div>
+            <div className="avatar" style={{ background: `hsl(${ctx.seats[view].hue} 55% 38%)` }}>{ctx.seats[view].glyph || [...ctx.seats[view].name][0]}</div>
           </div>
         )}
-        <div className="hint-line">{limit > 0 && myTurn && <b>⏱ {n(Math.max(left, 0))}{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}{hint}</div>
+        <div className="hint-line">{((online ? serverLeft > 0 : limit > 0) && myTurn) && <b>⏱ {n(online ? serverLeft : Math.max(left, 0))}{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}{hint}</div>
         {myTurn && card && opts.length > 1 && (
           <div className="opts">
             {opts.map((o, i) => {
@@ -373,8 +413,8 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
           <div className="sheet col" onClick={(e) => e.stopPropagation()}>
             <h2>{arena.fa}</h2>
             <button className="btn" onClick={() => setMenu(false)}>{tr('ادامهٔ بازی', 'Resume')}</button>
-            <button className="btn ghost" onClick={onExit}>{tr('ذخیره و رفتن به خانه', 'Save and go home')}</button>
-            <span className="mute">{tr('بازی ذخیره می‌شود و بعداً ادامه پیدا می‌کند.', 'The match is saved and can be resumed later.')}</span>
+            <button className="btn ghost" onClick={online ? online.leave : onExit}>{online ? tr('خروج از میز', 'Leave the table') : tr('ذخیره و رفتن به خانه', 'Save and go home')}</button>
+            <span className="mute">{online ? tr('با کد اتاق می‌توانی برگردی؛ تا آن موقع نوبت‌هایت خودکار بازی می‌شود.', 'You can rejoin with the room code; meanwhile your turns are played for you.') : tr('بازی ذخیره می‌شود و بعداً ادامه پیدا می‌کند.', 'The match is saved and can be resumed later.')}</span>
           </div>
         </div>
       )}
@@ -418,13 +458,13 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
                 ? mc.winner === null ? tr('مساوی!', 'Draw!') : tr(`${players === 4 ? unitName(mc.winner) : ctx.seats[mc.winner].name} برنده شد!`, `${players === 4 ? unitName(mc.winner) : ctx.seats[mc.winner].name} wins!`)
                 : result.outcome === 'win' ? tr('بردی! 🎉', 'You won! 🎉') : result.outcome === 'loss' ? tr('این‌بار نشد', 'Not this time') : tr('مساوی', 'Draw')}
             </h1>
-            {ctx.mode === 'bots' && result.paid && (
+            {ctx.mode === 'bots' && !online && result.paid && (
               <div className="grid2">
                 <div className="stat"><b className="row" style={{ justifyContent: 'center' }}><span className="coin" />{result.payout + result.bonus > 0 ? '+' : ''}{n(result.payout + result.bonus)}</b><span className="mute">{tr('شاهی جایزه', 'Shahi prize')}</span></div>
                 <div className="stat"><b>{result.trophyDelta > 0 ? '+' : ''}{n(result.trophyDelta)}</b><span className="mute">{tr('جام', 'Trophies')}</span></div>
               </div>
             )}
-            {ctx.mode === 'bots' && <div className="mute">{result.xpGain > 0 ? '+' : ''}{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
+            {ctx.mode === 'bots' && !online && <div className="mute">{result.xpGain > 0 ? '+' : ''}{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
             {ctx.stageId && result.stagePrize > 0 && (
               <div className="stat"><b className="row" style={{ justifyContent: 'center' }}><span className="coin" />+{n(result.stagePrize)}</b><span className="mute">{tr('جایزهٔ مرحله', 'Stage prize')}</span></div>
             )}
@@ -434,12 +474,13 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
             {result.unlocked.map((id) => (
               <div key={id} className="panel">🏅 {tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}</div>
             ))}
-            {ctx.mode === 'bots' && result.outcome === 'win' && result.paid && result.bonus === 0 && adOk && (
+            {ctx.mode === 'bots' && !online && result.outcome === 'win' && result.paid && result.bonus === 0 && adOk && (
               <button className="btn good" disabled={adBusy} onClick={doubleUp}>▶ {tr(`تماشای ویدیو: ${n(Math.round(result.payout * 0.5))} شاهی بیشتر`, `Watch a video: +${n(Math.round(result.payout * 0.5))} Shahi`)}</button>
             )}
-            {nextStage && <button className="btn primary" onClick={() => onStage(nextStage)}>{tr('مرحلهٔ بعد', 'Next stage')}</button>}
-            <button className={nextStage ? 'btn ghost' : 'btn primary'} onClick={onAgain}>{ctx.stageId ? tr('تلاش دوباره', 'Retry') : tr('بازی دوباره', 'Play again')}</button>
-            <button className="btn ghost" onClick={onExit}>{tr('خانه', 'Home')}</button>
+            {online && <button className="btn primary" onClick={online.leave}>{tr('بازگشت', 'Back')}</button>}
+            {!online && nextStage && <button className="btn primary" onClick={() => onStage(nextStage)}>{tr('مرحلهٔ بعد', 'Next stage')}</button>}
+            {!online && <button className={nextStage ? 'btn ghost' : 'btn primary'} onClick={onAgain}>{ctx.stageId ? tr('تلاش دوباره', 'Retry') : tr('بازی دوباره', 'Play again')}</button>}
+            {!online && <button className="btn ghost" onClick={onExit}>{tr('خانه', 'Home')}</button>}
           </div>
         </div>
       )}

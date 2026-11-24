@@ -10,6 +10,7 @@ import { Game } from './screens/Game';
 import { Home } from './screens/Home';
 import { Settings } from './screens/Settings';
 import { Shop } from './screens/Shop';
+import { Online } from './screens/Online';
 import { Stages } from './screens/Stages';
 import { Stats } from './screens/Stats';
 import { Tutorial } from './screens/Tutorial';
@@ -79,6 +80,7 @@ export default function App() {
   const [saved, setSaved] = useState<MatchCtx | null>(() => loadMatch());
   const [tutorial, setTutorial] = useState(false);
   const [stages, setStages] = useState(false);
+  const [onlineOpen, setOnlineOpen] = useState(false);
   const [pending, setPending] = useState<string | null>(null); // stage waiting for the first-time guide
   const guided = useRef(false);
   const { tr } = useLang();
@@ -138,11 +140,13 @@ export default function App() {
 
   return (
     <div className="app">
-      {playing ? (
+      {onlineOpen ? (
+        <Online onClose={() => setOnlineOpen(false)} />
+      ) : playing ? (
         <Game key={playing.key} ctx={playing.ctx} onExit={exit} onAgain={again} onForfeit={() => { forfeit(); setPlaying(null); }} onStage={(id) => { saveMatch(null); setPlaying(null); setSaved(null); startStage(id); }} />
       ) : (
         <>
-          {tab === 'home' && <Home saved={saved} onStart={start} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} onStages={() => setStages(true)} />}
+          {tab === 'home' && <Home saved={saved} onStart={start} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} onStages={() => setStages(true)} onOnline={() => setOnlineOpen(true)} />}
           {tab === 'shop' && <Shop />}
           {tab === 'stats' && <Stats />}
           {tab === 'settings' && <Settings onTutorial={() => setTutorial(true)} />}

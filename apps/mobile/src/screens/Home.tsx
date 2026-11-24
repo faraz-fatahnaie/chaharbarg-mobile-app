@@ -34,13 +34,14 @@ export function Header() {
   );
 }
 
-export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages }: {
+export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages, onOnline }: {
   saved: MatchCtx | null;
   onStart: (arena: Arena, players: 2 | 3 | 4, mode: 'bots' | 'pnp') => void;
   onResume: () => void;
   onForfeit: () => void;
   onTutorial: () => void;
   onStages: () => void;
+  onOnline: () => void;
 }) {
   const { tr, n, date, lang } = useLang();
   const p = useProfile();
@@ -193,6 +194,7 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
         {canClaimRelief(p, now) && <button className="btn good" onClick={() => { update((q) => claimRelief(q, Date.now())); sfx('coin'); }}>🎁 {tr('هدیه', 'Gift')}</button>}
       </div>
       <button className="btn ghost" style={{ margin: '0 14px 8px' }} onClick={onStages}>🧭 {tr('مرحله‌های تک‌نفره', 'Solo stages')}</button>
+      <button className="btn ghost" style={{ margin: '0 14px 8px' }} onClick={onOnline}>🌐 {tr('بازی آنلاین', 'Online play')}</button>
       {!p.tutorialDone && (
         <button className="btn ghost" style={{ margin: '0 14px 14px' }} onClick={onTutorial}>📖 {tr('آموزش بازی (۵ گوهر جایزه)', 'Learn to play (+5 Gohar)')}</button>
       )}
