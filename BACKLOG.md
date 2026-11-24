@@ -21,13 +21,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-068 Add focus handling and a screen-reader announcement to the inline confirmations in Home (forfeit) and Settings (erase all data).
   Depends on: F-050
   Found while building F-050.
-- [ ] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this).
-  Depends on: F-050
-  Found while building F-050.
 - [ ] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`.
-  Depends on: F-009
-  Found while building F-009.
-- [ ] F-082 Announce newly reached honors on the match-end screen in `Game.tsx`.
   Depends on: F-009
   Found while building F-009.
 
@@ -122,3 +116,5 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-095 Quits still count as played games in the all-player totals (`games`, `losses`, `streak`), unlike daily challenges and the player-count groups. A person should decide whether those should match. (closed: decided: quits count as played games everywhere, a forfeit is a loss)
 - [x] F-094 A save with no `stats` object at all still loads with no `games`/`wins` fields, so `Stats.tsx` would show undefined values. (closed: done: stats default on load)
 - [x] F-096 A save with no `stats` object at all loads without `games`/`wins` fields, so `Stats.tsx` would show undefined values. (closed: done: stats default on load)
+- [x] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this). (closed: done: XP gain shows a sign only when positive)
+- [x] F-082 Announce newly reached honors on the match-end screen in `Game.tsx`. (closed: done: new honors announced on the result screen)

@@ -9,8 +9,9 @@ import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
 import { botById, EMOTES } from '../data/bots';
 import { TABLE_COLORS } from '../data/cosmetics';
-import { adStatus, checkAchievements, clearStage, grantAd, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
+import { adStatus, checkAchievements, clearStage, grantAd, honorUnlocked, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
 import { STAGES } from '../data/stages';
+import { HONORS, type Honor } from '../data/honors';
 import { useLang } from '../lib/i18n';
 import { MAX_TIMEOUTS, TURN_SECONDS, timeoutMove } from '../lib/match';
 import { adProvider } from '../lib/services';
@@ -25,11 +26,11 @@ const label = (c: Card) => `${({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<n
 
 interface Settled {
   outcome: 'win' | 'loss' | 'draw';
-  payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; paid: boolean; bonus: number; stagePrize: number;
+  payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; honors: Honor[]; paid: boolean; bonus: number; stagePrize: number;
 }
 
 export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void; onForfeit: () => void }) {
-  const { tr, n } = useLang();
+  const { tr, n, lang } = useLang();
   const profile = useProfile();
   const [mc, setMc] = useState<MatchState>(ctx.match);
   const [sel, setSel] = useState<string | null>(null);
@@ -182,12 +183,14 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
     let info = { payout: 0, trophyDelta: 0, xpGain: 0, levelUps: 0 };
     let unlocked: string[] = [];
     let stagePrize = 0;
+    let honors: Honor[] = [];
     if (ctx.mode === 'bots') {
       update((p) => {
         const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee, margin, target: mc.config.target }, todayKey(), Date.now());
         info = r;
         const a = checkAchievements(r.profile, Date.now());
         unlocked = a.unlocked;
+        honors = HONORS.filter((h) => !honorUnlocked(p, h) && honorUnlocked(a.profile, h));
         if (ctx.stageId && outcome === 'win') {
           const c = clearStage(a.profile, ctx.stageId, Date.now());
           stagePrize = c.shahi - a.profile.shahi;
@@ -198,7 +201,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
     }
     sfx(outcome === 'win' ? 'win' : outcome === 'loss' ? 'lose' : 'click');
     setSummary(false);
-    setResult({ outcome, ...info, unlocked, paid, bonus: 0, stagePrize });
+    setResult({ outcome, ...info, unlocked, honors, paid, bonus: 0, stagePrize });
   }
 
   async function doubleUp() {
@@ -412,10 +415,13 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
                 <div className="stat"><b>{result.trophyDelta > 0 ? '+' : ''}{n(result.trophyDelta)}</b><span className="mute">{tr('جام', 'Trophies')}</span></div>
               </div>
             )}
-            {ctx.mode === 'bots' && <div className="mute">+{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
+            {ctx.mode === 'bots' && <div className="mute">{result.xpGain > 0 ? '+' : ''}{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
             {ctx.stageId && result.stagePrize > 0 && (
               <div className="stat"><b className="row" style={{ justifyContent: 'center' }}><span className="coin" />+{n(result.stagePrize)}</b><span className="mute">{tr('جایزهٔ مرحله', 'Stage prize')}</span></div>
             )}
+            {result.honors.map((h) => (
+              <div key={h.id} className="panel">🏆 {tr('افتخار جدید:', 'New honor:')} {lang === 'fa' ? h.fa : h.en}</div>
+            ))}
             {result.unlocked.map((id) => (
               <div key={id} className="panel">🏅 {tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}</div>
             ))}
