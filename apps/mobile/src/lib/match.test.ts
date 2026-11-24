@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RULES, mulberry32, newMatch } from '@chaharbarg/engine';
+import { DEFAULT_RULES, legalMoves, mulberry32, newMatch } from '@chaharbarg/engine';
 import { DEFAULT_SETTINGS, createProfile } from '../economy/economy';
-import { fixMatchTarget, rulesFrom, stageCtx } from './match';
+import { fixMatchTarget, rulesFrom, stageCtx, timeoutMove } from './match';
 import type { MatchCtx } from './store';
 
 const profile = (target: 'short' | 'long') => ({ ...createProfile(0), settings: { ...DEFAULT_SETTINGS, target } });
@@ -47,5 +47,18 @@ describe('stageCtx', () => {
     expect(c.match.config.players).toBe(2);
     const p = { ...createProfile(0), stages: ['stage-1'] };
     expect(stageCtx(p, 'stage-2')!.arenaId).toBe('si-o-se-pol');
+  });
+});
+
+describe('timeoutMove', () => {
+  it('always returns a legal move; takes the biggest capture when one exists', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const deal = newMatch({ ...DEFAULT_RULES, players: 2, target: 35 }, mulberry32(seed)).deal;
+      const mv = timeoutMove(deal, deal.turn, mulberry32(seed));
+      const moves = legalMoves(deal, deal.turn);
+      expect(moves.some((m) => m.cardId === mv.cardId && m.captureIds.join() === mv.captureIds.join())).toBe(true);
+      const most = Math.max(...moves.map((m) => m.captureIds.length));
+      if (most > 0) expect(mv.captureIds.length).toBe(most);
+    }
   });
 });

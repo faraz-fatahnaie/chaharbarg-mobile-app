@@ -76,6 +76,11 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         <Tog k="music" label={tr('موسیقی', 'Music')} />
         <Tog k="effects" label={tr('جلوه‌های صوتی', 'Sound effects')} />
         <Tog k="hints" label={tr('نمایش راهنما (برجسته‌کردن برداشت‌های ممکن)', 'Hints (highlight valid captures)')} />
+        <label className="tog"><span>{tr('زمان‌سنج نوبت (با ربات)', 'Turn timer (vs bots)')}</span>
+          <select value={s.turnTimer} onChange={(e) => set('turnTimer', e.target.value as S['turnTimer'])}>
+            <option value="off">{tr('خاموش', 'Off')}</option>
+            <option value="normal">{tr('عادی (۱۵ ثانیه)', 'Normal (15 s)')}</option>
+            <option value="speed">{tr('سریع (۵ ثانیه)', 'Speed (5 s)')}</option></select></label>
         <label className="tog"><span>{tr('زمان روز در آرنا', 'Time of day')}</span>
           <select value={s.timeOfDay} onChange={(e) => set('timeOfDay', e.target.value as S['timeOfDay'])}>
             <option value="auto">{tr('خودکار (ساعت گوشی)', 'Automatic')}</option>

@@ -419,3 +419,11 @@ describe('stats by player count', () => {
     expect(p.stats.games).toBe(3);
   });
 });
+
+describe('turnTimer setting', () => {
+  it('defaults to off and rejects bad saved values', () => {
+    expect(migrateSettings({}).turnTimer).toBe('off');
+    expect(migrateSettings({ turnTimer: 'speed' }).turnTimer).toBe('speed');
+    expect(migrateSettings({ turnTimer: 99 }).turnTimer).toBe('off');
+  });
+});

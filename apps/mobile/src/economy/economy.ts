@@ -31,6 +31,8 @@ export interface Settings {
   mustCapture: boolean;
   openingJack: 'replace' | 'allow';
   surSarbazPoints: 5 | 10;
+  /** per-turn limit vs bots: off, 15 s, or 5 s */
+  turnTimer: 'off' | 'normal' | 'speed';
 }
 
 export interface Stats {
@@ -81,7 +83,7 @@ export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'fa', music: true, effects: true, notifications: false, hints: true, timeOfDay: 'auto',
-  target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
+  target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10, turnTimer: 'off',
 };
 
 /** Load-time migration of saved settings: old `sound` becomes music + effects; bad booleans fall back to defaults. */
@@ -96,6 +98,7 @@ export function migrateSettings(raw: unknown): Settings {
   for (const k of ['music', 'effects', 'notifications'] as const) {
     if (typeof out[k] !== 'boolean') out[k] = DEFAULT_SETTINGS[k];
   }
+  if (!['off', 'normal', 'speed'].includes(out.turnTimer as string)) out.turnTimer = DEFAULT_SETTINGS.turnTimer;
   return out as unknown as Settings;
 }
 
