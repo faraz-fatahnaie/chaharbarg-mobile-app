@@ -164,7 +164,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Blocked
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
@@ -198,3 +197,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target. (closed: moot: F-039 removed the 50-point sur cap)
 - [x] F-040 Close F-022 and F-026, which are moot now. (closed: moot: F-039 removed the 50-point sur cap)
 - [x] F-044 Close F-022 and F-026, which no longer apply. (closed: moot: F-039 removed the 50-point sur cap)
+- [x] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
