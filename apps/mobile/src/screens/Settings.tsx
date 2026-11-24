@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useLang } from '../lib/i18n';
 import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
 import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
@@ -12,6 +12,10 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
   const p = useProfile();
   const s = p.settings;
   const [confirm, setConfirm] = useState(false);
+  const eraseBtn = useRef<HTMLButtonElement>(null);
+  const wasConfirm = useRef(false);
+  // after cancelling, put focus back on the button that opened the confirmation
+  useEffect(() => { if (wasConfirm.current && !confirm) eraseBtn.current?.focus(); wasConfirm.current = confirm; }, [confirm]);
   const photo = usePhoto();
   const [draft, setDraft] = useState(p.name);
   const [nameErr, setNameErr] = useState('');
@@ -117,8 +121,10 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         <a className="btn" href={supportHref(s.lang)}>✉️ {tr('تماس با پشتیبانی', 'Contact support')}</a>
         <a className="btn" href={feedbackHref(s.lang)}>💬 {tr('ارسال نظر و پیشنهاد', 'Send feedback / suggestions')}</a>
         <span className="mute">{SUPPORT_EMAIL}</span>
-        {!confirm ? <button className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
-          : <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); resetAll(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div>}
+        {!confirm ? <button ref={eraseBtn} className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
+          : <div role="alertdialog" aria-label={tr('پاک‌کردن همهٔ اطلاعات؟ این کار برگشت‌ندارد.', 'Erase all data? This cannot be undone.')} className="col">
+            <span role="alert" className="mute">{tr('همهٔ اطلاعات پاک می‌شود و برگشت‌ندارد.', 'This erases everything and cannot be undone.')}</span>
+            <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); resetAll(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" autoFocus onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div></div>}
         <span className="mute">{tr('چهاربرگ — نسخهٔ ۰٫۱ · همه‌چیز روی همین گوشی ذخیره می‌شود.', 'Chaharbarg v0.1 · everything is stored on this device.')}</span>
       </div>
     </div>

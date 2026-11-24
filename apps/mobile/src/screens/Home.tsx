@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { targetOptions } from '@chaharbarg/engine';
 import { Scene } from '../art/Scene';
 import { ARENAS, timeOfDayFor, type Arena } from '../data/arenas';
@@ -53,6 +53,10 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
   const [msg, setMsg] = useState('');
   const [adBusy, setAdBusy] = useState(false);
   const [confirmQuit, setConfirmQuit] = useState(false);
+  const quitBtn = useRef<HTMLButtonElement>(null);
+  const wasQuit = useRef(false);
+  // after cancelling, put focus back on the button that opened the confirmation
+  useEffect(() => { if (wasQuit.current && !confirmQuit) quitBtn.current?.focus(); wasQuit.current = confirmQuit; }, [confirmQuit]);
   const loss = forfeitXpLoss(p.xp);
   const arena = ARENAS.find((a) => a.id === sel)!;
   const locked = p.trophies < arena.minTrophies;
@@ -77,19 +81,19 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
         <div className="panel col" style={{ margin: '0 14px' }}>
           <b>{tr('بازی نیمه‌تمام داری', 'You have a match in progress')}</b>
           {saved.mode === 'bots' && confirmQuit ? (
-            <>
-              <span className="mute">{loss > 0
+            <div role="alertdialog" aria-label={tr('انصراف از بازی؟', 'Forfeit the match?')} className="col">
+              <span role="alert" className="mute">{loss > 0
                 ? tr(`با انصراف، این بازی باخت حساب می‌شود، ${n(loss)} XP از دست می‌دهی و برای چالش بازی‌های امروز شمرده نمی‌شود.`, `Forfeiting counts as a loss, costs you ${loss} XP, and doesn't count toward today's games challenge.`)
                 : tr('با انصراف، این بازی باخت حساب می‌شود و برای چالش بازی‌های امروز شمرده نمی‌شود.', "Forfeiting counts as a loss and doesn't count toward today's games challenge.")}</span>
               <div className="row">
                 <button className="btn danger grow" onClick={() => { setConfirmQuit(false); onForfeit(); }}>{tr('مطمئنم، انصراف', 'Yes, forfeit')}</button>
-                <button className="btn ghost" onClick={() => setConfirmQuit(false)}>{tr('ادامهٔ بازی', 'Keep playing')}</button>
+                <button className="btn ghost" autoFocus onClick={() => setConfirmQuit(false)}>{tr('ادامهٔ بازی', 'Keep playing')}</button>
               </div>
-            </>
+            </div>
           ) : (
             <div className="row">
               <button className="btn primary grow" onClick={onResume}>{tr('ادامه', 'Resume')}</button>
-              {saved.mode === 'bots' && <button className="btn ghost" onClick={() => setConfirmQuit(true)}>{tr('انصراف (باخت)', 'Forfeit (loss)')}</button>}
+              {saved.mode === 'bots' && <button ref={quitBtn} className="btn ghost" onClick={() => setConfirmQuit(true)}>{tr('انصراف (باخت)', 'Forfeit (loss)')}</button>}
               {saved.mode === 'pnp' && <button className="btn ghost" onClick={onForfeit}>{tr('لغو', 'Discard')}</button>}
             </div>
           )}
