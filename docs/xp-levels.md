@@ -13,12 +13,11 @@ A review document. Every value is a named constant in `apps/mobile/src/economy/e
 | `XP_SARBAZ` | 10 | per sur sarbaz |
 | `XP_SUR_CAP` | 50 | max sur + sarbaz XP in one match |
 | `XP_QUIT` | 40 | taken away on forfeit |
-| `XP_SINGLE_SHARE` | 0.2 | a single-deal match earns this share of the match XP, rounded; the forfeit penalty is not scaled (F-051) |
-| `BIG_MARGIN_SHARE` | 0.25 | `bigMarginAt(t) = t === 'single' ? 10 : ceil(t × 0.25)` |
+| `BIG_MARGIN_SHARE` | 0.25 | `bigMarginAt(t) = ceil(t × 0.25)` |
 
 Margin is the player's unit score minus the best other unit's score at match end (0 when not a win).
 
-Big-margin thresholds: target 35 → 9, 62 → 16, 65 → 17, 100 → 25, 112 → 28, single deal → 10.
+Big-margin thresholds: target 35 → 9, 62 → 16, 65 → 17, 100 → 25, 112 → 28.
 
 ## Level curve
 

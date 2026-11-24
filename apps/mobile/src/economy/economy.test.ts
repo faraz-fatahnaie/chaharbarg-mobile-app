@@ -5,7 +5,7 @@ import {
   AD_COOLDOWN_MS, AD_DAILY_CAP, AD_REWARD, adStatus, applyDelta, buyCosmetic, canClaimRelief, canEnter, checkAchievements,
   claimChallenge, claimLogin, claimRelief, createProfile, dailyChallenges, equip, grantAd, grantPurchase, levelOf,
   loginPreview, payFee, settleMatch, verifyProfile, DEFAULT_SETTINGS, migrateSettings, type MatchSummary,
-  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, xpShare, forfeitXpLoss, XP_QUIT,
+  LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, forfeitXpLoss, XP_QUIT,
   honorUnlocked, currentTitle, stageUnlocked, clearStage, winRate, cleanByPlayers,
 } from './economy';
 import { HONORS } from '../data/honors';
@@ -104,27 +104,10 @@ describe('arena entry and match settlement', () => {
   });
 });
 
-describe('single-deal XP (F-051)', () => {
-  const single = (over: Partial<MatchSummary> = {}) => win({ target: 'single', ...over });
-  it('single-deal loss and win earn 0.2x, rounded', () => {
-    expect(settleMatch(createProfile(NOW), single({ outcome: 'loss' }), 'd', NOW).xpGain).toBe(4);
-    expect(settleMatch(createProfile(NOW), single({ surs: 1, sarbaz: 1 }), 'd', NOW).xpGain).toBe(13);
-  });
-  it('62 and 100 matches are unchanged', () => {
+describe('match XP', () => {
+  it('62 and 100 matches pay the same', () => {
     expect(settleMatch(createProfile(NOW), win({ surs: 1 }), 'd', NOW).xpGain).toBe(55);
     expect(settleMatch(createProfile(NOW), win({ surs: 1, target: 100 }), 'd', NOW).xpGain).toBe(55);
-  });
-  it('xpShare', () => {
-    expect([xpShare(35), xpShare(100), xpShare('single')]).toEqual([1, 1, 0.2]);
-  });
-  it('the forfeit penalty is not scaled', () => {
-    expect(matchXp(single({ quit: true }))).toBe(matchXp(win({ quit: true })));
-  });
-  it('a single deal cannot buy a level', () => {
-    const p = { ...createProfile(NOW), xp: 90 };
-    const r = settleMatch(p, single({ outcome: 'loss' }), 'd', NOW);
-    expect([r.profile.xp, r.levelUps, r.profile.gohar]).toEqual([94, 0, p.gohar]);
-    expect(settleMatch(p, win({ outcome: 'loss' }), 'd', NOW).levelUps).toBe(1);
   });
 });
 
@@ -150,7 +133,7 @@ describe('levels and XP', () => {
     expect(levelOf(NaN)).toBe(1);
   });
   it('bigMarginAt', () => {
-    expect([35, 62, 65, 100, 112, 'single'].map((t) => bigMarginAt(t as number | 'single'))).toEqual([9, 16, 17, 25, 28, 10]);
+    expect([35, 62, 65, 100, 112].map(bigMarginAt)).toEqual([9, 16, 17, 25, 28]);
   });
   it('matchXp', () => {
     expect(matchXp(win({ outcome: 'loss' }))).toBe(20);
@@ -333,7 +316,7 @@ describe('honors', () => {
   it('unlocks exactly at each threshold', () => {
     for (const h of HONORS) {
       const mk = (v: number) => h.kind === 'level' ? { ...base(), xp: xpForLevel(v) } : withStats({ [h.kind]: v });
-      expect(honorUnlocked(mk(h.at - 1), h), h.id).toBe(false);
+      expect(honorUnlocked(h.kind === 'level' ? { ...base(), xp: xpForLevel(h.at) - 1 } : mk(h.at - 1), h), h.id).toBe(false);
       expect(honorUnlocked(mk(h.at), h), h.id).toBe(true);
     }
   });
@@ -436,5 +419,20 @@ describe('stats by player count', () => {
     for (const bad of [undefined, null, 'x', []]) expect(cleanByPlayers(bad)).toEqual({});
     expect(cleanByPlayers({ 2: { games: 'a', wins: -1, surs: NaN }, 5: { games: 1, wins: 1, surs: 0 } })).toEqual({ 2: { games: 0, wins: 0, surs: 0 } });
     expect(cleanByPlayers({ 3: { games: 2, wins: 9, surs: 1.7 } })).toEqual({ 3: { games: 2, wins: 2, surs: 1 } });
+  });
+});
+
+describe('settings validation (F-062)', () => {
+  it('replaces every out-of-range saved value with the default', () => {
+    const bad = migrateSettings({ lang: 'xx', timeOfDay: 3, target: 'single', openingJack: null, surSarbazPoints: 7, hints: 'yes', mustCapture: 0, noSurInLastRound: {} });
+    expect(bad).toEqual(DEFAULT_SETTINGS);
+  });
+});
+
+describe('turnTimer setting', () => {
+  it('defaults to off and rejects bad saved values', () => {
+    expect(migrateSettings({}).turnTimer).toBe('off');
+    expect(migrateSettings({ turnTimer: 'speed' }).turnTimer).toBe('speed');
+    expect(migrateSettings({ turnTimer: 99 }).turnTimer).toBe('off');
   });
 });

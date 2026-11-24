@@ -129,3 +129,14 @@ describe('stats by player count in old saves', () => {
     expect(p.name).toBe('Sara');
   });
 });
+
+describe('save with no stats object', () => {
+  it('loads with zeroed totals', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    delete base.stats;
+    data.set(PROFILE_KEY, JSON.stringify(base));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stats).toMatchObject({ games: 0, wins: 0, byPlayers: {} });
+  });
+});

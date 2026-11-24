@@ -17,7 +17,7 @@ Android: `cd apps/mobile && npm run cap:sync && npx cap open android` (needs And
 2. Clubs need **≥7**; 3p tie → third player gets the 7.
 3. A card that can capture **must** capture (you choose which card and which combination). Your brief's default was "not forced"; Pagat/Wikipedia/Jahanshiri all say a capturable card can't be dropped.
 4. A lone Jack on the opening floor is **replaced** (your default was "no redeal"); sources agree.
-5. Match is played to **62** (Pagat/Wikipedia/Jahanshiri); configurable. Sur always scores in full (no points cap). Last player to capture takes the leftovers.
+5. Match is played to **35 or 65** (2–3 players) or **65 or 112** (4 players), chosen by the players; the first player is picked at random. Sur always scores in full (no points cap). Last player to capture takes the leftovers.
 6. Play direction counter-clockwise; dealer rotates.
 7. "Last turn" (no sur) = the **last round** of the deal (your docx uses نوبت for rounds).
 8. One capture group per play (no source allows several).

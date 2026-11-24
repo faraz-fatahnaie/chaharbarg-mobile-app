@@ -43,6 +43,7 @@ export async function readPhoto(file: File): Promise<string> {
     if (!ctx) throw new Error('not-image');
     ctx.drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
     const out = canvas.toDataURL('image/jpeg', 0.85);
+    canvas.width = canvas.height = 0; // free the bitmap (iOS canvas memory limit)
     if (!isPhotoDataUrl(out)) throw new Error('not-image');
     return out;
   } finally {

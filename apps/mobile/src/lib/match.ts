@@ -1,4 +1,4 @@
-import { DEFAULT_RULES, mulberry32, newMatch, targetOptions, type RulesConfig } from '@chaharbarg/engine';
+import { DEFAULT_RULES, chooseMove, legalMoves, mulberry32, newMatch, targetOptions, type DealState, type Move, type Rng, type RulesConfig } from '@chaharbarg/engine';
 import { timeOfDayFor, type Arena } from '../data/arenas';
 import { BOTS, botById } from '../data/bots';
 import { stageUnlocked, type Profile } from '../economy/economy';
@@ -66,3 +66,14 @@ export function stageCtx(p: Profile, stageId: string): MatchCtx | null {
 }
 
 export const botCount = BOTS.length;
+
+export const TURN_SECONDS = { off: 0, normal: 15, speed: 5 } as const;
+export const MAX_TIMEOUTS = 3;
+
+/** Move played for a player who ran out of time: the biggest capture if any exists, else the best drop. */
+export function timeoutMove(deal: DealState, seat: number, rng: Rng): Move {
+  const caps = legalMoves(deal, seat).filter((m) => m.captureIds.length);
+  // ponytail: biggest capture by card count, not by points; rank by points if players complain
+  if (caps.length) return caps.reduce((a, b) => (b.captureIds.length > a.captureIds.length ? b : a));
+  return chooseMove(deal, seat, 'hard', rng);
+}

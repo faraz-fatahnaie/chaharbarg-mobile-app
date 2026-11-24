@@ -18,7 +18,7 @@ function load(): Profile {
       // old builds stored 62 / 100 / 'single'; storage may also hold edited values
       const t: unknown = settings.target;
       settings.target = t === 'long' || t === 100 ? 'long' : 'short';
-      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), stats: { ...p.stats, byPlayers: cleanByPlayers(p.stats?.byPlayers) }, settings }, Date.now());
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), stats: { ...createProfile(0).stats, ...p.stats, byPlayers: cleanByPlayers(p.stats?.byPlayers) }, settings }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */
@@ -103,10 +103,19 @@ export function saveMatch(c: MatchCtx | null) {
   }
 }
 
+/** Shape check for a saved match: enough that resuming cannot crash on missing parts. */
+function validCtx(c: unknown): c is MatchCtx {
+  const x = c as MatchCtx | null;
+  const n = x?.match?.config?.players;
+  return (n === 2 || n === 3 || n === 4) && !!x!.match.deal && Array.isArray(x!.seats) && x!.seats.length === n
+    && typeof x!.arenaId === 'string' && (x!.mode === 'bots' || x!.mode === 'pnp');
+}
+
 export function loadMatch(): MatchCtx | null {
   try {
     const raw = localStorage.getItem(MATCH_KEY);
-    return raw ? fixMatchTarget(JSON.parse(raw) as MatchCtx) : null;
+    const c: unknown = raw ? JSON.parse(raw) : null;
+    return validCtx(c) ? fixMatchTarget(c) : null;
   } catch {
     return null;
   }
