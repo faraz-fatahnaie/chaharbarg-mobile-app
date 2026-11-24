@@ -23,7 +23,7 @@ export function Online({ onClose }: { onClose: () => void }) {
   const stop = useRef<() => void>(noop);
 
   useEffect(() => {
-    signIn(p.name || (tr('مهمان', 'Guest'))).then(setMyId).catch(() => setErr(tr('به سرور وصل نشد. آیا سرور روشن است؟', 'Cannot reach the server. Is it running?')));
+    signIn(p.name || `${tr('مهمان', 'Guest')} ${100 + Math.floor(Math.random() * 900)}`).then(setMyId).catch(() => setErr(tr('به سرور وصل نشد. آیا سرور روشن است؟', 'Cannot reach the server. Is it running?')));
     return () => stop.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
