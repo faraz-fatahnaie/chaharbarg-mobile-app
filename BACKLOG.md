@@ -36,7 +36,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## In progress
 
 ## Awaiting approval
-- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Blocked
 
@@ -124,3 +123,4 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-096 A save with no `stats` object at all loads without `games`/`wins` fields, so `Stats.tsx` would show undefined values. (closed: done: stats default on load)
 - [x] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this). (closed: done: XP gain shows a sign only when positive)
 - [x] F-082 Announce newly reached honors on the match-end screen in `Game.tsx`. (closed: done: new honors announced on the result screen)
+- [x] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
