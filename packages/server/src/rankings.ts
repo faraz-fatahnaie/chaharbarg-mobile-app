@@ -21,6 +21,11 @@ export const PRIZES: Record<Period, [number, number][]> = {
 
 export interface Row { id: string; name: string; wins: number; games: number; coins: number }
 
+export interface LadderRow { id: string; name: string; trophies: number }
+export function ladder(db: Db, limit = 20): LadderRow[] {
+  return db.prepare('SELECT id, name, trophies FROM players WHERE trophies > 0 ORDER BY trophies DESC, name ASC LIMIT ?').all(limit) as unknown as LadderRow[];
+}
+
 export function rankings(db: Db, from: number, to = Infinity, limit = 20): Row[] {
   return db.prepare(`
     SELECT rp.player_id AS id, p.name AS name, SUM(rp.won) AS wins, COUNT(*) AS games, SUM(rp.coins) AS coins

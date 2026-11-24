@@ -6,7 +6,7 @@ import {
 export const MAX_TIMEOUTS = 3;
 export type TimerMode = 0 | 5 | 15; // seconds per turn; 0 = off (a 60 s idle limit still applies)
 
-export interface Seat { playerId: string | null; name: string; bot: boolean; timeouts: number; abandoned: boolean }
+export interface Seat { playerId: string | null; name: string; bot: boolean; timeouts: number; abandoned: boolean; left?: boolean }
 
 export interface Room {
   code: string;
@@ -19,6 +19,14 @@ export interface Room {
   /** epoch ms when the current turn times out */
   deadline: number | null;
   ready: Set<number>;
+  /** ranked = found by matchmaking and worth ladder trophies; friendly = private room (friends or bots), no trophies */
+  ranked: boolean;
+  /** seats that asked for a rematch */
+  rematch: Set<number>;
+  /** ladder trophy change per seat once a ranked match is over */
+  deltas: (number | null)[] | null;
+  /** matches started in this room (1 after start, +1 per rematch) */
+  games: number;
 }
 
 /** What one seat is allowed to see: other hands and the stock are same-length placeholders. */
@@ -33,6 +41,10 @@ export interface RoomView {
   match: MatchState | null;
   deadline: number | null;
   ready: number[];
+  ranked: boolean;
+  rematch: number[];
+  deltas: (number | null)[] | null;
+  games: number;
 }
 
 export interface FinishInfo {
@@ -40,6 +52,7 @@ export interface FinishInfo {
   /** per seat */
   players: { playerId: string | null; name: string; won: boolean; abandoned: boolean }[];
   winnerUnit: number | null;
+  ranked: boolean;
 }
 
 export interface RoomsOptions {
@@ -51,7 +64,10 @@ export interface RoomsOptions {
   botDelayMs?: number;
   /** turn limit when the room timer is off (ms) */
   idleLimitMs?: number;
-  onFinish?: (info: FinishInfo) => void;
+  /** milliseconds per timer second (1000; tests shrink it) */
+  secondMs?: number;
+  /** may return the ladder trophy change per seat (ranked matches) */
+  onFinish?: (info: FinishInfo) => (number | null)[] | void;
 }
 
 export class RoomError extends Error {
@@ -70,7 +86,8 @@ export class Rooms {
   private dealPauseMs: number;
   private botDelayMs: number;
   private idleLimitMs: number;
-  private onFinish: (i: FinishInfo) => void;
+  private secondMs: number;
+  private onFinish: (i: FinishInfo) => (number | null)[] | void;
 
   constructor(o: RoomsOptions = {}) {
     this.rng = o.rng ?? mulberry32(Date.now() ^ (Math.random() * 2 ** 32));
@@ -78,6 +95,7 @@ export class Rooms {
     this.dealPauseMs = o.dealPauseMs ?? 6000;
     this.botDelayMs = o.botDelayMs ?? 900;
     this.idleLimitMs = o.idleLimitMs ?? 60_000;
+    this.secondMs = o.secondMs ?? 1000;
     this.onFinish = o.onFinish ?? (() => {});
   }
 
@@ -87,7 +105,7 @@ export class Rooms {
     return r;
   }
 
-  create(playerId: string, name: string, players: number, target: number, timer: number): Room {
+  create(playerId: string, name: string, players: number, target: number, timer: number, ranked = false): Room {
     if (players !== 2 && players !== 3 && players !== 4) throw new RoomError(400, 'players must be 2, 3 or 4');
     if (!(targetOptions(players) as readonly number[]).includes(target)) throw new RoomError(400, 'target not allowed');
     if (timer !== 0 && timer !== 5 && timer !== 15) throw new RoomError(400, 'timer must be 0, 5 or 15');
@@ -95,7 +113,7 @@ export class Rooms {
     do code = Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(this.rng() * CODE_CHARS.length)]).join('');
     while (this.rooms.has(code));
     const room: Room = {
-      code, hostId: playerId, timer: timer as TimerMode, status: 'lobby', match: null, deadline: null, ready: new Set(),
+      code, hostId: playerId, timer: timer as TimerMode, status: 'lobby', match: null, deadline: null, ready: new Set(), ranked, rematch: new Set(), deltas: null, games: 0,
       config: { ...DEFAULT_RULES, players, target: target as RulesConfig['target'] },
       seats: [{ playerId, name, bot: false, timeouts: 0, abandoned: false }],
     };
@@ -113,6 +131,45 @@ export class Rooms {
     return r;
   }
 
+  /** Leaving: a lobby seat is freed (the host leaving closes the room); after a match the seat stops counting for a rematch. */
+  leave(code: string, playerId: string): void {
+    const r = this.get(code);
+    const i = this.seatOf(r, playerId);
+    if (r.status === 'lobby') {
+      if (r.hostId === playerId) { this.rooms.delete(code); this.listeners.delete(code); return; }
+      r.seats.splice(i, 1);
+    } else if (r.status === 'over') {
+      r.seats[i].left = true;
+      r.rematch.delete(i);
+      this.maybeRematch(r);
+    } else return;
+    this.publish(r);
+  }
+
+  /** Friendly rooms only: when every human still at the table asks, a new match starts with the same seats and rules. */
+  requestRematch(code: string, playerId: string): void {
+    const r = this.get(code);
+    const i = this.seatOf(r, playerId);
+    if (r.ranked) throw new RoomError(409, 'ranked matches have no rematch');
+    if (r.status !== 'over') throw new RoomError(409, 'the match is not over');
+    r.seats[i].left = false;
+    r.rematch.add(i);
+    this.maybeRematch(r);
+    this.publish(r);
+  }
+
+  private maybeRematch(r: Room) {
+    const humans = r.seats.flatMap((s, i) => (s.playerId && !s.left ? [i] : []));
+    if (!humans.length || !humans.every((i) => r.rematch.has(i))) return;
+    r.seats.forEach((s) => { if (s.playerId) { s.bot = false; s.abandoned = false; } s.timeouts = 0; });
+    r.rematch = new Set();
+    r.deltas = null;
+    r.status = 'playing';
+    r.games++;
+    r.match = newMatch(r.config, this.rng);
+    this.afterChange(r);
+  }
+
   /** Host starts the game; with fillBots the empty seats are played by bots. */
   start(code: string, playerId: string, fillBots: boolean): Room {
     const r = this.get(code);
@@ -121,6 +178,7 @@ export class Rooms {
     if (r.seats.length < r.config.players && !fillBots) throw new RoomError(409, 'waiting for players');
     while (r.seats.length < r.config.players) r.seats.push({ playerId: null, name: `Bot ${r.seats.length}`, bot: true, timeouts: 0, abandoned: false });
     r.status = 'playing';
+    r.games++;
     r.match = newMatch(r.config, this.rng);
     this.afterChange(r);
     return r;
@@ -188,7 +246,7 @@ export class Rooms {
     return {
       code: r.code, status: r.status, mySeat: seat, hostId: r.hostId, config: r.config, timer: r.timer,
       seats: r.seats.map((s) => ({ name: s.name, bot: s.bot, connected: s.bot || (!!s.playerId && !!byPlayer?.get(s.playerId)?.size), abandoned: s.abandoned })),
-      match, deadline: r.deadline, ready: [...r.ready],
+      match, deadline: r.deadline, ready: [...r.ready], ranked: r.ranked, rematch: [...r.rematch], deltas: r.deltas, games: r.games,
     };
   }
 
@@ -221,10 +279,10 @@ export class Rooms {
       this.clearTimer(r.code);
       r.status = 'over';
       const winners = new Set(r.seats.flatMap((_, i) => (unitOf(r.config.players, i) === m.winner ? [i] : [])));
-      this.onFinish({
-        config: r.config, winnerUnit: m.winner,
+      r.deltas = this.onFinish({
+        config: r.config, winnerUnit: m.winner, ranked: r.ranked,
         players: r.seats.map((s, i) => ({ playerId: s.playerId, name: s.name, won: winners.has(i), abandoned: s.abandoned })),
-      });
+      }) ?? null;
     } else if (m.phase === 'dealOver') {
       r.ready = new Set();
       this.later(r, this.dealPauseMs, () => this.nextDeal(r));
@@ -233,7 +291,7 @@ export class Rooms {
       if (seat.bot) {
         this.later(r, this.botDelayMs, () => this.botMove(r));
       } else {
-        const ms = r.timer ? r.timer * 1000 : this.idleLimitMs;
+        const ms = r.timer ? r.timer * this.secondMs : this.idleLimitMs;
         r.deadline = this.now() + ms;
         this.later(r, ms, () => this.timeout(r));
       }

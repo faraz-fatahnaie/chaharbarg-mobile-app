@@ -112,7 +112,7 @@ describe('rankings and prizes', () => {
   const SAT = Date.UTC(2026, 10, 14); // Saturday 2026-11-14
   const win = (db: ReturnType<typeof openDb>, ts: number, ids: [string, boolean, boolean?][], players = 2) => {
     const real = Date.now; Date.now = () => ts; // recordResult stamps with Date.now()
-    try { recordResult(db, { config: { players, target: 35 } as any, winnerUnit: 0, players: ids.map(([id, won, ab]) => ({ playerId: id, name: id, won, abandoned: !!ab })) }); } finally { Date.now = real; }
+    try { recordResult(db, { config: { players, target: 35 } as any, winnerUnit: 0, ranked: false, players: ids.map(([id, won, ab]) => ({ playerId: id, name: id, won, abandoned: !!ab })) }); } finally { Date.now = real; }
   };
   it('weeks start on Saturday, months on the 1st', () => {
     expect(new Date(periodStart('week', Date.UTC(2026, 10, 18, 12))).toISOString()).toBe('2026-11-14T00:00:00.000Z');

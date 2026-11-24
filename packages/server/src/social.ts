@@ -2,6 +2,7 @@ import type { Db } from './db';
 import { RoomError } from './rooms';
 
 type Event = Record<string, unknown>;
+export interface Person { id: string; name: string }
 
 /** Per-player push channel (friend requests, messages, chat). A player is "online" while any connection is open. */
 export class Hub {
@@ -46,9 +47,27 @@ export class Social {
 
   code(id: string): string { return (this.db.prepare('SELECT fcode FROM players WHERE id = ?').get(id) as { fcode: string }).fcode; }
 
-  request(me: { id: string; name: string }, fcode: string) {
-    const t = this.db.prepare('SELECT id, name FROM players WHERE fcode = ?').get(String(fcode).toUpperCase()) as { id: string; name: string } | undefined;
-    if (!t) throw new RoomError(404, 'no player with that code');
+  /** Find players by name (prefix match, at least 3 characters); blocked players in either direction are hidden. */
+  search(me: { id: string }, q: unknown): Person[] {
+    const s = typeof q === 'string' ? q.trim() : '';
+    if ([...s].length < 3 || [...s].length > 24) throw new RoomError(400, 'type at least 3 characters');
+    const like = s.replace(/[\\%_]/g, (c) => `\\${c}`) + '%';
+    const rows = this.db.prepare("SELECT id, name FROM players WHERE name LIKE ? ESCAPE '\\' AND id != ? ORDER BY name LIMIT 20").all(like, me.id) as unknown as Person[];
+    return rows.filter((p) => !this.isBlocked(me.id, p.id));
+  }
+
+  /** Tell a friend about a room they can join. */
+  invite(me: { id: string; name: string }, to: string, room: { code: string; players: number }) {
+    if (!this.areFriends(me.id, to) || this.isBlocked(me.id, to)) throw new RoomError(403, 'you can only invite friends');
+    this.hub.notify(to, { type: 'invite', code: room.code, players: room.players, from: { id: me.id, name: me.name } });
+  }
+
+  /** Ask by friend code (6 characters) or by player id (found through search). */
+  request(me: { id: string; name: string }, who: string) {
+    const t = (/^[0-9a-f-]{36}$/.test(who)
+      ? this.db.prepare('SELECT id, name FROM players WHERE id = ?').get(who)
+      : this.db.prepare('SELECT id, name FROM players WHERE fcode = ?').get(String(who).toUpperCase())) as { id: string; name: string } | undefined;
+    if (!t) throw new RoomError(404, 'no such player');
     if (t.id === me.id) throw new RoomError(400, 'that is your own code');
     if (this.isBlocked(me.id, t.id)) throw new RoomError(403, 'cannot send a request to this player');
     if (this.areFriends(me.id, t.id)) throw new RoomError(409, 'already friends');

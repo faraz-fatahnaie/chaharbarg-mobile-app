@@ -24,6 +24,7 @@ export function openDb(path = ':memory:') {
     CREATE TABLE IF NOT EXISTS result_players (result_id INTEGER NOT NULL, player_id TEXT, name TEXT NOT NULL, won INTEGER NOT NULL, abandoned INTEGER NOT NULL, coins INTEGER NOT NULL);
   `);
   try { db.exec('ALTER TABLE players ADD COLUMN fcode TEXT'); } catch { /* column exists */ }
+  try { db.exec('ALTER TABLE players ADD COLUMN trophies INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS players_fcode ON players (fcode)');
   for (const r of db.prepare('SELECT id FROM players WHERE fcode IS NULL').all() as { id: string }[]) db.prepare('UPDATE players SET fcode = ? WHERE id = ?').run(newFriendCode(db), r.id);
   return db;
@@ -62,6 +63,21 @@ export function authenticate(db: Db, header: string | undefined): Account | null
   const row = db.prepare('SELECT id, name, token_hash FROM players WHERE id = ?').get(m[1]) as { id: string; name: string; token_hash: string } | undefined;
   if (!row || !same(row.token_hash, sha(m[2]))) return null;
   return { id: row.id, name: row.name };
+}
+
+/** Ladder trophies (ranked matches only): +25 for a win, -12 for a loss or abandoning, never below 0. Same values as the offline arenas. */
+export const WIN_TROPHIES = 25;
+export const LOSS_TROPHIES = 12;
+export const trophiesOf = (db: Db, id: string) => (db.prepare('SELECT trophies FROM players WHERE id = ?').get(id) as { trophies: number } | undefined)?.trophies ?? 0;
+
+export function applyTrophies(db: Db, f: FinishInfo): (number | null)[] {
+  return f.players.map((p) => {
+    if (!p.playerId) return null;
+    const before = trophiesOf(db, p.playerId);
+    const after = p.won && !p.abandoned ? before + WIN_TROPHIES : Math.max(0, before - LOSS_TROPHIES);
+    db.prepare('UPDATE players SET trophies = ? WHERE id = ?').run(after, p.playerId);
+    return after - before;
+  });
 }
 
 export function recordResult(db: Db, f: FinishInfo) {
