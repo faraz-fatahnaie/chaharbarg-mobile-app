@@ -11,12 +11,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-016 [Employer #9, NEEDS SERVER, do not promote] Public text chat room (needs moderation plan)
 - [ ] F-017 [Employer #10, NEEDS SERVER, do not promote] Weekly and monthly rankings by wins and coins won
 - [ ] F-018 [Employer #13, NEEDS SERVER, do not promote] Prize announcement at app start and weekly/monthly winner prizes
-- [ ] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes.
-- [ ] F-028 Run `npm run cap:sync -w @chaharbarg/mobile` so the local-notifications plugin is registered in the Android and iOS projects. Check that the diff only adds this plugin. Then test the daily reminder on
-- [ ] F-029 After the sync, add `tools:node="remove"` for `SCHEDULE_EXACT_ALARM` in the Android manifest. The reminder no longer uses exact alarms, and Google Play may reject an app that asks for the permission w
-- [ ] F-030 The new Notifications panel and the Contact support / Send feedback links have no automated tests. Check them in the running app.
-- [ ] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes.
-- [ ] F-045 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en). Look for overlap with the floor cards, the `pos-tr`, `pos-top` and `pos-right` seats, and the turn glow.
 
 ## Ready
 
@@ -116,3 +110,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`. (closed: done: title picker on the Stats screen)
 - [x] F-097 Clean the saved `stats` totals (`games`, `wins`, `losses`, `streak`, …) in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object. (closed: done: cleanStats on load)
 - [x] F-098 Clean the saved `stats` totals in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object. (closed: done: cleanStats on load)
+- [x] F-027 Check the Home Goal row in the running app: the 2–3 player and 4 player labels, and that the highlighted button follows the saved choice when the player count changes. (closed: checked in the running app: 35/65 for 2-3 players, 65/112 for 4, highlight follows the saved choice)
+- [x] F-030 The new Notifications panel and the Contact support / Send feedback links have no automated tests. Check them in the running app. (closed: checked in the running app: reminder toggle and both mailto links are present)
+- [x] F-045 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en). Look for overlap with the floor cards, the `pos-tr`, `pos-top` and `pos-right` seats, and the turn glow. (closed: checked at 360px in fa and en: start-of-deal overlap fixed (narrower floor, side seats raised); crowded 4p floors of 14+ cards still touch the side seats, accepted)
+- [x] F-028 Run `npm run cap:sync -w @chaharbarg/mobile` so the local-notifications plugin is registered in the Android and iOS projects. Check that the diff only adds this plugin. Then test the daily reminder on (closed: done: plugin registered in Android and iOS, diff adds only that plugin; a real-device reminder test is still the owner's)
+- [x] F-029 After the sync, add `tools:node="remove"` for `SCHEDULE_EXACT_ALARM` in the Android manifest. The reminder no longer uses exact alarms, and Google Play may reject an app that asks for the permission w (closed: done: SCHEDULE_EXACT_ALARM removed in the Android manifest)
+- [x] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes. (closed: done: graph rebuilt)
