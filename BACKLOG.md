@@ -34,6 +34,7 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Ready
 
 ## In progress
+- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Awaiting approval
 
@@ -65,7 +66,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-026 R16's 50-point sur cap can never apply in a 35-point match. Ask the employer whether the cap should change with the target. (closed: moot: F-039 removed the 50-point sur cap)
 - [x] F-040 Close F-022 and F-026, which are moot now. (closed: moot: F-039 removed the 50-point sur cap)
 - [x] F-044 Close F-022 and F-026, which no longer apply. (closed: moot: F-039 removed the 50-point sur cap)
-- [x] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 - [x] F-019 `docs/plan.md` line 20 still says the match is played to 62, and line 21 doesn't mention the random first player. Update both. (closed: fixed in docs)
 - [x] F-020 `docs/features.md` line 8 still says "match to 62/100/single deal". (closed: fixed in docs)
 - [x] F-021 Once F-001 lands, check its target choices (single deal kept or dropped, any default) against these docs. (closed: moot: F-001/F-002 landed, code and docs use 35/65/112)
