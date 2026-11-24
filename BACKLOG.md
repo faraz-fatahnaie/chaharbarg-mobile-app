@@ -130,6 +130,18 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-087 The person should confirm the `[review]` thresholds and the Persian names.
   Depends on: F-009
   Found while building F-009.
+- [ ] F-093 Quits still count as played games in the all-player totals (`games`, `losses`, `streak`). A person should decide whether those should match the groups.
+  Depends on: F-010
+  Found while building F-010.
+- [ ] F-094 A save with no `stats` object at all still loads with no `games`/`wins` fields, so `Stats.tsx` would show undefined values.
+  Depends on: F-010
+  Found while building F-010.
+- [ ] F-095 Quits still count as played games in the all-player totals (`games`, `losses`, `streak`), unlike daily challenges and the player-count groups. A person should decide whether those should match.
+  Depends on: F-010
+  Found while building F-010.
+- [ ] F-096 A save with no `stats` object at all loads without `games`/`wins` fields, so `Stats.tsx` would show undefined values.
+  Depends on: F-010
+  Found while building F-010.
 
 ## Ready
 - [ ] F-089 Staged solo mode from beginner to advanced with guided tutorial and a (part 2: Stage prize and unlock logic)
@@ -150,9 +162,9 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   Depends on: F-091
 
 ## In progress
-- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Awaiting approval
+- [ ] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
 
 ## Blocked
 - [ ] F-012 [Employer #8, offline-capable, P10] Optional turn timer, normal 15s / speed 5s. On timeout auto-drop: first a card that captures nothing, else the best card; auto-capture if a capture exists. 3 timeou
