@@ -74,9 +74,16 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   }, [mc, ctx]);
 
   useEffect(() => {
-    if (profile.settings.music) startAmbient(arena.ambient);
+    if (profile.settings.music) startAmbient(arena.ambient, arena.id);
     return () => stopAmbient();
   }, [arena.ambient, profile.settings.music]);
+
+  const wasMyTurn = useRef(false);
+  useEffect(() => {
+    if (myTurn && !wasMyTurn.current && !noFx) sfx('turn');
+    wasMyTurn.current = myTurn;
+  }, [myTurn]);
+  useEffect(() => { if (!vs && !noFx) sfx('deal'); }, [vs, mc.dealNo, deal.round]);
 
   useEffect(() => {
     if (!vs) return;
@@ -92,7 +99,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   function announce(seat: number, r: NonNullable<MatchState['lastResult']>) {
     sfx(r.captured.length ? 'capture' : 'card');
     if (r.sur) {
-      sfx('sur');
+      sfx(r.sur === 'sarbaz' ? 'sarbaz' : 'sur');
       setBanner(r.sur === 'sarbaz'
         ? { a: tr('سور سرباز!', 'Sur Sarbaz!'), b: `+${n(mc.config.surSarbazPoints)}` }
         : { a: tr('سور!', 'Sur!'), b: '+۵'.replace('۵', n(5)) });
@@ -131,6 +138,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     const id = setInterval(() => {
       s -= 1;
       setLeft(s);
+      if (s > 0 && s <= 5) sfx('timer', s <= 3 ? 1 : 0);
       if (s > 0) return;
       clearInterval(id);
       if (++timeouts.current >= MAX_TIMEOUTS) { onForfeit(); return; }
@@ -183,7 +191,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
 
   function tapHand(c: Card) {
     if (!myTurn) return;
-    sfx('click');
+    sfx('select');
     if (sel === c.id) {
       const o = captureOptions(c, deal.floor);
       if (o.length === 1) play(c.id, o[0].map((x) => x.id));
@@ -367,6 +375,10 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
             ] });
           });
           setFlies((f) => [...f, ...out]);
+          now.forEach((t, u) => {
+            const d = t - (snap.current.live[u] ?? t);
+            for (let k = 0; k < Math.min(d, 14); k++) setTimeout(() => sfx('score', k), D - 120 + 350 + k * 100);
+          });
           const chip = pileEl as HTMLElement;
           setTimeout(() => { chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }, D - 60);
           if (lr.sur) { setTimeout(() => setSurfx(true), land); setTimeout(() => setSurfx(false), land + 600); }
