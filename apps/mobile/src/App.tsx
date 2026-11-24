@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { arenaById, type Arena } from './data/arenas';
 import { canEnter, payFee, settleMatch, todayKey } from './economy/economy';
 import { buildCtx, stageCtx } from './lib/match';
@@ -13,6 +13,7 @@ import { Shop } from './screens/Shop';
 import { Stages } from './screens/Stages';
 import { Stats } from './screens/Stats';
 import { Tutorial } from './screens/Tutorial';
+import { STAGES } from './data/stages';
 import { GOHAR_PACKS } from './data/cosmetics';
 
 type Tab = 'home' | 'shop' | 'stats' | 'settings';
@@ -78,6 +79,8 @@ export default function App() {
   const [saved, setSaved] = useState<MatchCtx | null>(() => loadMatch());
   const [tutorial, setTutorial] = useState(false);
   const [stages, setStages] = useState(false);
+  const [pending, setPending] = useState<string | null>(null); // stage waiting for the first-time guide
+  const guided = useRef(false);
   const { tr } = useLang();
 
   useEffect(() => {
@@ -98,6 +101,14 @@ export default function App() {
   }
 
   function startStage(id: string) {
+    // guide first, once per session, for a player who never finished it; Close skips it
+    if (!guided.current && !getProfile().tutorialDone && id === STAGES[0].id) {
+      guided.current = true;
+      setPending(id);
+      setTutorial(true);
+      setStages(false);
+      return;
+    }
     const ctx = stageCtx(getProfile(), id);
     if (!ctx) return;
     setStages(false);
@@ -145,8 +156,8 @@ export default function App() {
           </nav>
         </>
       )}
-      {stages && <Stages busy={!!saved} onPlay={startStage} onClose={() => setStages(false)} />}
-      {tutorial && <Tutorial onClose={() => setTutorial(false)} />}
+      {stages && <Stages busy={!!saved} onPlay={startStage} onGuide={() => setTutorial(true)} onClose={() => setStages(false)} />}
+      {tutorial && <Tutorial onClose={() => { setTutorial(false); if (pending) { const id = pending; setPending(null); startStage(id); } }} />}
       <AdModal />
       <PayModal />
     </div>

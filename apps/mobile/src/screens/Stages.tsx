@@ -5,7 +5,7 @@ import { useLang } from '../lib/i18n';
 import { sfx } from '../lib/sound';
 import { useProfile } from '../lib/store';
 
-export function Stages({ busy, onPlay, onClose }: { busy: boolean; onPlay: (id: string) => void; onClose: () => void }) {
+export function Stages({ busy, onPlay, onGuide, onClose }: { busy: boolean; onPlay: (id: string) => void; onGuide: () => void; onClose: () => void }) {
   const { tr, n, lang } = useLang();
   const p = useProfile();
   return (
@@ -26,6 +26,7 @@ export function Stages({ busy, onPlay, onClose }: { busy: boolean; onPlay: (id: 
                   {done ? '✓ ' + tr('انجام شد', 'Cleared') : open ? tr('باز', 'Open') : '🔒 ' + tr('قفل', 'Locked')}
                   {' · '}{n(s.prize)} {tr('شاهی', 'Shahi')}
                 </div>
+                {s.tip && open && !done && <div className="mute" style={{ marginTop: 4 }}>💡 {tr(s.tip.fa, s.tip.en)}</div>}
               </div>
               <button className="btn primary" disabled={!open || busy} onClick={() => { sfx('click'); onPlay(s.id); }}>
                 {done ? tr('دوباره', 'Replay') : tr('شروع', 'Start')}
@@ -33,6 +34,7 @@ export function Stages({ busy, onPlay, onClose }: { busy: boolean; onPlay: (id: 
             </div>
           );
         })}
+        <button className="btn ghost" onClick={onGuide}>📖 {tr('آموزش بازی', 'How to play')}</button>
         <button className="btn ghost" onClick={onClose}>{tr('بستن', 'Close')}</button>
       </div>
     </div>
