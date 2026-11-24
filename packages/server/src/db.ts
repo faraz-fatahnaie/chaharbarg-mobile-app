@@ -14,9 +14,28 @@ export function openDb(path = ':memory:') {
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT NOT NULL, created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS results (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, players INTEGER NOT NULL, target INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS relations (a TEXT NOT NULL, b TEXT NOT NULL, kind TEXT NOT NULL, ts INTEGER NOT NULL, PRIMARY KEY (a, b, kind));
+    CREATE TABLE IF NOT EXISTS dms (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, sender TEXT NOT NULL, recipient TEXT NOT NULL, text TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, sender TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL, hidden INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS chat_reports (msg_id INTEGER NOT NULL, reporter TEXT NOT NULL, PRIMARY KEY (msg_id, reporter));
+    CREATE TABLE IF NOT EXISTS mutes (player_id TEXT PRIMARY KEY, until INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS awarded (period TEXT PRIMARY KEY);
+    CREATE TABLE IF NOT EXISTS prizes (id INTEGER PRIMARY KEY AUTOINCREMENT, period TEXT NOT NULL, rank INTEGER NOT NULL, player_id TEXT NOT NULL, name TEXT NOT NULL, shahi INTEGER NOT NULL, gohar INTEGER NOT NULL, claimed INTEGER NOT NULL DEFAULT 0, UNIQUE (period, rank));
     CREATE TABLE IF NOT EXISTS result_players (result_id INTEGER NOT NULL, player_id TEXT, name TEXT NOT NULL, won INTEGER NOT NULL, abandoned INTEGER NOT NULL, coins INTEGER NOT NULL);
   `);
+  try { db.exec('ALTER TABLE players ADD COLUMN fcode TEXT'); } catch { /* column exists */ }
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS players_fcode ON players (fcode)');
+  for (const r of db.prepare('SELECT id FROM players WHERE fcode IS NULL').all() as { id: string }[]) db.prepare('UPDATE players SET fcode = ? WHERE id = ?').run(newFriendCode(db), r.id);
   return db;
+}
+
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+/** Short code players share to be found as friends. */
+function newFriendCode(db: DatabaseSync): string {
+  for (;;) {
+    const c = Array.from(randomBytes(6), (b) => CODE_CHARS[b % CODE_CHARS.length]).join('');
+    if (!db.prepare('SELECT 1 FROM players WHERE fcode = ?').get(c)) return c;
+  }
 }
 export type Db = ReturnType<typeof openDb>;
 
@@ -33,7 +52,7 @@ export function guestLogin(db: Db, name: string, id?: string, token?: string): A
   }
   const nid = randomUUID();
   const ntoken = randomBytes(24).toString('hex');
-  db.prepare('INSERT INTO players (id, name, token_hash, created) VALUES (?, ?, ?, ?)').run(nid, name, sha(ntoken), Date.now());
+  db.prepare('INSERT INTO players (id, name, token_hash, created, fcode) VALUES (?, ?, ?, ?, ?)').run(nid, name, sha(ntoken), Date.now(), newFriendCode(db));
   return { id: nid, name, token: ntoken };
 }
 

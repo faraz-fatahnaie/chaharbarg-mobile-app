@@ -1,8 +1,11 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { authenticate, guestLogin, openDb, recordResult, type Db } from './db';
 import { RoomError, Rooms, type RoomsOptions } from './rooms';
+import { Hub, Social } from './social';
+import { claimPrize, periodStart, prizeInfo, rankings, type Period } from './rankings';
 
 const MAX_BODY = 4096;
+const UUID = /^[0-9a-f-]{36}$/;
 const CARD_ID = /^[SHDC](1[0-3]|[1-9])$/;
 const cleanName = (x: unknown) => {
   const s = typeof x === 'string' ? x.replace(/[\u0000-\u001f\u007f]/g, '').trim() : '';
@@ -15,6 +18,10 @@ export interface ServerOptions extends RoomsOptions { db?: Db }
 export function createApp(opts: ServerOptions = {}) {
   const db = opts.db ?? openDb();
   const rooms = new Rooms({ ...opts, onFinish: (f) => { recordResult(db, f); opts.onFinish?.(f); } });
+
+  const hub = new Hub();
+  const now = opts.now ?? Date.now;
+  const social = new Social(db, hub, now);
 
   const send = (res: ServerResponse, status: number, body: unknown) => {
     res.writeHead(status, { 'content-type': 'application/json' });
@@ -58,6 +65,53 @@ export function createApp(opts: ServerOptions = {}) {
       return send(res, 200, { code: r.code });
     }
 
+    // ---- account, friends, direct messages, public chat, rankings, prizes ----
+    if (path === '/api/me' && method === 'GET') return send(res, 200, { id: me.id, name: me.name, code: social.code(me.id) });
+    if (path === '/api/me/events' && method === 'GET') {
+      res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+      res.write(': hello\n\n');
+      const off = hub.add(me.id, (e) => res.write(`data: ${JSON.stringify(e)}\n\n`));
+      const ping = setInterval(() => res.write(': ping\n\n'), 20_000);
+      req.on('close', () => { clearInterval(ping); off(); });
+      return;
+    }
+    if (path === '/api/friends' && method === 'GET') return send(res, 200, social.list(me));
+    const fr = /^\/api\/friends\/(request|accept|reject|remove|block|unblock)$/.exec(path);
+    if (fr && method === 'POST') {
+      const b = await readJson(req);
+      if (fr[1] === 'request') social.request(me, String(b.code ?? ''));
+      else {
+        const id = String(b.id ?? '');
+        if (!UUID.test(id)) throw new RoomError(400, 'bad id');
+        social[fr[1] as 'accept' | 'reject' | 'remove' | 'block' | 'unblock'](me, id);
+      }
+      return send(res, 200, { ok: true });
+    }
+    const dm = /^\/api\/dm\/([0-9a-f-]{36})$/.exec(path);
+    if (dm) {
+      if (method === 'GET') return send(res, 200, { messages: social.dmHistory(me, dm[1]) });
+      if (method === 'POST') return send(res, 200, social.sendDm(me, dm[1], (await readJson(req)).text));
+    }
+    if (path === '/api/chat' && method === 'GET') return send(res, 200, { messages: social.chatHistory(me) });
+    if (path === '/api/chat' && method === 'POST') return send(res, 200, social.postChat(me, (await readJson(req)).text));
+    if (path === '/api/chat/report' && method === 'POST') {
+      const id = Number((await readJson(req)).id);
+      if (!Number.isInteger(id)) throw new RoomError(400, 'bad id');
+      social.report(me, id);
+      return send(res, 200, { ok: true });
+    }
+    if (path === '/api/rankings' && method === 'GET') {
+      const kind = new URL(req.url ?? '', 'http://x').searchParams.get('period') === 'month' ? 'month' : 'week';
+      return send(res, 200, { period: kind, since: periodStart(kind as Period, now()), rows: rankings(db, periodStart(kind as Period, now())) });
+    }
+    if (path === '/api/prizes' && method === 'GET') return send(res, 200, prizeInfo(db, me.id, now()));
+    if (path === '/api/prizes/claim' && method === 'POST') {
+      const id = Number((await readJson(req)).id);
+      const r = Number.isInteger(id) ? claimPrize(db, me.id, id) : null;
+      if (!r) throw new RoomError(404, 'no such unclaimed prize');
+      return send(res, 200, r);
+    }
+
     const m = /^\/api\/rooms\/([A-Z0-9]{5})\/(join|start|move|ready|events)$/.exec(path);
     if (!m) return send(res, 404, { error: 'not found' });
     const [, code, action] = m;
@@ -96,5 +150,5 @@ export function createApp(opts: ServerOptions = {}) {
       else { console.error(e); send(res, 500, { error: 'server error' }); }
     });
   });
-  return { server, rooms, db, close: () => { rooms.close(); server.closeAllConnections(); server.close(); } };
+  return { server, rooms, db, hub, social, close: () => { rooms.close(); server.closeAllConnections(); server.close(); } };
 }

@@ -1,0 +1,61 @@
+import type { Db } from './db';
+
+export type Period = 'week' | 'month';
+const DAY = 86_400_000;
+
+/** Start (UTC ms) of the period containing `now`: weeks begin on Saturday, months on the 1st. */
+export function periodStart(kind: Period, now: number): number {
+  const d = new Date(now);
+  if (kind === 'month') return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+  const day0 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return day0 - ((d.getUTCDay() + 1) % 7) * DAY; // Saturday = 6 -> 0 days back
+}
+const prevStart = (kind: Period, start: number) => (kind === 'week' ? start - 7 * DAY : periodStart('month', start - DAY));
+const keyOf = (kind: Period, start: number) => `${kind}:${new Date(start).toISOString().slice(0, 10)}`;
+
+/** Prizes per rank (Shahi, Gohar), no real money. [review] */
+export const PRIZES: Record<Period, [number, number][]> = {
+  week: [[500, 0], [300, 0], [150, 0]],
+  month: [[2000, 3], [1200, 2], [600, 1]],
+};
+
+export interface Row { id: string; name: string; wins: number; games: number; coins: number }
+
+export function rankings(db: Db, from: number, to = Infinity, limit = 20): Row[] {
+  return db.prepare(`
+    SELECT rp.player_id AS id, p.name AS name, SUM(rp.won) AS wins, COUNT(*) AS games, SUM(rp.coins) AS coins
+    FROM result_players rp JOIN results r ON r.id = rp.result_id JOIN players p ON p.id = rp.player_id
+    WHERE r.ts >= ? AND r.ts < ? GROUP BY rp.player_id HAVING wins > 0 ORDER BY wins DESC, coins DESC, games ASC, p.name ASC LIMIT ?
+  `).all(from, to === Infinity ? Number.MAX_SAFE_INTEGER : to, limit) as unknown as Row[];
+}
+
+/** Awards the prizes of any finished period that has not been awarded yet (idempotent). */
+export function ensurePrizes(db: Db, now: number) {
+  for (const kind of ['week', 'month'] as Period[]) {
+    const end = periodStart(kind, now);
+    const start = prevStart(kind, end);
+    const key = keyOf(kind, start);
+    if (db.prepare('SELECT 1 FROM awarded WHERE period = ?').get(key)) continue;
+    rankings(db, start, end, 3).forEach((r, i) => {
+      const [shahi, gohar] = PRIZES[kind][i];
+      db.prepare('INSERT OR IGNORE INTO prizes (period, rank, player_id, name, shahi, gohar) VALUES (?, ?, ?, ?, ?, ?)').run(key, i + 1, r.id, r.name, shahi, gohar);
+    });
+    db.prepare('INSERT INTO awarded (period) VALUES (?)').run(key);
+  }
+}
+
+export function prizeInfo(db: Db, playerId: string, now: number) {
+  ensurePrizes(db, now);
+  const mine = db.prepare('SELECT id, period, rank, shahi, gohar FROM prizes WHERE player_id = ? AND claimed = 0').all(playerId);
+  const latest = (kind: Period) => {
+    const key = keyOf(kind, prevStart(kind, periodStart(kind, now)));
+    return { period: key, winners: db.prepare('SELECT rank, name FROM prizes WHERE period = ? ORDER BY rank').all(key) };
+  };
+  return { mine, announcement: [latest('week'), latest('month')] };
+}
+
+/** Marks one prize claimed and returns what the client should add to its wallet; null if not yours or already claimed. */
+export function claimPrize(db: Db, playerId: string, id: number): { shahi: number; gohar: number } | null {
+  const r = db.prepare('UPDATE prizes SET claimed = 1 WHERE id = ? AND player_id = ? AND claimed = 0 RETURNING shahi, gohar').get(id, playerId) as { shahi: number; gohar: number } | undefined;
+  return r ?? null;
+}
