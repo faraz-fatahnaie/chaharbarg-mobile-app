@@ -5,18 +5,19 @@ import { BACK_STYLES } from '../data/cosmetics';
 const GLYPH = { S: '♠', H: '♥', D: '♦', C: '♣' } as const;
 const RANK = (r: number) => (r === 1 ? 'A' : r === 11 ? 'J' : r === 12 ? 'Q' : r === 13 ? 'K' : String(r));
 
-const L = 30, C = 50, R = 70;
+const L = 26, C = 50, R = 74;
+// classic playing-card layouts: side columns, optional centre column; spacing keeps every pip clear of its neighbours
 const PIPS: Record<number, [number, number][]> = {
   1: [[C, 50]],
-  2: [[C, 22], [C, 78]],
-  3: [[C, 22], [C, 50], [C, 78]],
-  4: [[L, 22], [R, 22], [L, 78], [R, 78]],
-  5: [[L, 22], [R, 22], [C, 50], [L, 78], [R, 78]],
-  6: [[L, 22], [R, 22], [L, 50], [R, 50], [L, 78], [R, 78]],
-  7: [[L, 22], [R, 22], [C, 36], [L, 50], [R, 50], [L, 78], [R, 78]],
-  8: [[L, 22], [R, 22], [C, 36], [L, 50], [R, 50], [C, 64], [L, 78], [R, 78]],
-  9: [[L, 20], [R, 20], [L, 40], [R, 40], [C, 50], [L, 60], [R, 60], [L, 80], [R, 80]],
-  10: [[L, 20], [R, 20], [C, 30], [L, 40], [R, 40], [L, 60], [R, 60], [C, 70], [L, 80], [R, 80]],
+  2: [[C, 20], [C, 80]],
+  3: [[C, 20], [C, 50], [C, 80]],
+  4: [[L, 20], [R, 20], [L, 80], [R, 80]],
+  5: [[L, 20], [R, 20], [C, 50], [L, 80], [R, 80]],
+  6: [[L, 20], [R, 20], [L, 50], [R, 50], [L, 80], [R, 80]],
+  7: [[L, 20], [R, 20], [C, 35], [L, 50], [R, 50], [L, 80], [R, 80]],
+  8: [[L, 20], [R, 20], [C, 35], [L, 50], [R, 50], [C, 65], [L, 80], [R, 80]],
+  9: [[L, 16], [R, 16], [L, 38], [R, 38], [C, 50], [L, 62], [R, 62], [L, 84], [R, 84]],
+  10: [[L, 16], [R, 16], [C, 27], [L, 38], [R, 38], [L, 62], [R, 62], [C, 73], [L, 84], [R, 84]],
 };
 
 export function backStyle(id: string): CSSProperties {
@@ -45,9 +46,10 @@ export function SuitSprite() {
 export const Suit = ({ s }: { s: Card['suit'] }) => <svg className="suit" viewBox="0 0 24 24" aria-hidden="true"><use href={`#s-${s}`} /></svg>;
 
 /** J/Q/K: a gold-framed bust drawn once and mirrored for the lower half, like a real deck. */
-function FaceArt({ rank }: { rank: number }) {
+function FaceArt({ rank, suit }: { rank: number; suit: Card['suit'] }) {
   const half = (
     <g stroke="var(--outline)" strokeWidth="1.4" strokeLinejoin="round">
+      <use href={`#s-${suit}`} x="5" y="5" width="20" height="20" fill="currentColor" stroke="none" />
       <path d="M16 68 Q50 36 84 68Z" fill="currentColor" />
       <path d="M30 56 Q50 44 70 56" fill="none" stroke="var(--gold)" strokeWidth="3" />
       {rank === 12 && <path d="M37 26 Q26 46 30 64 L40 56Z M63 26 Q74 46 70 64 L60 56Z" fill="var(--turq)" opacity=".85" />}
@@ -106,14 +108,14 @@ export function CardView({ card, faceDown, deck = 'deck-classic', back = 'back-i
   const r = RANK(card.rank);
   return (
     <div className={`${cls} s-${card.suit}`} style={style} onClick={onClick} role="img" aria-label={`${r} ${g}`}>
-      <div className="idx tl"><b>{r}</b><Suit s={card.suit} /></div>
-      <div className="idx br"><b>{r}</b><Suit s={card.suit} /></div>
+      <div className="idx tl"><b>{r}</b></div>
+      <div className="idx br"><b>{r}</b></div>
       {card.rank >= 11 ? (
-        <FaceArt rank={card.rank} />
+        <FaceArt rank={card.rank} suit={card.suit} />
       ) : (
         <div className="pips">
           {PIPS[card.rank].map(([x, y], i) => (
-            <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 7 ? ' sm' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
+            <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 9 ? ' sm' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
           ))}
         </div>
       )}
