@@ -7,7 +7,7 @@ import { CardView } from '../art/CardView';
 import { Scene } from '../art/Scene';
 import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
-import { botById, EMOTES } from '../data/bots';
+import { botById, CHAT_GAP_MS, EMOTES } from '../data/bots';
 import { TABLE_COLORS } from '../data/cosmetics';
 import { adStatus, checkAchievements, clearStage, grantAd, honorUnlocked, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
 import { STAGES } from '../data/stages';
@@ -44,6 +44,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
   const [chat, setChat] = useState(false);
   const [adBusy, setAdBusy] = useState(false);
   const settled = useRef(false);
+  const lastChat = useRef(0);
   const rng = useMemo(() => mulberry32((Date.now() ^ 0x9e3779b9) >>> 0), []);
 
   const arena = arenaById(ctx.arenaId);
@@ -252,7 +253,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
           <span className="chip" style={{ fontSize: 11 }}>{tr('هدف', 'Goal')} {targetLabel}</span>
           <span className="stockinfo">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Rd')} {n(deal.round + 1)}</span>
         </div>
-        {ctx.mode === 'bots' && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label="chat">💬</button>}
+        {ctx.mode === 'bots' && <button className="iconbtn" onClick={() => setChat((c) => !c)} aria-label={tr('پیام سریع', 'Quick chat')}>💬</button>}
       </div>
       <div className="live">
         <table>
@@ -272,10 +273,12 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchC
       {chat && ctx.mode === 'bots' && (
         <div className="emotes">
           {EMOTES.map((e) => (
-            <button key={e} onClick={() => {
-              say(0, e); setChat(false);
+            <button key={e.en} onClick={() => {
+              if (Date.now() - lastChat.current < CHAT_GAP_MS) return;
+              lastChat.current = Date.now();
+              say(0, tr(e.fa, e.en)); setChat(false);
               if (Math.random() < 0.5) { const s = 1 + Math.floor(Math.random() * (players - 1)); const b = ctx.seats[s].botId; if (b) setTimeout(() => say(s, botById(b).lines.big[0]), 900); }
-            }}>{e}</button>
+            }}>{tr(e.fa, e.en)}</button>
           ))}
         </div>
       )}

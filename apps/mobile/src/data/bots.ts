@@ -29,4 +29,9 @@ export const BOTS: BotPersona[] = [
 export const botById = (id: string) => BOTS.find((b) => b.id === id) ?? BOTS[0];
 
 /** Quick-chat stickers the human can send (no free text in v1). */
-export const EMOTES = ['آفرین!', 'ای وای', 'سور!', 'قشنگ بود', 'فکر کن...', 'دمت گرم'];
+export const EMOTES = [
+  { fa: 'آفرین!', en: 'Well done!' }, { fa: 'ای وای', en: 'Oh no' }, { fa: 'سور!', en: 'Sur!' },
+  { fa: 'قشنگ بود', en: 'Nice one' }, { fa: 'فکر کن...', en: 'Think...' }, { fa: 'دمت گرم', en: 'Good game' },
+];
+/** Minimum gap between two quick-chat messages from the player, in ms. */
+export const CHAT_GAP_MS = 2500;
