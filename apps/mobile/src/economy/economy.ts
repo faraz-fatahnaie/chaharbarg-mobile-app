@@ -63,6 +63,8 @@ export interface Profile {
   tutorialDone: boolean;
   /** cleared solo stage ids (data/stages.ts) */
   stages: string[];
+  /** honor id the player chose as title; null = best level honor */
+  title: string | null;
   tampered: number;
   ledger: LedgerEntry[];
 }
@@ -125,7 +127,7 @@ export function createProfile(now: number): Profile {
     login: { last: '', streak: 0 },
     daily: { date: '', progress: {}, claimed: [] },
     ads: { day: '', watched: 0, lastAt: 0 },
-    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], tampered: 0, ledger: [],
+    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], title: null, tampered: 0, ledger: [],
   };
   return applyDelta(blank, START_SHAHI, 0, 'welcome', now);
 }
@@ -278,6 +280,8 @@ export function honorValue(p: Profile, kind: HonorKind): number {
 }
 export const honorUnlocked = (p: Profile, h: Honor): boolean => honorValue(p, h.kind) >= h.at;
 export function currentTitle(p: Profile): Honor | null {
+  const chosen = HONORS.find((h) => h.id === p.title);
+  if (chosen && honorUnlocked(p, chosen)) return chosen;
   let best: Honor | null = null;
   for (const h of HONORS) if (h.kind === 'level' && honorUnlocked(p, h) && (!best || h.at > best.at)) best = h;
   return best;

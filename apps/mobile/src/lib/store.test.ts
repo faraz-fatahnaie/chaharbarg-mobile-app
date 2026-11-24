@@ -128,3 +128,15 @@ describe('save with no stats object', () => {
     expect((await fresh()).getProfile().stats).toMatchObject({ games: 0, wins: 0, byPlayers: {} });
   });
 });
+
+describe('saved title', () => {
+  it('keeps a known honor id and drops anything else', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    for (const [saved, want] of [['wins-25', 'wins-25'], ['bogus', null], [5, null]] as const) {
+      data.set(PROFILE_KEY, JSON.stringify({ ...base, title: saved }));
+      vi.resetModules();
+      expect((await fresh()).getProfile().title).toBe(want);
+    }
+  });
+});

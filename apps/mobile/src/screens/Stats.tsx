@@ -1,9 +1,9 @@
 import { ACH_NAMES } from '../data/achievements';
 import { ARENAS } from '../data/arenas';
 import { HONORS } from '../data/honors';
-import { ACHIEVEMENTS, honorUnlocked, honorValue, levelOf } from '../economy/economy';
+import { ACHIEVEMENTS, currentTitle, honorUnlocked, honorValue, levelOf } from '../economy/economy';
 import { useLang } from '../lib/i18n';
-import { useProfile } from '../lib/store';
+import { update, useProfile } from '../lib/store';
 import { Header } from './Home';
 
 export function Stats() {
@@ -40,7 +40,8 @@ export function Stats() {
       </div>
 
       <div className="panel col" style={{ margin: '0 14px' }}>
-        <h3>{tr('افتخارات', 'Honors')}</h3>
+        <div className="row"><h3 className="grow">{tr('افتخارات', 'Honors')}</h3>
+          {p.title && <button className="btn ghost" onClick={() => update((q) => ({ ...q, title: null }))}>{tr('عنوان خودکار', 'Auto title')}</button>}</div>
         {HONORS.map((h) => {
           const done = honorUnlocked(p, h);
           const desc = h.kind === 'level' ? tr(`به سطح ${n(h.at)} برس`, `Reach level ${n(h.at)}`)
@@ -50,7 +51,8 @@ export function Stats() {
             <div key={h.id} className="row" style={{ opacity: done ? 1 : 0.55 }}>
               <span>{done ? '🏆' : '🔒'}</span>
               <div className="grow"><b>{lang === 'fa' ? h.fa : h.en}</b><div className="mute">{desc}</div></div>
-              <span className="mute">{n(Math.min(honorValue(p, h.kind), h.at))} / {n(h.at)}</span>
+              {done ? <button className={currentTitle(p)?.id === h.id ? 'btn primary' : 'btn ghost'} onClick={() => update((q) => ({ ...q, title: h.id }))}>{currentTitle(p)?.id === h.id ? '✓ ' + tr('عنوان', 'Title') : tr('انتخاب عنوان', 'Use as title')}</button>
+                : <span className="mute">{n(Math.min(honorValue(p, h.kind), h.at))} / {n(h.at)}</span>}
             </div>
           );
         })}

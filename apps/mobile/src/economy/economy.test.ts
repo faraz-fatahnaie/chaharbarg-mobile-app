@@ -417,3 +417,13 @@ describe('turnTimer setting', () => {
     expect(migrateSettings({ turnTimer: 99 }).turnTimer).toBe('off');
   });
 });
+
+describe('chosen title (F-081)', () => {
+  const base2 = () => ({ ...createProfile(NOW), xp: xpForLevel(10), stats: { ...createProfile(NOW).stats, wins: 30 } });
+  it('uses the chosen honor when unlocked, else the best level honor', () => {
+    expect(currentTitle(base2())?.id).toBe('lvl-10');
+    expect(currentTitle({ ...base2(), title: 'wins-25' })?.id).toBe('wins-25');
+    expect(currentTitle({ ...base2(), title: 'wins-100' })?.id).toBe('lvl-10');
+    expect(currentTitle({ ...base2(), title: 'nope' })?.id).toBe('lvl-10');
+  });
+});
