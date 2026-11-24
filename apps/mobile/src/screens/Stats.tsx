@@ -57,6 +57,15 @@ export function Stats() {
       </div>
 
       <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('بر اساس تعداد بازیکن', 'By player count')}</h3>
+        {([2, 3, 4] as const).map((k) => {
+          const r = s.byPlayers[k] ?? { games: 0, wins: 0, surs: 0 };
+          return <div key={k} className="row"><span className="grow">{n(k)} {tr('نفره', 'players')}</span>
+            <span className="mute">{n(r.games)} {tr('بازی', 'games')} · {n(r.wins)} {tr('برد', 'wins')} · {n(r.games ? Math.round((r.wins / r.games) * 100) : 0)}% · {n(r.surs)} {tr('سور', 'sur')}</span></div>;
+        })}
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px' }}>
         <h3>{tr('آرناها', 'Arenas')}</h3>
         {ARENAS.map((a) => {
           const r = s.byArena[a.id];

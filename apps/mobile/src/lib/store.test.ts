@@ -106,3 +106,14 @@ describe('solo stage progress', () => {
     expect((await fresh()).getProfile().stages).toEqual([]);
   });
 });
+
+describe('stats by player count in old saves', () => {
+  it('a save without byPlayers loads with an empty split', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    delete base.stats.byPlayers;
+    data.set(PROFILE_KEY, JSON.stringify(base));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stats.byPlayers).toEqual({});
+  });
+});

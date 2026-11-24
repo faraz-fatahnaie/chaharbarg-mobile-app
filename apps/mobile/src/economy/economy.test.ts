@@ -408,3 +408,14 @@ describe('solo stages', () => {
     expect(clearStage(p, 'nope', NOW)).toBe(p);
   });
 });
+
+describe('stats by player count', () => {
+  it('splits games, wins and surs per player count', () => {
+    let p = createProfile(NOW);
+    p = settleMatch(p, win({ players: 2, surs: 2 }), '2025-01-01', NOW).profile;
+    p = settleMatch(p, win({ players: 2, outcome: 'loss', surs: 1 }), '2025-01-01', NOW).profile;
+    p = settleMatch(p, win({ players: 4, surs: 3 }), '2025-01-01', NOW).profile;
+    expect(p.stats.byPlayers).toEqual({ 2: { games: 2, wins: 1, surs: 3 }, 4: { games: 1, wins: 1, surs: 3 } });
+    expect(p.stats.games).toBe(3);
+  });
+});

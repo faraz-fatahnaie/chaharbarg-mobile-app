@@ -37,6 +37,8 @@ export interface Stats {
   games: number; wins: number; losses: number; draws: number;
   surs: number; sarbaz: number; streak: number; bestStreak: number;
   byArena: Record<string, { games: number; wins: number }>;
+  /** keyed by player count: '2' | '3' | '4' */
+  byPlayers: Record<string, { games: number; wins: number; surs: number }>;
 }
 
 export interface Profile {
@@ -108,7 +110,7 @@ export function applyDelta(p: Profile, dS: number, dG: number, reason: string, n
 export function createProfile(now: number): Profile {
   const blank: Profile = {
     v: 1, name: '', shahi: 0, gohar: 0, trophies: 0, xp: 0,
-    stats: { games: 0, wins: 0, losses: 0, draws: 0, surs: 0, sarbaz: 0, streak: 0, bestStreak: 0, byArena: {} },
+    stats: { games: 0, wins: 0, losses: 0, draws: 0, surs: 0, sarbaz: 0, streak: 0, bestStreak: 0, byArena: {}, byPlayers: {} },
     owned: COSMETICS.filter((c) => c.gohar === 0).map((c) => c.id),
     equipped: { deck: 'deck-classic', back: 'back-indigo', table: 'table-arena' },
     settings: { ...DEFAULT_SETTINGS },
@@ -205,6 +207,7 @@ export function settleMatch(p: Profile, m: MatchSummary, today: string, now: num
   const s = q.stats;
   const streak = m.outcome === 'win' ? s.streak + 1 : m.outcome === 'loss' ? 0 : s.streak;
   const ar = s.byArena[m.arenaId] ?? { games: 0, wins: 0 };
+  const bp = s.byPlayers[m.players] ?? { games: 0, wins: 0, surs: 0 };
   q = {
     ...q,
     trophies: q.trophies + trophyDelta,
@@ -214,6 +217,7 @@ export function settleMatch(p: Profile, m: MatchSummary, today: string, now: num
       draws: s.draws + (m.outcome === 'draw' ? 1 : 0), surs: s.surs + m.surs, sarbaz: s.sarbaz + m.sarbaz,
       streak, bestStreak: Math.max(s.bestStreak, streak),
       byArena: { ...s.byArena, [m.arenaId]: { games: ar.games + 1, wins: ar.wins + (m.outcome === 'win' ? 1 : 0) } },
+      byPlayers: { ...s.byPlayers, [m.players]: { games: bp.games + 1, wins: bp.wins + (m.outcome === 'win' ? 1 : 0), surs: bp.surs + m.surs } },
     },
   };
   const levelUps = after - before;
