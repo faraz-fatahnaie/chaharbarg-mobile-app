@@ -11,6 +11,7 @@ import { Home } from './screens/Home';
 import { Settings } from './screens/Settings';
 import { Shop } from './screens/Shop';
 import { Online } from './screens/Online';
+import { PrizeModal } from './screens/Prizes';
 import { Stages } from './screens/Stages';
 import { Stats } from './screens/Stats';
 import { Tutorial } from './screens/Tutorial';
@@ -162,6 +163,7 @@ export default function App() {
       )}
       {stages && <Stages busy={!!saved} onPlay={startStage} onGuide={() => setTutorial(true)} onClose={() => setStages(false)} />}
       {tutorial && <Tutorial onClose={() => { setTutorial(false); if (pending) { const id = pending; setPending(null); startStage(id); } }} />}
+      <PrizeModal />
       <AdModal />
       <PayModal />
     </div>

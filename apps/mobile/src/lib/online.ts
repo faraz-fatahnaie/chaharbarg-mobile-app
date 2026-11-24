@@ -96,3 +96,61 @@ export function watchRoom(code: string, onView: (v: RoomView) => void, onState: 
   })();
   return () => { stop = true; ac?.abort(); };
 }
+
+// ---- social: friends, direct messages, public chat, rankings, prizes ----
+export interface Person { id: string; name: string }
+export interface FriendsList { code: string; friends: (Person & { online: boolean })[]; incoming: Person[]; outgoing: Person[]; blocked: Person[] }
+export interface DmMsg { id: number; ts: number; from: string; to: string; text: string }
+export interface ChatMsg { id: number; ts: number; from: string; name: string; text: string }
+export interface RankRow { id: string; name: string; wins: number; games: number; coins: number }
+export interface PrizeInfo { mine: { id: number; period: string; rank: number; shahi: number; gohar: number }[]; announcement: { period: string; winners: { rank: number; name: string }[] }[] }
+export type PushEvent =
+  | { type: 'friend-request' | 'friend-accepted'; from: Person }
+  | { type: 'dm'; msg: DmMsg; fromName: string }
+  | { type: 'chat'; msg: ChatMsg }
+  | { type: 'chat-hide'; id: number };
+
+export const hasCred = () => loadCred() !== null;
+export const getFriends = () => call<FriendsList>('GET', '/api/friends');
+export const friendRequest = (code: string) => call('POST', '/api/friends/request', { code });
+export const friendAction = (action: 'accept' | 'reject' | 'remove' | 'block' | 'unblock', id: string) => call('POST', `/api/friends/${action}`, { id });
+export const getDms = (id: string) => call<{ messages: DmMsg[] }>('GET', `/api/dm/${id}`);
+export const sendDm = (id: string, text: string) => call<DmMsg>('POST', `/api/dm/${id}`, { text });
+export const getChat = () => call<{ messages: ChatMsg[] }>('GET', '/api/chat');
+export const postChat = (text: string) => call<ChatMsg>('POST', '/api/chat', { text });
+export const reportChat = (id: number) => call('POST', '/api/chat/report', { id });
+export const getRankings = (period: 'week' | 'month') => call<{ rows: RankRow[] }>('GET', `/api/rankings?period=${period}`);
+export const getPrizes = () => call<PrizeInfo>('GET', '/api/prizes');
+export const claimPrizeCall = (id: number) => call<{ shahi: number; gohar: number }>('POST', '/api/prizes/claim', { id });
+
+/** Push channel for requests, messages and chat; reconnects after a drop until stopped. */
+export function watchMe(onEvent: (e: PushEvent) => void): () => void {
+  let stop = false;
+  let ac: AbortController | null = null;
+  (async () => {
+    while (!stop) {
+      ac = new AbortController();
+      try {
+        const res = await fetch(`${SERVER_URL}/api/me/events`, { headers: { authorization: `Bearer ${token}` }, signal: ac.signal });
+        if (!res.ok || !res.body) throw new Error(String(res.status));
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let i: number;
+          while ((i = buf.indexOf('\n\n')) >= 0) {
+            const chunk = buf.slice(0, i);
+            buf = buf.slice(i + 2);
+            if (chunk.startsWith('data: ')) onEvent(JSON.parse(chunk.slice(6)) as PushEvent);
+          }
+        }
+      } catch { /* retry */ }
+      if (stop) return;
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  })();
+  return () => { stop = true; ac?.abort(); };
+}

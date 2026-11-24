@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { targetOptions } from '@chaharbarg/engine';
 import { useLang } from '../lib/i18n';
-import { createRoom, joinRoom, sendMove, sendReady, signIn, startRoom, watchRoom, type RoomView } from '../lib/online';
+import { createRoom, joinRoom, sendMove, sendReady, signIn, startRoom, watchMe, watchRoom, type PushEvent, type RoomView } from '../lib/online';
 import { useProfile, type MatchCtx } from '../lib/store';
 import { Game } from './Game';
+import { Friends, PublicChat, Rankings } from './Social';
 
 const HUES = [45, 210, 140, 290];
 const noop = () => {};
@@ -21,12 +22,22 @@ export function Online({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<RoomView | null>(null);
   const [online, setOnline] = useState(true);
   const stop = useRef<() => void>(noop);
+  const [tab, setTab] = useState<'play' | 'friends' | 'chat' | 'ranks'>('play');
+  const [badge, setBadge] = useState('');
+  const listeners = useRef(new Set<(e: PushEvent) => void>());
+  const bus = useRef({ on: (f: (e: PushEvent) => void) => { listeners.current.add(f); return () => { listeners.current.delete(f); }; } }).current;
 
   useEffect(() => {
     signIn(p.name || `${tr('مهمان', 'Guest')} ${100 + Math.floor(Math.random() * 900)}`).then(setMyId).catch(() => setErr(tr('به سرور وصل نشد. آیا سرور روشن است؟', 'Cannot reach the server. Is it running?')));
     return () => stop.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    if (!myId) return;
+    const off = watchMe((e) => { listeners.current.forEach((f) => f(e)); if (e.type === 'friend-request') setBadge(tr('درخواست دوستی جدید', 'New friend request')); });
+    return off;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myId]);
 
   const enter = (c: string) => { stop.current(); setCode(c); setView(null); stop.current = watchRoom(c, setView, setOnline); };
   const leave = () => { stop.current(); stop.current = noop; setCode(null); setView(null); };
@@ -53,6 +64,18 @@ export function Online({ onClose }: { onClose: () => void }) {
       {err && <div className="panel" role="alert">{err}</div>}
       {!online && <div className="panel">{tr('اتصال قطع شد؛ در حال تلاش دوباره…', 'Disconnected, retrying…')}</div>}
       {!code && (
+        <div className="seg">
+          {(['play', 'friends', 'chat', 'ranks'] as const).map((k) => (
+            <button key={k} className={tab === k ? 'on' : ''} onClick={() => { setTab(k); if (k === 'friends') setBadge(''); }}>
+              {{ play: tr('بازی', 'Play'), friends: tr('دوستان', 'Friends') + (badge ? ' •' : ''), chat: tr('گفتگو', 'Chat'), ranks: tr('رتبه‌ها', 'Ranks') }[k]}
+            </button>
+          ))}
+        </div>
+      )}
+      {!code && myId && tab === 'friends' && <Friends me={myId} bus={bus} />}
+      {!code && myId && tab === 'chat' && <PublicChat me={myId} bus={bus} />}
+      {!code && myId && tab === 'ranks' && <Rankings me={myId} />}
+      {!code && tab === 'play' && (
         <>
           <div className="panel col">
             <h3>{tr('ساخت اتاق', 'Create a room')}</h3>
