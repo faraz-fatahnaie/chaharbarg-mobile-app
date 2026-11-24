@@ -74,3 +74,11 @@ export function chooseMove(s: DealState, seat: number, level: Level, rng: Rng): 
   }
   return best;
 }
+
+/** Move played for a player who ran out of time: the biggest capture if any exists, else the best drop. */
+export function timeoutMove(deal: DealState, seat: number, rng: Rng): Move {
+  const caps = legalMoves(deal, seat).filter((m) => m.captureIds.length);
+  // ponytail: biggest capture by card count, not by points; rank by points if players complain
+  if (caps.length) return caps.reduce((a, b) => (b.captureIds.length > a.captureIds.length ? b : a));
+  return chooseMove(deal, seat, 'hard', rng);
+}

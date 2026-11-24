@@ -1,0 +1,13 @@
+{
+  "name": "@chaharbarg/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite-node src/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": { "@chaharbarg/engine": "*" },
+  "devDependencies": { "@types/node": "*", "typescript": "^5.6.0", "vitest": "^3.0.0" }
+}
