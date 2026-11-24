@@ -12,6 +12,7 @@ import { TABLE_COLORS } from '../data/cosmetics';
 import { adStatus, checkAchievements, clearStage, grantAd, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
 import { STAGES } from '../data/stages';
 import { useLang } from '../lib/i18n';
+import { MAX_TIMEOUTS, TURN_SECONDS, timeoutMove } from '../lib/match';
 import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
 import { saveMatch, update, useProfile, type MatchCtx } from '../lib/store';
@@ -27,7 +28,7 @@ interface Settled {
   payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; paid: boolean; bonus: number; stagePrize: number;
 }
 
-export function Game({ ctx, onExit, onAgain, onStage }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void }) {
+export function Game({ ctx, onExit, onAgain, onStage, onForfeit }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void; onForfeit: () => void }) {
   const { tr, n } = useLang();
   const profile = useProfile();
   const [mc, setMc] = useState<MatchState>(ctx.match);
@@ -93,6 +94,28 @@ export function Game({ ctx, onExit, onAgain, onStage }: { ctx: MatchCtx; onExit:
     }
   }
 
+  // turn timer (vs bots only): 3 timeouts in a row forfeit the match
+  const limit = ctx.mode === 'bots' ? TURN_SECONDS[profile.settings.turnTimer] : 0;
+  const [left, setLeft] = useState(0);
+  const timeouts = useRef(0);
+  const play = (cardId: string, ids: string[]) => { timeouts.current = 0; commit(cardId, ids); };
+  useEffect(() => {
+    if (!limit || !myTurn || menu) return;
+    let s = limit;
+    setLeft(s);
+    const id = setInterval(() => {
+      s -= 1;
+      setLeft(s);
+      if (s > 0) return;
+      clearInterval(id);
+      if (++timeouts.current >= MAX_TIMEOUTS) { onForfeit(); return; }
+      const mv = timeoutMove(deal, deal.turn, rng);
+      commit(mv.cardId, mv.captureIds);
+    }, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit, myTurn, menu, mc]);
+
   // bots take their turn
   useEffect(() => {
     if (mc.phase !== 'playing' || summary || result || menu || !isBot(deal.turn)) return;
@@ -117,8 +140,8 @@ export function Game({ ctx, onExit, onAgain, onStage }: { ctx: MatchCtx; onExit:
     sfx('click');
     if (sel === c.id) {
       const o = captureOptions(c, deal.floor);
-      if (o.length === 1) commit(c.id, o[0].map((x) => x.id));
-      else if (o.length === 0) commit(c.id, []);
+      if (o.length === 1) play(c.id, o[0].map((x) => x.id));
+      else if (o.length === 0) play(c.id, []);
       return;
     }
     setSel(c.id);
@@ -284,7 +307,7 @@ export function Game({ ctx, onExit, onAgain, onStage }: { ctx: MatchCtx; onExit:
       </div>
 
       <div className="myzone">
-        <div className="hint-line">{hint}</div>
+        <div className="hint-line">{limit > 0 && myTurn && <b>⏱ {n(Math.max(left, 0))}{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}{hint}</div>
         {myTurn && card && opts.length > 1 && (
           <div className="opts">
             {opts.map((o, i) => {
@@ -301,11 +324,11 @@ export function Game({ ctx, onExit, onAgain, onStage }: { ctx: MatchCtx; onExit:
           {myTurn && card && (
             <>
               {opts.length > 0 && (
-                <button className="btn good" disabled={!matched} onClick={() => matched && commit(card.id, matched.map((c) => c.id))}>
+                <button className="btn good" disabled={!matched} onClick={() => matched && play(card.id, matched.map((c) => c.id))}>
                   {tr('بردار', 'Capture')}{matched ? ` (${n(matched.length + 1)})` : ''}
                 </button>
               )}
-              {dropAllowed && <button className="btn" onClick={() => commit(card.id, [])}>{tr('بینداز', 'Drop')}</button>}
+              {dropAllowed && <button className="btn" onClick={() => play(card.id, [])}>{tr('بینداز', 'Drop')}</button>}
             </>
           )}
           {!myTurn && mc.phase === 'playing' && !handoff && (

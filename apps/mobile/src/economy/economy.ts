@@ -51,6 +51,8 @@ export interface Settings {
   mustCapture: boolean;
   openingJack: 'replace' | 'allow';
   surSarbazPoints: 5 | 10;
+  /** per-turn limit vs bots: off, 15 s, or 5 s */
+  turnTimer: 'off' | 'normal' | 'speed';
 }
 
 export interface Stats {
@@ -101,7 +103,7 @@ export const LOGIN_GOHAR_DAY7 = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   lang: 'fa', music: true, effects: true, notifications: false, hints: true, timeOfDay: 'auto',
-  target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10,
+  target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10, turnTimer: 'off',
 };
 
 /** Load-time migration of saved settings: old `sound` becomes music + effects; bad booleans fall back to defaults. */
@@ -116,6 +118,12 @@ export function migrateSettings(raw: unknown): Settings {
   for (const k of ['music', 'effects', 'notifications'] as const) {
     if (typeof out[k] !== 'boolean') out[k] = DEFAULT_SETTINGS[k];
   }
+  const oneOf: Record<string, readonly unknown[]> = {
+    lang: ['fa', 'en'], timeOfDay: ['auto', 'day', 'dusk', 'night'], target: ['short', 'long'], openingJack: ['replace', 'allow'],
+    surSarbazPoints: [5, 10], turnTimer: ['off', 'normal', 'speed'],
+  };
+  for (const [k, ok] of Object.entries(oneOf)) if (!ok.includes(out[k])) out[k] = (DEFAULT_SETTINGS as unknown as Record<string, unknown>)[k];
+  for (const k of ['hints', 'noSurInLastRound', 'mustCapture'] as const) if (typeof out[k] !== 'boolean') out[k] = DEFAULT_SETTINGS[k];
   return out as unknown as Settings;
 }
 
@@ -165,12 +173,9 @@ export const XP_SUR = 5;
 export const XP_SARBAZ = 10;
 export const XP_SUR_CAP = 50;
 export const XP_QUIT = 40;
-/** Single-deal matches pay a fixed share of normal match XP, so they are not a faster way to level (F-051). The forfeit penalty is not scaled. */
-export const XP_SINGLE_SHARE = 0.2;
-export const xpShare = (target: number | 'single') => (target === 'single' ? XP_SINGLE_SHARE : 1);
 export const BIG_MARGIN_SHARE = 0.25;
 
-export const bigMarginAt = (target: number | 'single'): number => (target === 'single' ? 10 : Math.ceil(target * BIG_MARGIN_SHARE));
+export const bigMarginAt = (target: number): number => Math.ceil(target * BIG_MARGIN_SHARE);
 
 /** Level L starts at 10·(L−1)·(L+8) XP; unbounded. */
 export const xpForLevel = (lvl: number) => 10 * (lvl - 1) * (lvl + 8);
@@ -201,14 +206,14 @@ export const payFee = (p: Profile, a: Arena, now: number) => applyDelta(p, -a.fe
 export interface MatchSummary {
   arenaId: string; players: 2 | 3 | 4; outcome: 'win' | 'loss' | 'draw'; surs: number; sarbaz: number; paid: boolean; fee: number;
   /** Player's unit score minus best other unit's score; 0 when not a win. */
-  margin: number; target: number | 'single'; quit?: boolean;
+  margin: number; target: number; quit?: boolean;
 }
 
 export function matchXp(m: MatchSummary): number {
   if (m.quit) return -XP_QUIT;
   const win = m.outcome === 'win';
-  return Math.round(xpShare(m.target) * (XP_FINISH + (win ? XP_WIN : 0) + (win && m.margin >= bigMarginAt(m.target) ? XP_BIG_MARGIN : 0)
-    + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz)));
+  return XP_FINISH + (win ? XP_WIN : 0) + (win && m.margin >= bigMarginAt(m.target) ? XP_BIG_MARGIN : 0)
+    + Math.min(XP_SUR_CAP, XP_SUR * m.surs + XP_SARBAZ * m.sarbaz);
 }
 
 /** XP a forfeit would cost at this XP total: XP_QUIT, but never below the current level's start (same clamp as settleMatch). */

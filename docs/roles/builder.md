@@ -26,3 +26,4 @@ Lasting facts about this project, added by the software factory when tasks land.
 - (F-035, 2026-11-20) Vitest runs in Node with no DOM, so image and canvas behaviour in `identity.test.ts` must be stubbed with `vi.stubGlobal` and `vi.spyOn`.
 - (F-046, 2026-11-20) `max-width` on a `<td>` does nothing in the auto-layout table, so put the width limit on a block-level child such as a span inside the cell.
 - (F-009, 2026-11-20) The mobile app has no DOM test setup, so screen changes such as the Stats panel and the Header need a manual check at phone width in fa and en.
+- (F-010, 2026-11-24) Quits are excluded from the player-count groups but still counted in the all-player totals, so tests for the groups should not assume the totals match them.
