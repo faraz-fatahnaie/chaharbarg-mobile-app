@@ -17,7 +17,12 @@ function InviteFriends({ code }: { code: string }) {
   const { tr } = useLang();
   const [list, setList] = useState<FriendsList['friends']>([]);
   const [sent, setSent] = useState<Record<string, boolean>>({});
-  useEffect(() => { getFriends().then((f) => setList(f.friends)).catch(() => {}); }, []);
+  useEffect(() => {
+    const load = () => { getFriends().then((f) => setList(f.friends)).catch(() => {}); };
+    load();
+    const id = setInterval(load, 4000); // friends come online while we wait
+    return () => clearInterval(id);
+  }, []);
   const online = list.filter((f) => f.online);
   if (!online.length) return <span className="mute">{tr('دوستی آنلاین نیست. کد اتاق را برایشان بفرست.', 'No friend is online. Send them the room code.')}</span>;
   return (
@@ -81,7 +86,11 @@ export function Online({ onClose }: { onClose: () => void }) {
   const enter = (c: string) => { stop.current(); setCode(c); setView(null); setInvite(null); stop.current = watchRoom(c, setView, setOnline); };
   const leave = () => { if (code) void leaveRoom(code).catch(() => {}); stop.current(); stop.current = noop; setCode(null); setView(null); };
   const run = async (f: () => Promise<unknown>) => { setErr(''); try { await f(); } catch (e) { setErr((e as Error).message); } };
-  const find = (size: number) => run(async () => { await joinQueue(size); setQueue({ players: size, since: Date.now() }); setNow(Date.now()); });
+  // show "searching" before the request returns: the server can match instantly and push match-found first
+  const find = (size: number) => run(async () => {
+    setQueue({ players: size, since: Date.now() }); setNow(Date.now());
+    try { await joinQueue(size); } catch (e) { setQueue(null); throw e; }
+  });
   const cancel = () => run(async () => { await leaveQueue(); setQueue(null); });
 
   if (code && view?.match && view.status !== 'lobby') {
