@@ -17,12 +17,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-030 The new Notifications panel and the Contact support / Send feedback links have no automated tests. Check them in the running app.
 - [ ] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes.
 - [ ] F-045 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en). Look for overlap with the floor cards, the `pos-tr`, `pos-top` and `pos-right` seats, and the turn glow.
-- [ ] F-097 Clean the saved `stats` totals (`games`, `wins`, `losses`, `streak`, …) in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object.
-  Depends on: F-010
-  Found while building F-010.
-- [ ] F-098 Clean the saved `stats` totals in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object.
-  Depends on: F-010
-  Found while building F-010.
 
 ## Ready
 
@@ -120,3 +114,5 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-068 Add focus handling and a screen-reader announcement to the inline confirmations in Home (forfeit) and Settings (erase all data). (closed: done: focus and alertdialog announcement)
 - [x] F-011 [Employer #5, offline P9] Quick-chat messages during play: polish the existing bot sticker chat; online delivery later (closed: done: bilingual quick chat with cooldown)
 - [x] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`. (closed: done: title picker on the Stats screen)
+- [x] F-097 Clean the saved `stats` totals (`games`, `wins`, `losses`, `streak`, …) in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object. (closed: done: cleanStats on load)
+- [x] F-098 Clean the saved `stats` totals in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object. (closed: done: cleanStats on load)

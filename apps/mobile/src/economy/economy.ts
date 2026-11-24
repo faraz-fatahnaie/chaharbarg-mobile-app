@@ -1,4 +1,4 @@
-import { type Arena } from '../data/arenas';
+import { ARENAS, type Arena } from '../data/arenas';
 import { STAGES } from '../data/stages';
 import { COSMETICS, GOHAR_PACKS, type CosmeticKind } from '../data/cosmetics';
 import { HONORS, type Honor, type HonorKind } from '../data/honors';
@@ -41,6 +41,29 @@ export interface Stats {
   byArena: Record<string, { games: number; wins: number }>;
   /** keyed by player count: '2' | '3' | '4' */
   byPlayers: Record<string, { games: number; wins: number; surs: number }>;
+}
+
+const count = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x > 0 ? Math.floor(x) : 0);
+const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+
+/** Saved stats from storage: every counter a non-negative integer, groups kept only for known keys. */
+export function cleanStats(raw: unknown): Stats {
+  const r = isObj(raw) ? raw : {};
+  const group = <K extends string>(g: unknown, keys: readonly K[], allowed?: readonly string[]) => {
+    const out: Record<string, Record<K, number>> = {};
+    if (isObj(g)) for (const [id, v] of Object.entries(g)) {
+      if (allowed && !allowed.includes(id)) continue;
+      const o = isObj(v) ? v : {};
+      out[id] = Object.fromEntries(keys.map((k) => [k, count(o[k])])) as Record<K, number>;
+    }
+    return out;
+  };
+  return {
+    games: count(r.games), wins: count(r.wins), losses: count(r.losses), draws: count(r.draws),
+    surs: count(r.surs), sarbaz: count(r.sarbaz), streak: count(r.streak), bestStreak: count(r.bestStreak),
+    byArena: group(r.byArena, ['games', 'wins'] as const, ARENAS.map((a) => a.id)),
+    byPlayers: group(r.byPlayers, ['games', 'wins', 'surs'] as const, ['2', '3', '4']),
+  };
 }
 
 export interface Profile {

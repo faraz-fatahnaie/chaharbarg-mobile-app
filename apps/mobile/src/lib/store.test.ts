@@ -140,3 +140,20 @@ describe('saved title', () => {
     }
   });
 });
+
+describe('saved stats cleaning (F-097)', () => {
+  it('repairs bad counters, drops unknown groups, handles a non-object', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    const bad = { games: -3, wins: 'x', losses: 2.9, streak: null, byArena: { persepolis: { games: 5, wins: 'a' }, zzz: { games: 1 } }, byPlayers: { 2: { games: 4, wins: 1, surs: 2 }, 9: {} } };
+    data.set(PROFILE_KEY, JSON.stringify({ ...base, stats: bad }));
+    vi.resetModules();
+    const st = (await fresh()).getProfile().stats;
+    expect(st).toMatchObject({ games: 0, wins: 0, losses: 2, streak: 0 });
+    expect(st.byArena).toEqual({ persepolis: { games: 5, wins: 0 } });
+    expect(st.byPlayers).toEqual({ 2: { games: 4, wins: 1, surs: 2 } });
+    data.set(PROFILE_KEY, JSON.stringify({ ...base, stats: [1] }));
+    vi.resetModules();
+    expect((await fresh()).getProfile().stats.games).toBe(0);
+  });
+});
