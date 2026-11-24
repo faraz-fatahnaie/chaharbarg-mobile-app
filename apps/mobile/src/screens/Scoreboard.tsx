@@ -37,7 +37,7 @@ export function Scoreboard({ mc, units, onMenu }: { mc: MatchState; units: Score
         <span className="round">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Round')} {n(deal.round + 1)}</span>
         <span className="goal">{tr('هدف', 'Goal')} <b>{n(target)}</b></span>
       </div>
-      <div className="units" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen((o) => !o)}
+      <div className={`units u${units.length}`} role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen((o) => !o); }}>
         {units.map((u, i) => (
           <div key={i} className={`ucard ${u.me ? 'me' : ''}`} aria-label={`${u.name} ${mc.scores[i]} / ${target}, +${live[i].total}`}>

@@ -416,9 +416,9 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
           const info = ctx.seats[seat];
           const mate = players === 4 && unitOf(4, seat) === u0;
           return (
-            <div key={seat} className={`seat ${deal.turn === seat && mc.phase === 'playing' ? 'turn' : ''}`} style={{ gridColumn: cols[i], gridRow: 1 }}>
+            <div key={seat} className={`seat ${mate ? 'mate' : ''} ${deal.turn === seat && mc.phase === 'playing' ? 'turn' : ''}`} style={{ gridColumn: cols[i], gridRow: 1 }}>
               <Avatar data-seat={seat} hue={info.hue} glyph={info.glyph} name={info.name} />
-              <div className="nm"><bdi>{info.name}</bdi>{mate ? ` · ${tr('هم‌تیمی', 'partner')}` : ''}</div>
+              <div className="nm" title={mate ? tr('هم‌تیمی', 'partner') : undefined}><bdi>{info.name}</bdi></div>
               <div className="hand">
                 {!vs && deal.hands[seat].slice(0, 6).map((_, k) => <CardView key={k} faceDown back={profile.equipped.back} style={{ ['--i' as string]: k }} />)}
               </div>
