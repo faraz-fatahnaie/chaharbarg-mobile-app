@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { arenaById, type Arena } from './data/arenas';
 import { canEnter, payFee, settleMatch, todayKey } from './economy/economy';
-import { buildCtx } from './lib/match';
+import { buildCtx, stageCtx } from './lib/match';
 import { useLang } from './lib/i18n';
 import { registerAdUI, registerPayUI } from './lib/services';
 import { setEffectsEnabled, setMusicEnabled } from './lib/sound';
@@ -10,6 +10,7 @@ import { Game } from './screens/Game';
 import { Home } from './screens/Home';
 import { Settings } from './screens/Settings';
 import { Shop } from './screens/Shop';
+import { Stages } from './screens/Stages';
 import { Stats } from './screens/Stats';
 import { Tutorial } from './screens/Tutorial';
 import { GOHAR_PACKS } from './data/cosmetics';
@@ -76,6 +77,7 @@ export default function App() {
   const [playing, setPlaying] = useState<{ ctx: MatchCtx; key: number } | null>(null);
   const [saved, setSaved] = useState<MatchCtx | null>(() => loadMatch());
   const [tutorial, setTutorial] = useState(false);
+  const [stages, setStages] = useState(false);
   const { tr } = useLang();
 
   useEffect(() => {
@@ -95,6 +97,13 @@ export default function App() {
     begin(buildCtx(getProfile(), arena, players, mode));
   }
 
+  function startStage(id: string) {
+    const ctx = stageCtx(getProfile(), id);
+    if (!ctx) return;
+    setStages(false);
+    begin(ctx);
+  }
+
   function forfeit() {
     if (saved && saved.mode === 'bots' && saved.paid) {
       const hu = 0;
@@ -112,6 +121,7 @@ export default function App() {
     saveMatch(null);
     setPlaying(null);
     setSaved(null);
+    if (c.stageId) { startStage(c.stageId); return; }
     start(arenaById(c.arenaId), c.match.config.players, c.mode);
   };
 
@@ -121,7 +131,7 @@ export default function App() {
         <Game key={playing.key} ctx={playing.ctx} onExit={exit} onAgain={again} />
       ) : (
         <>
-          {tab === 'home' && <Home saved={saved} onStart={start} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} />}
+          {tab === 'home' && <Home saved={saved} onStart={start} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} onStages={() => setStages(true)} />}
           {tab === 'shop' && <Shop />}
           {tab === 'stats' && <Stats />}
           {tab === 'settings' && <Settings onTutorial={() => setTutorial(true)} />}
@@ -135,6 +145,7 @@ export default function App() {
           </nav>
         </>
       )}
+      {stages && <Stages busy={!!saved} onPlay={startStage} onClose={() => setStages(false)} />}
       {tutorial && <Tutorial onClose={() => setTutorial(false)} />}
       <AdModal />
       <PayModal />

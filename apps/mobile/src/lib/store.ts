@@ -90,6 +90,8 @@ export interface MatchCtx {
   paid: boolean;
   fee: number;
   tod: 'day' | 'dusk' | 'night';
+  /** set when the match is a solo stage (data/stages.ts) */
+  stageId?: string;
 }
 
 export function saveMatch(c: MatchCtx | null) {

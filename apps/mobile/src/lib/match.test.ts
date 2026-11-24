@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, mulberry32, newMatch } from '@chaharbarg/engine';
 import { DEFAULT_SETTINGS, createProfile } from '../economy/economy';
-import { fixMatchTarget, rulesFrom } from './match';
+import { fixMatchTarget, rulesFrom, stageCtx } from './match';
 import type { MatchCtx } from './store';
 
 const profile = (target: 'short' | 'long') => ({ ...createProfile(0), settings: { ...DEFAULT_SETTINGS, target } });
@@ -33,5 +33,19 @@ describe('fixMatchTarget', () => {
       expect(f.match.config.target).toBe(want);
       expect(f.match.deal.config.target).toBe(want);
     }
+  });
+});
+
+describe('stageCtx', () => {
+  it('is null for a locked or unknown stage', () => {
+    expect(stageCtx(createProfile(0), 'stage-2')).toBeNull();
+    expect(stageCtx(createProfile(0), 'nope')).toBeNull();
+  });
+  it('is a free 2-player match in the stage arena once open', () => {
+    const c = stageCtx(createProfile(0), 'stage-1')!;
+    expect(c).toMatchObject({ arenaId: 'persepolis', stageId: 'stage-1', mode: 'bots', paid: false, fee: 0 });
+    expect(c.match.config.players).toBe(2);
+    const p = { ...createProfile(0), stages: ['stage-1'] };
+    expect(stageCtx(p, 'stage-2')!.arenaId).toBe('si-o-se-pol');
   });
 });

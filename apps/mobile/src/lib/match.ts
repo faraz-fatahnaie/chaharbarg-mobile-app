@@ -1,7 +1,9 @@
 import { DEFAULT_RULES, mulberry32, newMatch, targetOptions, type RulesConfig } from '@chaharbarg/engine';
 import { timeOfDayFor, type Arena } from '../data/arenas';
 import { BOTS, botById } from '../data/bots';
-import type { Profile } from '../economy/economy';
+import { stageUnlocked, type Profile } from '../economy/economy';
+import { arenaById } from '../data/arenas';
+import { STAGES } from '../data/stages';
 import type { MatchCtx, SeatInfo } from './store';
 
 export function rulesFrom(p: Profile, players: 2 | 3 | 4): RulesConfig {
@@ -54,6 +56,13 @@ export function buildCtx(p: Profile, arena: Arena, players: 2 | 3 | 4, mode: 'bo
     match: newMatch(rulesFrom(p, players), rng),
     arenaId: arena.id, seats, mode, paid: mode === 'bots', fee: mode === 'bots' ? arena.fee : 0, tod,
   };
+}
+
+/** A free 2-player match against the stage's arena bots; null if the stage is unknown or still locked. No fee, trophies or pot. */
+export function stageCtx(p: Profile, stageId: string): MatchCtx | null {
+  const st = STAGES.find((s) => s.id === stageId);
+  if (!st || !stageUnlocked(p, stageId)) return null;
+  return { ...buildCtx(p, arenaById(st.arenaId), 2, 'bots'), paid: false, fee: 0, stageId };
 }
 
 export const botCount = BOTS.length;
