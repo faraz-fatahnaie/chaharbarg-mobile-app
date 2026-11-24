@@ -12,11 +12,24 @@ export interface RoomView {
   match: MatchState | null;
   deadline: number | null;
   ready: number[];
+  ranked: boolean;
+  rematch: number[];
+  deltas: (number | null)[] | null;
+  games: number;
 }
 
-/** Server address: VITE_SERVER_URL, else port 8787 on the host serving the app (works from a phone on the same Wi-Fi). */
-export const SERVER_URL: string =
-  (import.meta.env.VITE_SERVER_URL as string | undefined) ?? `${location.protocol}//${location.hostname}:8787`;
+/** Server address: one chosen in the app, else VITE_SERVER_URL, else port 8787 on the host serving the app (a phone on the same Wi-Fi). */
+const SERVER_KEY = 'chaharbarg.server.v1';
+const defaultServer = (import.meta.env.VITE_SERVER_URL as string | undefined) ?? `${location.protocol}//${location.hostname}:8787`;
+let SERVER_URL: string = (() => { try { return localStorage.getItem(SERVER_KEY) || defaultServer; } catch { return defaultServer; } })();
+export const getServerUrl = () => SERVER_URL;
+/** Saves a new server address (http/https only); an empty value goes back to the default. Returns false if it is not a valid URL. */
+export function setServerUrl(v: string): boolean {
+  const s = v.trim().replace(/\/+$/, '');
+  if (s && !/^https?:\/\/[^\s/]+(:\d+)?$/.test(s)) return false;
+  try { if (s) localStorage.setItem(SERVER_KEY, s); else localStorage.removeItem(SERVER_KEY); } catch { return false; }
+  return true;
+}
 
 // Credentials live in localStorage. `?as=name` gives a separate identity per tab, so two tabs can play each other on one device.
 const as = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('as') : null;
@@ -59,6 +72,14 @@ export const createRoom = (players: number, target: number, timer: number) => ca
 export const joinRoom = (code: string) => call('POST', `/api/rooms/${code}/join`, {});
 export const startRoom = (code: string, fillBots: boolean) => call('POST', `/api/rooms/${code}/start`, { fillBots });
 export const sendMove = (code: string, cardId: string, captureIds: string[]) => call('POST', `/api/rooms/${code}/move`, { cardId, captureIds });
+export const joinQueue = (players: number) => call('POST', '/api/queue', { players });
+export const leaveQueue = () => call('POST', '/api/queue/leave', {});
+export const rematch = (code: string) => call('POST', `/api/rooms/${code}/rematch`, {});
+export const leaveRoom = (code: string) => call('POST', `/api/rooms/${code}/leave`, {});
+export const inviteFriend = (code: string, id: string) => call('POST', `/api/rooms/${code}/invite`, { id });
+export const getMe = () => call<{ id: string; name: string; code: string; trophies: number; queued: boolean }>('GET', '/api/me');
+export const searchPlayers = (q: string) => call<{ players: Person[] }>('GET', `/api/players/search?q=${encodeURIComponent(q)}`);
+export const friendRequestById = (id: string) => call('POST', '/api/friends/request', { id });
 export const sendReady = (code: string) => call('POST', `/api/rooms/${code}/ready`, {});
 
 /** Streams room views; reconnects after a drop until the returned function is called or the match is over. */
@@ -108,7 +129,9 @@ export type PushEvent =
   | { type: 'friend-request' | 'friend-accepted'; from: Person }
   | { type: 'dm'; msg: DmMsg; fromName: string }
   | { type: 'chat'; msg: ChatMsg }
-  | { type: 'chat-hide'; id: number };
+  | { type: 'chat-hide'; id: number }
+  | { type: 'match-found'; code: string }
+  | { type: 'invite'; code: string; players: number; from: Person };
 
 export const hasCred = () => loadCred() !== null;
 export const getFriends = () => call<FriendsList>('GET', '/api/friends');
@@ -119,7 +142,8 @@ export const sendDm = (id: string, text: string) => call<DmMsg>('POST', `/api/dm
 export const getChat = () => call<{ messages: ChatMsg[] }>('GET', '/api/chat');
 export const postChat = (text: string) => call<ChatMsg>('POST', '/api/chat', { text });
 export const reportChat = (id: number) => call('POST', '/api/chat/report', { id });
-export const getRankings = (period: 'week' | 'month') => call<{ rows: RankRow[] }>('GET', `/api/rankings?period=${period}`);
+export interface LadderRow { id: string; name: string; trophies: number }
+export const getRankings = (period: 'week' | 'month' | 'ladder') => call<{ rows: (RankRow & LadderRow)[] }>('GET', `/api/rankings?period=${period}`);
 export const getPrizes = () => call<PrizeInfo>('GET', '/api/prizes');
 export const claimPrizeCall = (id: number) => call<{ shahi: number; gohar: number }>('POST', '/api/prizes/claim', { id });
 

@@ -31,7 +31,7 @@ interface Settled {
 }
 
 /** Online mode: the server owns the match; this screen shows the view it sends and posts moves. */
-export interface OnlineCtl { view: RoomView; move: (cardId: string, captureIds: string[]) => void; ready: () => void; leave: () => void }
+export interface OnlineCtl { view: RoomView; move: (cardId: string, captureIds: string[]) => void; ready: () => void; leave: () => void; rematch: () => void; again: () => void }
 
 export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void; onForfeit: () => void; online?: OnlineCtl }) {
   const { tr, n, lang } = useLang();
@@ -477,7 +477,16 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
             {ctx.mode === 'bots' && !online && result.outcome === 'win' && result.paid && result.bonus === 0 && adOk && (
               <button className="btn good" disabled={adBusy} onClick={doubleUp}>▶ {tr(`تماشای ویدیو: ${n(Math.round(result.payout * 0.5))} شاهی بیشتر`, `Watch a video: +${n(Math.round(result.payout * 0.5))} Shahi`)}</button>
             )}
-            {online && <button className="btn primary" onClick={online.leave}>{tr('بازگشت', 'Back')}</button>}
+            {online && online.view.ranked && online.view.deltas?.[view] != null && (
+              <div className="stat"><b>🏆 {online.view.deltas[view]! > 0 ? '+' : ''}{n(online.view.deltas[view]!)}</b><span className="mute">{tr('جام', 'Trophies')}</span></div>
+            )}
+            {online && !online.view.ranked && (
+              <button className="btn primary" disabled={online.view.rematch.includes(view)} onClick={online.rematch}>
+                {online.view.rematch.includes(view) ? tr('منتظر بقیه…', 'Waiting for the others…') : tr('بازی دوباره', 'Rematch')}
+              </button>
+            )}
+            {online && online.view.ranked && <button className="btn primary" onClick={online.again}>{tr('حریف جدید', 'Find another match')}</button>}
+            {online && <button className="btn ghost" onClick={online.leave}>{tr('بازگشت', 'Back')}</button>}
             {!online && nextStage && <button className="btn primary" onClick={() => onStage(nextStage)}>{tr('مرحلهٔ بعد', 'Next stage')}</button>}
             {!online && <button className={nextStage ? 'btn ghost' : 'btn primary'} onClick={onAgain}>{ctx.stageId ? tr('تلاش دوباره', 'Retry') : tr('بازی دوباره', 'Play again')}</button>}
             {!online && <button className="btn ghost" onClick={onExit}>{tr('خانه', 'Home')}</button>}

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/i18n';
 import {
-  friendAction, friendRequest, getChat, getDms, getFriends, getRankings, postChat, reportChat, sendDm,
-  type ChatMsg, type DmMsg, type FriendsList, type Person, type PushEvent, type RankRow,
+  friendAction, friendRequest, friendRequestById, getChat, getDms, getFriends, getRankings, postChat, reportChat, searchPlayers, sendDm,
+  type ChatMsg, type DmMsg, type FriendsList, type LadderRow, type Person, type PushEvent, type RankRow,
 } from '../lib/online';
 
 type Bus = { on: (f: (e: PushEvent) => void) => () => void };
@@ -40,6 +40,28 @@ function Thread({ me, peer, bus, onBack }: { me: string; peer: Person; bus: Bus;
   );
 }
 
+/** Find players on the server by name and send them a request. */
+function Search({ onAdd, known }: { onAdd: (id: string) => void; known: Set<string> }) {
+  const { tr } = useLang();
+  const [q, setQ] = useState('');
+  const [found, setFound] = useState<Person[] | null>(null);
+  const [err, setErr] = useState('');
+  const go = () => { setErr(''); searchPlayers(q.trim()).then((r) => setFound(r.players)).catch((e: Error) => { setFound(null); setErr(e.message); }); };
+  return (
+    <div className="panel col">
+      <h3>{tr('جستجوی بازیکن', 'Find a player')}</h3>
+      <div className="row">
+        <input style={input} value={q} maxLength={24} aria-label={tr('نام بازیکن', 'Player name')} placeholder={tr('حداقل ۳ حرف از نام', 'First 3+ letters of the name')} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && go()} />
+        <button className="btn" disabled={q.trim().length < 3} onClick={go}>{tr('جستجو', 'Search')}</button>
+      </div>
+      {err && <span role="alert" className="mute">{err}</span>}
+      {found?.length === 0 && <span className="mute">{tr('کسی پیدا نشد.', 'Nobody found.')}</span>}
+      {found?.map((p) => <div key={p.id} className="row"><span className="grow">{p.name}</span>
+        <button className="btn primary" disabled={known.has(p.id)} onClick={() => onAdd(p.id)}>{known.has(p.id) ? tr('✓', '✓') : tr('افزودن', 'Add')}</button></div>)}
+    </div>
+  );
+}
+
 export function Friends({ me, bus }: { me: string; bus: Bus }) {
   const { tr } = useLang();
   const [list, setList] = useState<FriendsList | null>(null);
@@ -68,6 +90,7 @@ export function Friends({ me, bus }: { me: string; bus: Bus }) {
         </div>
         {err && <span role="alert" className="mute">{err}</span>}
       </div>
+      <Search onAdd={(id) => run(async () => { await friendRequestById(id); reload(); })} known={new Set([...list.friends, ...list.outgoing].map((p) => p.id))} />
       {list.incoming.length > 0 && (
         <div className="panel col"><h3>{tr('درخواست‌ها', 'Requests')}</h3>
           {list.incoming.map((p) => <div key={p.id} className="row"><span className="grow">{p.name}</span>
@@ -127,12 +150,13 @@ export function PublicChat({ me, bus }: { me: string; bus: Bus }) {
 
 export function Rankings({ me }: { me: string }) {
   const { tr, n } = useLang();
-  const [period, setPeriod] = useState<'week' | 'month'>('week');
-  const [rows, setRows] = useState<RankRow[] | null>(null);
+  const [period, setPeriod] = useState<'ladder' | 'week' | 'month'>('ladder');
+  const [rows, setRows] = useState<(RankRow & LadderRow)[] | null>(null);
   useEffect(() => { setRows(null); getRankings(period).then((r) => setRows(r.rows)).catch(() => setRows([])); }, [period]);
   return (
     <div className="panel col">
       <div className="seg">
+        <button className={period === 'ladder' ? 'on' : ''} onClick={() => setPeriod('ladder')}>{tr('جام‌ها', 'Trophies')}</button>
         <button className={period === 'week' ? 'on' : ''} onClick={() => setPeriod('week')}>{tr('هفتگی', 'Weekly')}</button>
         <button className={period === 'month' ? 'on' : ''} onClick={() => setPeriod('month')}>{tr('ماهانه', 'Monthly')}</button>
       </div>
@@ -141,7 +165,7 @@ export function Rankings({ me }: { me: string }) {
       {rows?.map((r, i) => (
         <div key={r.id} className="row" style={{ fontWeight: r.id === me ? 800 : 400 }}>
           <span style={{ width: 24 }}>{n(i + 1)}</span><span className="grow">{r.name}</span>
-          <span>{n(r.wins)} {tr('برد', 'wins')}</span><span className="chip shahi"><span className="coin" />{n(r.coins)}</span>
+          {period === 'ladder' ? <span>🏆 {n(r.trophies)}</span> : <><span>{n(r.wins)} {tr('برد', 'wins')}</span><span className="chip shahi"><span className="coin" />{n(r.coins)}</span></>}
         </div>
       ))}
     </div>
