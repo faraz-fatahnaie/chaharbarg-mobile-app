@@ -18,7 +18,7 @@ function load(): Profile {
       // old builds stored 62 / 100 / 'single'; storage may also hold edited values
       const t: unknown = settings.target;
       settings.target = t === 'long' || t === 100 ? 'long' : 'short';
-      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), stats: { ...p.stats, byPlayers: p.stats?.byPlayers ?? {} }, settings }, Date.now());
+      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), stats: { ...createProfile(0).stats, ...p.stats, byPlayers: p.stats?.byPlayers ?? {} }, settings }, Date.now());
     }
   } catch {
     /* storage unavailable or corrupt: start fresh */
