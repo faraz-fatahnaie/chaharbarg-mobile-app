@@ -5,7 +5,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 
 ## Inbox
 - [ ] F-007 [Employer #4, offline P5] Avatar creator, shown on the left during play; leave room for later taunt moments. Depends on avatar art (plan: v2)
-- [ ] F-011 [Employer #5, offline P9] Quick-chat messages during play: polish the existing bot sticker chat; online delivery later
 - [ ] F-013 [Employer #2 online half, NEEDS SERVER, do not promote] Online play for 2, 3 and 4 players
 - [ ] F-014 [Employer #6, NEEDS SERVER, do not promote] Friend requests: send, accept, reject, remove, block
 - [ ] F-015 [Employer #15, NEEDS SERVER, do not promote] Friends list with a chat button per friend
@@ -18,12 +17,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [ ] F-030 The new Notifications panel and the Contact support / Send feedback links have no automated tests. Check them in the running app.
 - [ ] F-041 Rebuild `docs/graph/graph.json` (`graphify update .`) after this lands; it still has R16 and `surCap` nodes.
 - [ ] F-045 Run the spec's phone-viewport check (2p, 3p and 4p, in fa and en). Look for overlap with the floor cards, the `pos-tr`, `pos-top` and `pos-right` seats, and the turn glow.
-- [ ] F-068 Add focus handling and a screen-reader announcement to the inline confirmations in Home (forfeit) and Settings (erase all data).
-  Depends on: F-050
-  Found while building F-050.
-- [ ] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`.
-  Depends on: F-009
-  Found while building F-009.
 - [ ] F-097 Clean the saved `stats` totals (`games`, `wins`, `losses`, `streak`, …) in `store.ts` `load()` the same way `cleanByPlayers` does, and only copy `p.stats` in when it is a plain object.
   Depends on: F-010
   Found while building F-010.
@@ -124,3 +117,6 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 - [x] F-069 `Game.tsx` line 383 would show `+-N XP` if a negative XP result ever reached that screen (the spec already lists this). (closed: done: XP gain shows a sign only when positive)
 - [x] F-082 Announce newly reached honors on the match-end screen in `Game.tsx`. (closed: done: new honors announced on the result screen)
 - [x] F-010 [Employer #11 offline part, offline P8] Stats split by 2, 3 and 4 player games: games, wins, win percent, sur count
+- [x] F-068 Add focus handling and a screen-reader announcement to the inline confirmations in Home (forfeit) and Settings (erase all data). (closed: done: focus and alertdialog announcement)
+- [x] F-011 [Employer #5, offline P9] Quick-chat messages during play: polish the existing bot sticker chat; online delivery later (closed: done: bilingual quick chat with cooldown)
+- [x] F-081 Let the player pick a title from their unlocked honors. This needs a stored `title` field, checked on load in `store.ts`. (closed: done: title picker on the Stats screen)
