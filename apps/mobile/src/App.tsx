@@ -128,7 +128,7 @@ export default function App() {
   return (
     <div className="app">
       {playing ? (
-        <Game key={playing.key} ctx={playing.ctx} onExit={exit} onAgain={again} />
+        <Game key={playing.key} ctx={playing.ctx} onExit={exit} onAgain={again} onStage={(id) => { saveMatch(null); setPlaying(null); setSaved(null); startStage(id); }} />
       ) : (
         <>
           {tab === 'home' && <Home saved={saved} onStart={start} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} onStages={() => setStages(true)} />}

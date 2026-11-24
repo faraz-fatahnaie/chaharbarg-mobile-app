@@ -9,7 +9,8 @@ import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
 import { botById, EMOTES } from '../data/bots';
 import { TABLE_COLORS } from '../data/cosmetics';
-import { adStatus, checkAchievements, grantAd, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
+import { adStatus, checkAchievements, clearStage, grantAd, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
+import { STAGES } from '../data/stages';
 import { useLang } from '../lib/i18n';
 import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
@@ -23,10 +24,10 @@ const label = (c: Card) => `${({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<n
 
 interface Settled {
   outcome: 'win' | 'loss' | 'draw';
-  payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; paid: boolean; bonus: number;
+  payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; paid: boolean; bonus: number; stagePrize: number;
 }
 
-export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void }) {
+export function Game({ ctx, onExit, onAgain, onStage }: { ctx: MatchCtx; onExit: () => void; onAgain: () => void; onStage: (id: string) => void }) {
   const { tr, n } = useLang();
   const profile = useProfile();
   const [mc, setMc] = useState<MatchState>(ctx.match);
@@ -157,18 +158,24 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     const margin = outcome === 'win' ? mc.scores[hu] - Math.max(...mc.scores.filter((_, u) => u !== hu)) : 0;
     let info = { payout: 0, trophyDelta: 0, xpGain: 0, levelUps: 0 };
     let unlocked: string[] = [];
+    let stagePrize = 0;
     if (ctx.mode === 'bots') {
       update((p) => {
         const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee, margin, target: mc.config.target }, todayKey(), Date.now());
         info = r;
         const a = checkAchievements(r.profile, Date.now());
         unlocked = a.unlocked;
+        if (ctx.stageId && outcome === 'win') {
+          const c = clearStage(a.profile, ctx.stageId, Date.now());
+          stagePrize = c.shahi - a.profile.shahi;
+          return c;
+        }
         return a.profile;
       });
     }
     sfx(outcome === 'win' ? 'win' : outcome === 'loss' ? 'lose' : 'click');
     setSummary(false);
-    setResult({ outcome, ...info, unlocked, paid, bonus: 0 });
+    setResult({ outcome, ...info, unlocked, paid, bonus: 0, stagePrize });
   }
 
   async function doubleUp() {
@@ -183,6 +190,8 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
     setResult({ ...result, bonus: extra });
   }
 
+  const si = STAGES.findIndex((s) => s.id === ctx.stageId);
+  const nextStage = result?.outcome === 'win' && si >= 0 ? STAGES[si + 1]?.id : undefined;
   const now = Date.now();
   const adOk = adStatus(profile, now, todayKey()).ok;
   const last = mc.history[mc.history.length - 1];
@@ -381,13 +390,17 @@ export function Game({ ctx, onExit, onAgain }: { ctx: MatchCtx; onExit: () => vo
               </div>
             )}
             {ctx.mode === 'bots' && <div className="mute">+{n(result.xpGain)} XP{result.levelUps > 0 && ` · ${tr('ارتقا سطح!', 'Level up!')} +${n(result.levelUps * LEVEL_GOHAR)} ${tr('گوهر', 'Gohar')}`}</div>}
+            {ctx.stageId && result.stagePrize > 0 && (
+              <div className="stat"><b className="row" style={{ justifyContent: 'center' }}><span className="coin" />+{n(result.stagePrize)}</b><span className="mute">{tr('جایزهٔ مرحله', 'Stage prize')}</span></div>
+            )}
             {result.unlocked.map((id) => (
               <div key={id} className="panel">🏅 {tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}</div>
             ))}
             {ctx.mode === 'bots' && result.outcome === 'win' && result.paid && result.bonus === 0 && adOk && (
               <button className="btn good" disabled={adBusy} onClick={doubleUp}>▶ {tr(`تماشای ویدیو: ${n(Math.round(result.payout * 0.5))} شاهی بیشتر`, `Watch a video: +${n(Math.round(result.payout * 0.5))} Shahi`)}</button>
             )}
-            <button className="btn primary" onClick={onAgain}>{tr('بازی دوباره', 'Play again')}</button>
+            {nextStage && <button className="btn primary" onClick={() => onStage(nextStage)}>{tr('مرحلهٔ بعد', 'Next stage')}</button>}
+            <button className={nextStage ? 'btn ghost' : 'btn primary'} onClick={onAgain}>{ctx.stageId ? tr('تلاش دوباره', 'Retry') : tr('بازی دوباره', 'Play again')}</button>
             <button className="btn ghost" onClick={onExit}>{tr('خانه', 'Home')}</button>
           </div>
         </div>
