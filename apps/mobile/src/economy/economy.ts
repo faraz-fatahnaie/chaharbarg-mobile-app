@@ -4,6 +4,26 @@ import { COSMETICS, GOHAR_PACKS, type CosmeticKind } from '../data/cosmetics';
 import { HONORS, type Honor, type HonorKind } from '../data/honors';
 import { sha256 } from './sha256';
 
+export const winRate = (wins: number, games: number): number => {
+  const r = games > 0 ? Math.round((wins / games) * 100) : 0;
+  return Number.isFinite(r) ? r : 0;
+};
+
+const count = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+
+export const cleanByPlayers = (raw: unknown): Stats['byPlayers'] => {
+  const out: Stats['byPlayers'] = {};
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return out;
+  for (const k of ['2', '3', '4']) {
+    const v = (raw as Record<string, unknown>)[k];
+    if (typeof v !== 'object' || v === null) continue;
+    const o = v as Record<string, unknown>;
+    const games = count(o.games);
+    out[k] = { games, wins: Math.min(count(o.wins), games), surs: count(o.surs) };
+  }
+  return out;
+};
+
 /*
  * Economy rules (all client-side, offline-first):
  *  - Shahi (شاهی): soft coin. Earned by playing, daily rewards, challenges and rewarded ads. Never sold for money.
@@ -43,7 +63,6 @@ export interface Stats {
   byPlayers: Record<string, { games: number; wins: number; surs: number }>;
 }
 
-const count = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x > 0 ? Math.floor(x) : 0);
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 
 /** Saved stats from storage: every counter a non-negative integer, groups kept only for known keys. */
@@ -62,7 +81,7 @@ export function cleanStats(raw: unknown): Stats {
     games: count(r.games), wins: count(r.wins), losses: count(r.losses), draws: count(r.draws),
     surs: count(r.surs), sarbaz: count(r.sarbaz), streak: count(r.streak), bestStreak: count(r.bestStreak),
     byArena: group(r.byArena, ['games', 'wins'] as const, ARENAS.map((a) => a.id)),
-    byPlayers: group(r.byPlayers, ['games', 'wins', 'surs'] as const, ['2', '3', '4']),
+    byPlayers: cleanByPlayers(r.byPlayers),
   };
 }
 
@@ -292,7 +311,7 @@ export function settleMatch(p: Profile, m: MatchSummary, today: string, now: num
       draws: s.draws + (m.outcome === 'draw' ? 1 : 0), surs: s.surs + m.surs, sarbaz: s.sarbaz + m.sarbaz,
       streak, bestStreak: Math.max(s.bestStreak, streak),
       byArena: { ...s.byArena, [m.arenaId]: { games: ar.games + 1, wins: ar.wins + (m.outcome === 'win' ? 1 : 0) } },
-      byPlayers: { ...s.byPlayers, [m.players]: { games: bp.games + 1, wins: bp.wins + (m.outcome === 'win' ? 1 : 0), surs: bp.surs + m.surs } },
+      byPlayers: m.quit ? s.byPlayers : { ...s.byPlayers, [m.players]: { games: bp.games + 1, wins: bp.wins + (m.outcome === 'win' ? 1 : 0), surs: bp.surs + m.surs } },
     },
   };
   const levelUps = after - before;

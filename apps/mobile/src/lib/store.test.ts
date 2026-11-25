@@ -118,6 +118,18 @@ describe('stats by player count in old saves', () => {
     vi.resetModules();
     expect((await fresh()).getProfile().stats.byPlayers).toEqual({});
   });
+
+  it('a save with bad byPlayers is cleaned on load', async () => {
+    const s = await fresh();
+    const base = JSON.parse(JSON.stringify(s.getProfile()));
+    base.name = 'Sara';
+    base.stats.byPlayers = { 2: { games: 'x' }, 9: {} };
+    data.set(PROFILE_KEY, JSON.stringify(base));
+    vi.resetModules();
+    const p = (await fresh()).getProfile();
+    expect(p.stats.byPlayers).toEqual({ 2: { games: 0, wins: 0, surs: 0 } });
+    expect(p.name).toBe('Sara');
+  });
 });
 
 describe('save with no stats object', () => {
