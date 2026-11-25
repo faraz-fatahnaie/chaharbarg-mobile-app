@@ -6,6 +6,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
 ## Inbox
 - [ ] F-099 Decide: opening-floor Q/K re-deal in 'allow jack' mode
   packages/engine/src/deal.ts: the 'no more than 2 queens/kings on the opening floor' re-deal only runs when openingJack === 'replace'. Owner decides whether it should also apply with 'allow' (then make it unconditional + test) or stay as is (then drop the pending-review comment).
+- [ ] F-100 Decide: login token lifetime and refresh
+  packages/server/src/db.ts: guest bearer tokens never expire and cannot be revoked. Owner decides lifetime (e.g. 90 days sliding), refresh on use, and a logout/revoke endpoint; then implement with tests and update apps/mobile/src/lib/online.ts to re-sign-in on 401.
 
 ## Ready
 
