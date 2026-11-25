@@ -83,8 +83,9 @@ export function Online({ onClose }: { onClose: () => void }) {
   }, [queue]);
   useEffect(() => { if (view?.status === 'over') refreshMe(); }, [view?.status]);
 
-  const enter = (c: string) => { stop.current(); setCode(c); setView(null); setInvite(null); stop.current = watchRoom(c, setView, setOnline); };
-  const leave = () => { if (code) void leaveRoom(code).catch(() => {}); stop.current(); stop.current = noop; setCode(null); setView(null); };
+  const closed = () => { stop.current = noop; setOnline(true); setCode(null); setView(null); setErr(tr('این میز بسته شد.', 'This room was closed.')); };
+  const enter = (c: string) => { stop.current(); setErr(''); setCode(c); setView(null); setInvite(null); stop.current = watchRoom(c, setView, setOnline, closed); };
+  const leave = () => { if (code) void leaveRoom(code).catch(() => {}); stop.current(); stop.current = noop; setOnline(true); setCode(null); setView(null); };
   const run = async (f: () => Promise<unknown>) => { setErr(''); try { await f(); } catch (e) { setErr((e as Error).message); } };
   // show "searching" before the request returns: the server can match instantly and push match-found first
   const find = (size: number) => run(async () => {
@@ -176,7 +177,7 @@ export function Online({ onClose }: { onClose: () => void }) {
             {serverDraft === null ? <button className="btn ghost" onClick={() => setServerDraft(getServerUrl())}>{tr('تغییر آدرس سرور', 'Change server')}</button> : (
               <div className="row">
                 <input style={{ ...field, flex: 1 }} value={serverDraft} aria-label={tr('آدرس سرور', 'Server address')} placeholder="https://play.example.com" onChange={(e) => setServerDraft(e.target.value)} />
-                <button className="btn primary" onClick={() => { if (setServerUrl(serverDraft)) location.reload(); else setErr(tr('آدرس باید با http:// یا https:// شروع شود.', 'The address must start with http:// or https://.')); }}>{tr('ذخیره', 'Save')}</button>
+                <button className="btn primary" onClick={() => { if (setServerUrl(serverDraft)) location.reload(); else setErr(tr('آدرس باید با https:// شروع شود (http:// فقط برای شبکهٔ محلی).', 'Use an https:// address (http:// only for a local network).')); }}>{tr('ذخیره', 'Save')}</button>
               </div>
             )}
           </div>

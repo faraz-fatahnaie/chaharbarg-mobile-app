@@ -30,6 +30,7 @@ export function Shop() {
     try { await fn(); } catch { setMsg(tr('ارتباط با فروشگاه ممکن نشد؛ دوباره امتحان کن.', "Couldn't reach the store — please try again.")); }
     finally { busyRef.current = false; setBusy(false); }
   }
+  const noStore = storeProvider.name === 'none'; // release build without a billing plugin
   const buyPack = (sku: string) => guarded(async () => {
     const r = await storeProvider.purchase(sku);
     if (!r) return;
@@ -51,14 +52,15 @@ export function Shop() {
         <span className="mute">{tr('گوهر فقط برای ظاهر بازی است و هرگز در شرط‌بندی یا ورودی آرنا استفاده نمی‌شود.', 'Gohar only buys cosmetics. It is never used for entry fees or stakes.')}</span>
         <div className="grid2" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {GOHAR_PACKS.map((g) => (
-            <button key={g.sku} className="btn col" style={{ alignItems: 'center', gap: 2 }} disabled={busy} onClick={() => buyPack(g.sku)}>
+            <button key={g.sku} className="btn col" style={{ alignItems: 'center', gap: 2 }} disabled={busy || noStore} onClick={() => buyPack(g.sku)}>
               <b style={{ color: 'var(--gohar)' }}>{n(g.gohar)} <span className="gem" /></b>
               <small>{n(g.toman)} {tr('تومان', 'Toman')}</small>
             </button>
           ))}
         </div>
         {storeProvider.isMock && <span className="mute">⚠ {tr('نسخهٔ آزمایشی: خرید واقعی نیست. در نسخهٔ بازار/مایکت به درگاه بازار/مایکت وصل می‌شود.', 'Demo build: no real payment. Bazaar/Myket builds use the store billing.')}</span>}
-        <button className="btn sm ghost" disabled={busy} onClick={restore}>{tr('بازیابی خریدها', 'Restore purchases')}</button>
+        {noStore && <span className="mute">{tr('خرید در این نسخه در دسترس نیست.', 'Purchases are not available in this build.')}</span>}
+        <button className="btn sm ghost" disabled={busy || noStore} onClick={restore}>{tr('بازیابی خریدها', 'Restore purchases')}</button>
         {msg && <span className="mute" role="status">{msg}</span>}
       </div>
 

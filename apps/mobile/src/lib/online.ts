@@ -148,7 +148,7 @@ async function readSse(url: string, signal: AbortSignal, onOpen: () => void, onJ
 
 /** Keeps an SSE stream open, reconnecting after a drop until the returned function is called, the server answers 404,
  *  or onJson returns true (a final message). */
-function watch(path: string, retryMs: number, onJson: (x: unknown) => boolean | void, onState?: (connected: boolean) => void): () => void {
+function watch(path: string, retryMs: number, onJson: (x: unknown) => boolean | void, onState?: (connected: boolean) => void, onDone?: () => void): () => void {
   let stop = false;
   let ac: AbortController | null = null;
   (async () => {
@@ -161,7 +161,7 @@ function watch(path: string, retryMs: number, onJson: (x: unknown) => boolean | 
         if (e instanceof Gone) done = true; /* else dropped: retry below */
       }
       if (stop) return;
-      if (done) { onState?.(false); return; }
+      if (done) { if (onDone) onDone(); else onState?.(false); return; }
       onState?.(false);
       await new Promise((r) => setTimeout(r, retryMs));
     }
@@ -192,12 +192,13 @@ export function parseView(x: unknown): RoomView | null {
 
 /** Streams room views; reconnects after a drop until the returned function is called, the room is gone (404),
  *  or the server sends its final view (`aborted: true`, on shutdown). */
-export function watchRoom(code: string, onView: (v: RoomView) => void, onState: (connected: boolean) => void): () => void {
+/** onClosed fires once when the room is gone for good (404 or an aborted view); without it the stream reports disconnected. */
+export function watchRoom(code: string, onView: (v: RoomView) => void, onState: (connected: boolean) => void, onClosed?: () => void): () => void {
   return watch(`/api/rooms/${encodeURIComponent(code)}/events`, 1000, (x) => {
     const v = parseView(x);
     if (v) onView(v);
     return v?.aborted === true;
-  }, onState);
+  }, onState, onClosed);
 }
 
 // ---- social: friends, direct messages, public chat, rankings, prizes ----

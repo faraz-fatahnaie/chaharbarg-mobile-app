@@ -59,13 +59,15 @@ describe('watchRoom stops for good', () => {
       return new Response(`: hi\n\ndata: ${JSON.stringify({ ...view, status: 'over', aborted: true })}\n\n`, { status: 200 });
     }));
     const views: unknown[] = [];
-    const stops = ['GONE1', 'ABRT1', 'ERR00'].map((c) => o.watchRoom(c, (v) => views.push(v), () => {}));
+    const closed: string[] = [];
+    const stops = ['GONE1', 'ABRT1', 'ERR00'].map((c) => o.watchRoom(c, (v) => views.push(v), () => {}, () => closed.push(c)));
     await new Promise((r) => setTimeout(r, 1200));
     stops.forEach((s) => s());
     expect(calls.GONE1).toBe(1);
     expect(calls.ABRT1).toBe(1);
     expect(calls.ERR00).toBeGreaterThan(1);
     expect(views).toHaveLength(1);
+    expect(closed.sort()).toEqual(['ABRT1', 'GONE1']);
     vi.unstubAllGlobals();
   });
 });
