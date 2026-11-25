@@ -45,8 +45,9 @@ describe('friends', () => {
     social.request(a, social.code(b.id)); social.accept(b, a.id);
     social.block(a, b.id);
     expect(social.areFriends(a.id, b.id)).toBe(false);
-    expect(fails(() => social.request(b, social.code(a.id)))).toBe(403);
-    expect(fails(() => social.request(a, social.code(b.id)))).toBe(403);
+    expect(fails(() => social.request(b, social.code(a.id)))).toBe(0); // looks sent: the block is not revealed
+    expect(social.list(a).incoming).toEqual([]); // but nothing was stored or pushed
+    expect(fails(() => social.request(a, social.code(b.id)))).toBe(403); // your own block: unblock first
     expect(fails(() => social.sendDm(b, a.id, 'hi'))).toBe(403);
     expect(social.list(a).blocked.map((x) => x.id)).toEqual([b.id]);
     social.unblock(a, b.id);
@@ -97,6 +98,7 @@ describe('public chat moderation', () => {
     const db = openDb(); const hub = new Hub(); let t = 1_700_000_000_000;
     const social = new Social(db, hub, () => t);
     const [spam, ...rs] = Array.from({ length: REPORTS_TO_HIDE + 1 }, (_, i) => guestLogin(db, `U${i}`));
+    db.prepare('UPDATE players SET created = 0').run(); // old enough to report
     const msg = social.postChat(spam, 'buy now');
     expect(fails(() => social.report(spam, msg.id))).toBe(400);
     rs.slice(0, REPORTS_TO_HIDE).forEach((r) => social.report(r, msg.id));
@@ -112,7 +114,7 @@ describe('rankings and prizes', () => {
   const SAT = Date.UTC(2026, 10, 14); // Saturday 2026-11-14
   const win = (db: ReturnType<typeof openDb>, ts: number, ids: [string, boolean, boolean?][], players = 2) => {
     const real = Date.now; Date.now = () => ts; // recordResult stamps with Date.now()
-    try { recordResult(db, { config: { players, target: 35 } as any, winnerUnit: 0, ranked: false, players: ids.map(([id, won, ab]) => ({ playerId: id, name: id, won, abandoned: !!ab })) }); } finally { Date.now = real; }
+    try { recordResult(db, { config: { players, target: 35 } as any, winnerUnit: 0, ranked: true, players: ids.map(([id, won, ab]) => ({ playerId: id, name: id, won, abandoned: !!ab })) }, true); } finally { Date.now = real; }
   };
   it('weeks start on Saturday, months on the 1st', () => {
     expect(new Date(periodStart('week', Date.UTC(2026, 10, 18, 12))).toISOString()).toBe('2026-11-14T00:00:00.000Z');

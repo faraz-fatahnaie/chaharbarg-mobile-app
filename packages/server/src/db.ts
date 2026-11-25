@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import type { FinishInfo } from './rooms';
+import { RoomError, type FinishInfo } from './rooms';
 
 /** Coins the server awards for an online win (shown in rankings; separate from the local Shahi wallet). */
 export const winCoins = (players: number) => 25 * players;
@@ -25,7 +25,11 @@ export function openDb(path = ':memory:') {
   `);
   try { db.exec('ALTER TABLE players ADD COLUMN fcode TEXT'); } catch { /* column exists */ }
   try { db.exec('ALTER TABLE players ADD COLUMN trophies INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
+  // Older databases: results before this column existed count as unranked (they may include bot or friendly games).
+  try { db.exec('ALTER TABLE results ADD COLUMN ranked INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
+  try { db.exec('ALTER TABLE chat_reports ADD COLUMN ts INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS players_fcode ON players (fcode)');
+  db.exec('CREATE INDEX IF NOT EXISTS result_players_player ON result_players (player_id, result_id)'); // pair cooldown + rankings
   for (const r of db.prepare('SELECT id FROM players WHERE fcode IS NULL').all() as { id: string }[]) db.prepare('UPDATE players SET fcode = ? WHERE id = ?').run(newFriendCode(db), r.id);
   return db;
 }
@@ -43,7 +47,7 @@ export type Db = ReturnType<typeof openDb>;
 export interface Account { id: string; name: string }
 
 /** Guest account: the client keeps {id, token}; the server stores only a hash of the token. */
-export function guestLogin(db: Db, name: string, id?: string, token?: string): Account & { token: string } {
+export function guestLogin(db: Db, name: string, id?: string, token?: string, mayCreate: () => boolean = () => true): Account & { token: string } {
   if (id && token) {
     const row = db.prepare('SELECT token_hash FROM players WHERE id = ?').get(id) as { token_hash: string } | undefined;
     if (row && same(row.token_hash, sha(token))) {
@@ -51,6 +55,7 @@ export function guestLogin(db: Db, name: string, id?: string, token?: string): A
       return { id, name, token };
     }
   }
+  if (!mayCreate()) throw new RoomError(429, 'too many new accounts, try again later');
   const nid = randomUUID();
   const ntoken = randomBytes(24).toString('hex');
   db.prepare('INSERT INTO players (id, name, token_hash, created, fcode) VALUES (?, ?, ?, ?, ?)').run(nid, name, sha(ntoken), Date.now(), newFriendCode(db));
@@ -70,6 +75,36 @@ export const WIN_TROPHIES = 25;
 export const LOSS_TROPHIES = 12;
 export const trophiesOf = (db: Db, id: string) => (db.prepare('SELECT trophies FROM players WHERE id = ?').get(id) as { trophies: number } | undefined)?.trophies ?? 0;
 
+/** Runs `fn` in one SQLite transaction: all of its writes land, or none. */
+export function tx<T>(db: Db, fn: () => T): T {
+  db.exec('BEGIN');
+  try { const v = fn(); db.exec('COMMIT'); return v; } catch (e) { db.exec('ROLLBACK'); throw e; }
+}
+
+/** A ranked match between players who met in a counted ranked match this recently changes no trophies and no rankings (anti-collusion). */
+export const PAIR_COOLDOWN_MS = 30 * 60_000;
+
+function metRecently(db: Db, ids: string[], since: number): boolean {
+  const q = db.prepare(`SELECT 1 FROM results r JOIN result_players a ON a.result_id = r.id JOIN result_players b ON b.result_id = r.id
+    WHERE r.ranked = 1 AND r.ts >= ? AND a.player_id = ? AND b.player_id = ? LIMIT 1`);
+  return ids.some((a, i) => ids.slice(i + 1).some((b) => !!q.get(since, a, b)));
+}
+
+/**
+ * Records a finished match and, for ranked rooms, applies ladder trophies, in one transaction.
+ * It counts for trophies and rankings only when the room is ranked, every seat is a real player (no bots),
+ * and no two of the players met in a counted ranked match within PAIR_COOLDOWN_MS. Returns per-seat deltas for ranked rooms.
+ */
+export function finishMatch(db: Db, f: FinishInfo, now = Date.now()): (number | null)[] | undefined {
+  return tx(db, () => {
+    const ids = f.players.flatMap((p) => (p.playerId ? [p.playerId] : []));
+    const counts = f.ranked && ids.length === f.players.length && !metRecently(db, ids, now - PAIR_COOLDOWN_MS);
+    recordResult(db, f, counts, now);
+    if (!f.ranked) return undefined;
+    return counts ? applyTrophies(db, f) : f.players.map((p) => (p.playerId ? 0 : null));
+  });
+}
+
 export function applyTrophies(db: Db, f: FinishInfo): (number | null)[] {
   return f.players.map((p) => {
     if (!p.playerId) return null;
@@ -80,8 +115,20 @@ export function applyTrophies(db: Db, f: FinishInfo): (number | null)[] {
   });
 }
 
-export function recordResult(db: Db, f: FinishInfo) {
-  const { lastInsertRowid } = db.prepare('INSERT INTO results (ts, players, target) VALUES (?, ?, ?)').run(Date.now(), f.config.players, f.config.target);
+/** `ranked`: whether this result counts for rankings and prizes (see finishMatch). */
+export function recordResult(db: Db, f: FinishInfo, ranked = false, now = Date.now()) {
+  const { lastInsertRowid } = db.prepare('INSERT INTO results (ts, players, target, ranked) VALUES (?, ?, ?, ?)').run(now, f.config.players, f.config.target, ranked ? 1 : 0);
   const ins = db.prepare('INSERT INTO result_players (result_id, player_id, name, won, abandoned, coins) VALUES (?, ?, ?, ?, ?, ?)');
   for (const p of f.players) if (p.playerId) ins.run(lastInsertRowid, p.playerId, p.name, p.won ? 1 : 0, p.abandoned ? 1 : 0, p.won && !p.abandoned ? winCoins(f.config.players) : 0);
+}
+
+/** Chat, direct messages and chat reports older than this are deleted (on startup and daily). */
+export const RETENTION_MS = 90 * 86_400_000;
+export function pruneOld(db: Db, now = Date.now()) {
+  const before = now - RETENTION_MS;
+  tx(db, () => {
+    db.prepare('DELETE FROM chat WHERE ts < ?').run(before);
+    db.prepare('DELETE FROM dms WHERE ts < ?').run(before);
+    db.prepare('DELETE FROM chat_reports WHERE ts < ? OR msg_id NOT IN (SELECT id FROM chat)').run(before);
+  });
 }

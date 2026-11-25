@@ -15,7 +15,7 @@ export class Queue {
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(private db: Db, private hub: Hub, private rooms: Rooms, private now: () => number = Date.now, tickMs = 1000) {
-    if (tickMs > 0) { this.timer = setInterval(() => this.tick(), tickMs); this.timer.unref?.(); }
+    if (tickMs > 0) { this.timer = setInterval(() => { try { this.tick(); } catch (e) { console.error('queue tick failed', e); } }, tickMs); this.timer.unref?.(); }
   }
 
   join(me: { id: string; name: string }, players: number) {
@@ -44,7 +44,8 @@ export class Queue {
           if (near.length >= size - 1) { made = [anchor, ...near.slice(0, size - 1)]; break; }
         }
         if (!made) break;
-        this.startMatch(made, size);
+        // the entries leave the queue first, so a failure cannot loop forever; the players can queue again
+        try { this.startMatch(made, size); } catch (e) { console.error('matchmaking failed', e); }
       }
     }
   }

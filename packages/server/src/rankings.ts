@@ -1,4 +1,4 @@
-import type { Db } from './db';
+import { tx, type Db } from './db';
 
 export type Period = 'week' | 'month';
 const DAY = 86_400_000;
@@ -30,22 +30,27 @@ export function rankings(db: Db, from: number, to = Infinity, limit = 20): Row[]
   return db.prepare(`
     SELECT rp.player_id AS id, p.name AS name, SUM(rp.won) AS wins, COUNT(*) AS games, SUM(rp.coins) AS coins
     FROM result_players rp JOIN results r ON r.id = rp.result_id JOIN players p ON p.id = rp.player_id
-    WHERE r.ts >= ? AND r.ts < ? GROUP BY rp.player_id HAVING wins > 0 ORDER BY wins DESC, coins DESC, games ASC, p.name ASC LIMIT ?
+    WHERE r.ranked = 1 AND r.ts >= ? AND r.ts < ? GROUP BY rp.player_id HAVING wins > 0 ORDER BY wins DESC, coins DESC, games ASC, p.name ASC LIMIT ?
   `).all(from, to === Infinity ? Number.MAX_SAFE_INTEGER : to, limit) as unknown as Row[];
 }
 
-/** Awards the prizes of any finished period that has not been awarded yet (idempotent). */
+/** Awards the prizes of every finished period not awarded yet, back to the last awarded one or the first ranked result (idempotent). */
 export function ensurePrizes(db: Db, now: number) {
+  const first = (db.prepare('SELECT MIN(ts) t FROM results WHERE ranked = 1').get() as { t: number | null }).t;
   for (const kind of ['week', 'month'] as Period[]) {
-    const end = periodStart(kind, now);
-    const start = prevStart(kind, end);
-    const key = keyOf(kind, start);
-    if (db.prepare('SELECT 1 FROM awarded WHERE period = ?').get(key)) continue;
-    rankings(db, start, end, 3).forEach((r, i) => {
-      const [shahi, gohar] = PRIZES[kind][i];
-      db.prepare('INSERT OR IGNORE INTO prizes (period, rank, player_id, name, shahi, gohar) VALUES (?, ?, ?, ?, ?, ?)').run(key, i + 1, r.id, r.name, shahi, gohar);
+    const last = (db.prepare('SELECT MAX(period) p FROM awarded WHERE period LIKE ?').get(`${kind}:%`) as { p: string | null }).p;
+    tx(db, () => {
+      for (let end = periodStart(kind, now), start = prevStart(kind, end); ; end = start, start = prevStart(kind, start)) {
+        const key = keyOf(kind, start);
+        if (last !== null && key <= last) break; // keys sort by date
+        rankings(db, start, end, 3).forEach((r, i) => {
+          const [shahi, gohar] = PRIZES[kind][i];
+          db.prepare('INSERT OR IGNORE INTO prizes (period, rank, player_id, name, shahi, gohar) VALUES (?, ?, ?, ?, ?, ?)').run(key, i + 1, r.id, r.name, shahi, gohar);
+        });
+        db.prepare('INSERT OR IGNORE INTO awarded (period) VALUES (?)').run(key);
+        if (first === null || start <= first) break;
+      }
     });
-    db.prepare('INSERT INTO awarded (period) VALUES (?)').run(key);
   }
 }
 

@@ -24,9 +24,15 @@ export const CHAT_GAP_MS = 2000;
 export const DM_GAP_MS = 500;
 export const REPORTS_TO_HIDE = 3;
 export const MUTE_MS = 10 * 60_000;
+/** Report guards against mute-bombing: new accounts' reports are ignored, each account has an hourly quota, and only recent visible messages can be reported. */
+export const REPORT_MIN_AGE_MS = 60 * 60_000;
+export const MAX_REPORTS_PER_HOUR = 10;
+export const REPORT_WINDOW_MS = 24 * 60 * 60_000;
 // Minimal word filter [review]: replace these with ***. A person should extend the list for Persian and English.
 const BAD_WORDS = ['fuck', 'shit', 'bitch', 'asshole', 'کیر', 'کس', 'کون', 'جنده', 'حرامزاده'];
-const filterText = (t: string) => BAD_WORDS.reduce((acc, w) => acc.replace(new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu'), '***'), t);
+// Whole words only (کس must not touch کسی or کسب); \b is ASCII-only, so the word edges are spelled out with Unicode classes.
+const BAD_RE = BAD_WORDS.map((w) => new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{M}\\p{N}])`, 'giu'));
+export const filterText = (t: string) => BAD_RE.reduce((acc, re) => acc.replace(re, '***'), t);
 const cleanText = (x: unknown, max: number) => {
   const s = typeof x === 'string' ? x.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
   if (!s || [...s].length > max) throw new RoomError(400, `message must be 1-${max} characters`);
@@ -37,6 +43,13 @@ export class Social {
   private lastDm = new Map<string, number>();
   private lastChat = new Map<string, number>();
   constructor(private db: Db, private hub: Hub, private now: () => number = Date.now) {}
+
+  /** Drops rate-limit entries that no longer limit anything. */
+  sweep() {
+    const now = this.now();
+    for (const [k, t] of this.lastDm) if (now - t >= DM_GAP_MS) this.lastDm.delete(k);
+    for (const [k, t] of this.lastChat) if (now - t >= CHAT_GAP_MS) this.lastChat.delete(k);
+  }
 
   private has(a: string, b: string, kind: string) { return !!this.db.prepare('SELECT 1 FROM relations WHERE a = ? AND b = ? AND kind = ?').get(a, b, kind); }
   private set(a: string, b: string, kind: string) { this.db.prepare('INSERT OR IGNORE INTO relations (a, b, kind, ts) VALUES (?, ?, ?, ?)').run(a, b, kind, this.now()); }
@@ -69,7 +82,8 @@ export class Social {
       : this.db.prepare('SELECT id, name FROM players WHERE fcode = ?').get(String(who).toUpperCase())) as { id: string; name: string } | undefined;
     if (!t) throw new RoomError(404, 'no such player');
     if (t.id === me.id) throw new RoomError(400, 'that is your own code');
-    if (this.isBlocked(me.id, t.id)) throw new RoomError(403, 'cannot send a request to this player');
+    if (this.has(t.id, me.id, 'block')) return; // they blocked you: look like a sent request, do not reveal the block
+    if (this.has(me.id, t.id, 'block')) throw new RoomError(403, 'unblock this player first');
     if (this.areFriends(me.id, t.id)) throw new RoomError(409, 'already friends');
     if (this.has(t.id, me.id, 'request')) return this.accept(me, t.id); // they asked first: just become friends
     this.set(me.id, t.id, 'request');
@@ -129,7 +143,8 @@ export class Social {
     this.lastChat.set(me.id, this.now());
     const { lastInsertRowid } = this.db.prepare('INSERT INTO chat (ts, sender, name, text) VALUES (?, ?, ?, ?)').run(this.now(), me.id, me.name, t);
     const msg = { id: Number(lastInsertRowid), ts: this.now(), from: me.id, name: me.name, text: t };
-    for (const id of this.hub.ids()) if (!this.isBlocked(id, me.id)) this.hub.notify(id, { type: 'chat', msg });
+    const blocks = new Set((this.db.prepare("SELECT b AS id FROM relations WHERE a = ? AND kind = 'block' UNION SELECT a FROM relations WHERE b = ? AND kind = 'block'").all(me.id, me.id) as { id: string }[]).map((x) => x.id));
+    for (const id of this.hub.ids()) if (!blocks.has(id)) this.hub.notify(id, { type: 'chat', msg });
     return msg;
   }
   chatHistory(me: { id: string }) {
@@ -137,10 +152,15 @@ export class Social {
     return rows.filter((m) => !this.isBlocked(me.id, m.from)).reverse();
   }
   report(me: { id: string }, msgId: number) {
-    const m = this.db.prepare('SELECT sender FROM chat WHERE id = ?').get(msgId) as { sender: string } | undefined;
-    if (!m) throw new RoomError(404, 'no such message');
+    const now = this.now();
+    const m = this.db.prepare('SELECT sender FROM chat WHERE id = ? AND hidden = 0 AND ts >= ?').get(msgId, now - REPORT_WINDOW_MS) as { sender: string } | undefined;
+    if (!m) throw new RoomError(404, 'no such message'); // only recent visible messages: what the reporter could have seen
     if (m.sender === me.id) throw new RoomError(400, 'you cannot report yourself');
-    this.db.prepare('INSERT OR IGNORE INTO chat_reports (msg_id, reporter) VALUES (?, ?)').run(msgId, me.id);
+    const recent = (this.db.prepare('SELECT COUNT(*) n FROM chat_reports WHERE reporter = ? AND ts >= ?').get(me.id, now - 60 * 60_000) as { n: number }).n;
+    if (recent >= MAX_REPORTS_PER_HOUR) throw new RoomError(429, 'too many reports, try again later');
+    const created = (this.db.prepare('SELECT created FROM players WHERE id = ?').get(me.id) as { created: number } | undefined)?.created ?? now;
+    if (now - created < REPORT_MIN_AGE_MS) return; // too new to count: accepted silently so sock puppets learn nothing
+    this.db.prepare('INSERT OR IGNORE INTO chat_reports (msg_id, reporter, ts) VALUES (?, ?, ?)').run(msgId, me.id, now);
     const n = (this.db.prepare('SELECT COUNT(*) n FROM chat_reports WHERE msg_id = ?').get(msgId) as { n: number }).n;
     if (n >= REPORTS_TO_HIDE) {
       this.db.prepare('UPDATE chat SET hidden = 1 WHERE id = ?').run(msgId);

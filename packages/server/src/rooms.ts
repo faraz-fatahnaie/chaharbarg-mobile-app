@@ -1,9 +1,16 @@
+import { randomInt } from 'node:crypto';
 import {
-  DEFAULT_RULES, chooseMove, matchNextDeal, matchPlay, mulberry32, newMatch, targetOptions, timeoutMove, unitOf,
+  DEFAULT_RULES, chooseMove, matchNextDeal, matchPlay, newMatch, targetOptions, timeoutMove, unitOf,
   type Card, type MatchState, type Rng, type RulesConfig,
 } from '@chaharbarg/engine';
 
 export const MAX_TIMEOUTS = 3;
+/** Extra seconds on the first turn of a ranked match: players arrive from the queue and still have to open the table. */
+export const FIRST_TURN_GRACE_S = 10;
+/** The janitor deletes a room nobody has touched for this long (a playing room is touched at least every turn limit). */
+export const ROOM_IDLE_MS = 15 * 60_000;
+/** Card shuffles and bot choices: cryptographic randomness, so no one can recover a seed from the cards they see. */
+const cryptoRng: Rng = () => randomInt(2 ** 47) / 2 ** 47;
 export type TimerMode = 0 | 5 | 15; // seconds per turn; 0 = off (a 60 s idle limit still applies)
 
 export interface Seat { playerId: string | null; name: string; bot: boolean; timeouts: number; abandoned: boolean; left?: boolean }
@@ -27,6 +34,10 @@ export interface Room {
   deltas: (number | null)[] | null;
   /** matches started in this room (1 after start, +1 per rematch) */
   games: number;
+  /** epoch ms of the last change (janitor) */
+  touched: number;
+  /** the match was cut short by a server shutdown: no result, no trophies */
+  aborted: boolean;
 }
 
 /** What one seat is allowed to see: other hands and the stock are same-length placeholders. */
@@ -45,6 +56,7 @@ export interface RoomView {
   rematch: number[];
   deltas: (number | null)[] | null;
   games: number;
+  aborted: boolean;
 }
 
 export interface FinishInfo {
@@ -79,7 +91,7 @@ const hidden = (n: number, tag: string): Card[] => Array.from({ length: n }, (_,
 
 export class Rooms {
   private rooms = new Map<string, Room>();
-  private listeners = new Map<string, Map<string, Set<(v: RoomView) => void>>>();
+  private listeners = new Map<string, Map<string, Set<{ send: (v: RoomView) => void; end: () => void }>>>();
   private timers = new Map<string, ReturnType<typeof setTimeout>>();
   private rng: Rng;
   private now: () => number;
@@ -90,7 +102,7 @@ export class Rooms {
   private onFinish: (i: FinishInfo) => (number | null)[] | void;
 
   constructor(o: RoomsOptions = {}) {
-    this.rng = o.rng ?? mulberry32(Date.now() ^ (Math.random() * 2 ** 32));
+    this.rng = o.rng ?? cryptoRng;
     this.now = o.now ?? Date.now;
     this.dealPauseMs = o.dealPauseMs ?? 6000;
     this.botDelayMs = o.botDelayMs ?? 900;
@@ -110,10 +122,10 @@ export class Rooms {
     if (!(targetOptions(players) as readonly number[]).includes(target)) throw new RoomError(400, 'target not allowed');
     if (timer !== 0 && timer !== 5 && timer !== 15) throw new RoomError(400, 'timer must be 0, 5 or 15');
     let code = '';
-    do code = Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(this.rng() * CODE_CHARS.length)]).join('');
+    do code = Array.from({ length: 5 }, () => CODE_CHARS[randomInt(CODE_CHARS.length)]).join('');
     while (this.rooms.has(code));
     const room: Room = {
-      code, hostId: playerId, timer: timer as TimerMode, status: 'lobby', match: null, deadline: null, ready: new Set(), ranked, rematch: new Set(), deltas: null, games: 0,
+      code, hostId: playerId, timer: timer as TimerMode, status: 'lobby', match: null, deadline: null, ready: new Set(), ranked, rematch: new Set(), deltas: null, games: 0, touched: this.now(), aborted: false,
       config: { ...DEFAULT_RULES, players, target: target as RulesConfig['target'] },
       seats: [{ playerId, name, bot: false, timeouts: 0, abandoned: false }],
     };
@@ -136,7 +148,7 @@ export class Rooms {
     const r = this.get(code);
     const i = this.seatOf(r, playerId);
     if (r.status === 'lobby') {
-      if (r.hostId === playerId) { this.rooms.delete(code); this.listeners.delete(code); return; }
+      if (r.hostId === playerId) { this.remove(code); return; }
       r.seats.splice(i, 1);
     } else if (r.status === 'over') {
       r.seats[i].left = true;
@@ -180,7 +192,7 @@ export class Rooms {
     r.status = 'playing';
     r.games++;
     r.match = newMatch(r.config, this.rng);
-    this.afterChange(r);
+    this.afterChange(r, r.ranked ? FIRST_TURN_GRACE_S * this.secondMs : 0);
     return r;
   }
 
@@ -198,8 +210,8 @@ export class Rooms {
     if (m.deal.turn !== seat) throw new RoomError(409, 'not your turn');
     try {
       r.match = matchPlay(m, cardId, captureIds);
-    } catch (e) {
-      throw new RoomError(400, `illegal move: ${(e as Error).message}`);
+    } catch {
+      throw new RoomError(400, 'illegal move');
     }
     r.seats[seat].timeouts = 0;
     this.afterChange(r);
@@ -216,17 +228,18 @@ export class Rooms {
   }
 
   /** Subscribe a player's connection; returns the unsubscribe function. */
-  connect(code: string, playerId: string, send: (v: RoomView) => void): () => void {
+  connect(code: string, playerId: string, send: (v: RoomView) => void, end: () => void = () => {}): () => void {
     const r = this.get(code);
     this.seatOf(r, playerId);
     let byPlayer = this.listeners.get(code);
     if (!byPlayer) this.listeners.set(code, (byPlayer = new Map()));
     let set = byPlayer.get(playerId);
     if (!set) byPlayer.set(playerId, (set = new Set()));
-    set.add(send);
+    const l = { send, end };
+    set.add(l);
     this.publish(r);
     return () => {
-      set!.delete(send);
+      set!.delete(l);
       if (!set!.size) byPlayer!.delete(playerId);
       if (this.rooms.has(code)) this.publish(r);
     };
@@ -246,17 +259,18 @@ export class Rooms {
     return {
       code: r.code, status: r.status, mySeat: seat, hostId: r.hostId, config: r.config, timer: r.timer,
       seats: r.seats.map((s) => ({ name: s.name, bot: s.bot, connected: s.bot || (!!s.playerId && !!byPlayer?.get(s.playerId)?.size), abandoned: s.abandoned })),
-      match, deadline: r.deadline, ready: [...r.ready], ranked: r.ranked, rematch: [...r.rematch], deltas: r.deltas, games: r.games,
+      match, deadline: r.deadline, ready: [...r.ready], ranked: r.ranked, rematch: [...r.rematch], deltas: r.deltas, games: r.games, aborted: r.aborted,
     };
   }
 
   private publish(r: Room) {
+    r.touched = this.now();
     const byPlayer = this.listeners.get(r.code);
     if (!byPlayer) return;
     r.seats.forEach((s, i) => {
       if (!s.playerId) return;
       const view = this.view(r, i);
-      byPlayer.get(s.playerId)?.forEach((send) => send(view));
+      byPlayer.get(s.playerId)?.forEach((l) => l.send(view));
     });
   }
 
@@ -268,21 +282,29 @@ export class Rooms {
 
   private later(r: Room, ms: number, fn: () => void) {
     this.clearTimer(r.code);
-    this.timers.set(r.code, setTimeout(() => { this.timers.delete(r.code); fn(); }, ms));
+    this.timers.set(r.code, setTimeout(() => {
+      this.timers.delete(r.code);
+      try { fn(); } catch (e) { console.error(`room ${r.code}:`, e); this.publish(r); }
+    }, ms));
   }
 
   /** Decide what happens next after any state change: finish, pause between deals, or wait for the player on turn. */
-  private afterChange(r: Room) {
+  private afterChange(r: Room, graceMs = 0) {
     const m = r.match!;
     r.deadline = null;
     if (m.phase === 'matchOver') {
       this.clearTimer(r.code);
       r.status = 'over';
       const winners = new Set(r.seats.flatMap((_, i) => (unitOf(r.config.players, i) === m.winner ? [i] : [])));
-      r.deltas = this.onFinish({
-        config: r.config, winnerUnit: m.winner, ranked: r.ranked,
-        players: r.seats.map((s, i) => ({ playerId: s.playerId, name: s.name, won: winners.has(i), abandoned: s.abandoned })),
-      }) ?? null;
+      try {
+        r.deltas = this.onFinish({
+          config: r.config, winnerUnit: m.winner, ranked: r.ranked,
+          players: r.seats.map((s, i) => ({ playerId: s.playerId, name: s.name, won: winners.has(i), abandoned: s.abandoned })),
+        }) ?? null;
+      } catch (e) {
+        console.error(`room ${r.code}: recording the result failed`, e); // the players still see the final state
+        r.deltas = null;
+      }
     } else if (m.phase === 'dealOver') {
       r.ready = new Set();
       this.later(r, this.dealPauseMs, () => this.nextDeal(r));
@@ -291,7 +313,7 @@ export class Rooms {
       if (seat.bot) {
         this.later(r, this.botDelayMs, () => this.botMove(r));
       } else {
-        const ms = r.timer ? r.timer * this.secondMs : this.idleLimitMs;
+        const ms = (r.timer ? r.timer * this.secondMs : this.idleLimitMs) + graceMs;
         r.deadline = this.now() + ms;
         this.later(r, ms, () => this.timeout(r));
       }
@@ -323,6 +345,39 @@ export class Rooms {
     const mv = timeoutMove(m.deal, m.deal.turn, this.rng);
     r.match = matchPlay(m, mv.cardId, mv.captureIds);
     this.afterChange(r);
+  }
+
+  /** Hosted rooms still in the lobby or playing (the server caps how many a player may open). */
+  openRoomsOf(playerId: string) { return [...this.rooms.values()].filter((r) => r.hostId === playerId && r.status !== 'over').length; }
+  size() { return this.rooms.size; }
+
+  /** Deletes a room and ends its event streams. */
+  private remove(code: string) {
+    this.clearTimer(code);
+    this.rooms.delete(code);
+    const byPlayer = this.listeners.get(code);
+    this.listeners.delete(code);
+    byPlayer?.forEach((set) => set.forEach((l) => l.end()));
+  }
+
+  /** Janitor: deletes rooms idle for ROOM_IDLE_MS, and finished rooms every human has left. */
+  sweep() {
+    const now = this.now();
+    for (const r of [...this.rooms.values()]) {
+      const deserted = r.status === 'over' && r.seats.every((s) => !s.playerId || s.left);
+      if (deserted || now - r.touched > ROOM_IDLE_MS) this.remove(r.code);
+    }
+  }
+
+  /**
+   * Shutdown: in-memory matches cannot survive a restart. Every match in progress ends as aborted
+   * (no result recorded, no trophy change), the players get that final view, and all streams are closed.
+   */
+  abortAll() {
+    for (const r of [...this.rooms.values()]) {
+      if (r.status === 'playing') { r.status = 'over'; r.aborted = true; r.deadline = null; r.deltas = null; this.publish(r); }
+      this.remove(r.code);
+    }
   }
 
   /** For tests and shutdown. */
