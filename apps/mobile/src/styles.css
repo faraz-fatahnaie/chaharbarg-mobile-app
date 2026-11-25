@@ -48,6 +48,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn.sm { padding: 4px 11px; font-size: 15px; border-radius: 10px; }
 /* small controls keep their look; an invisible ::after grows the hit area to at least 44x44 */
 .btn.sm, .iconbtn, .optchip { position: relative; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .btn.sm::after, .iconbtn::after, .optchip::after { content: ''; position: absolute; inset: min(0px, (100% - 44px) / 2); }
 .btn.block { width: 100%; }
 .row { display: flex; align-items: center; gap: 8px; }

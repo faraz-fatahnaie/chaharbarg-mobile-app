@@ -7,7 +7,7 @@ import { registerAdUI, registerPayUI } from './lib/services';
 import { setEffectsEnabled, setMusicEnabled } from './lib/sound';
 import { getProfile, loadMatch, saveMatch, update, useProfile, type MatchCtx } from './lib/store';
 import { forfeitSaved } from './screens/game/settle';
-import { Dialog } from './ui/Dialog';
+import { Dialog, setScreenBack } from './ui/Dialog';
 import { SuitSprite } from './art/CardView';
 import { Game } from './screens/Game';
 import { Home } from './screens/Home';
@@ -136,6 +136,9 @@ export default function App() {
   }
 
   const exit = () => { setSaved(loadMatch()); setPlaying(null); };
+  // Android back with no dialog open: any other screen goes Home (a local match stays saved), Home minimizes
+  const atHome = !playing && !onlineOpen && tab === 'home';
+  useEffect(() => setScreenBack(atHome ? null : () => { if (playing) exit(); else if (onlineOpen) setOnlineOpen(false); else setTab('home'); }));
   const again = () => {
     if (!playing) return;
     const c = playing.ctx;

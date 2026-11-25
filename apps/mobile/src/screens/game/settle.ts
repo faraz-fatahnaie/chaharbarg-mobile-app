@@ -59,3 +59,8 @@ export function forfeitSaved(now = Date.now()) {
   }
   saveMatch(null);
 }
+
+/** Crash exit: settle the saved match like a forfeit; if that throws (the save may be what broke) still drop it so the app can start. */
+export function abandonSaved(now = Date.now()) {
+  try { forfeitSaved(now); } catch (e) { console.error(e); saveMatch(null); }
+}

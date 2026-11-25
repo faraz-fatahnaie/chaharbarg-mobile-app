@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { liveScore, type MatchState } from '@chaharbarg/engine';
 import type { FlySpec } from '../../art/fx';
 import { sfx } from '../../lib/sound';
@@ -22,6 +22,8 @@ export function useFloorFx(root: RefObject<HTMLDivElement | null>, mc: MatchStat
   const lr = mc.lastResult;
   const fxKey = lr ? `${mc.dealNo}:${lr.card.id}` : '';
   const prevKey = useRef(fxKey);
+  const mcRef = useRef(mc);
+  mcRef.current = mc;
   {
     const ids = new Set(deal.floor.map((c) => c.id));
     const used = new Set<number>();
@@ -34,6 +36,15 @@ export function useFloorFx(root: RefObject<HTMLDivElement | null>, mc: MatchStat
       kinds.current[c.id] = c.id === lr?.card.id ? 'play' : 'deal';
     }
   }
+  // rects the next play/capture animation starts from, plus the live score it diffs against
+  const measure = () => {
+    const g0 = root.current;
+    if (!g0) return;
+    const f: Record<string, DOMRect> = {}, h: Record<string, DOMRect> = {};
+    g0.querySelectorAll<HTMLElement>('.fslot').forEach((e) => { f[e.dataset.cid!] = e.firstElementChild!.getBoundingClientRect(); });
+    g0.querySelectorAll<HTMLElement>('.hslot').forEach((e) => { h[e.dataset.cid!] = e.firstElementChild!.getBoundingClientRect(); });
+    snap.current = { floor: f, hand: h, live: liveScore(mcRef.current.deal).map((l) => l.total) };
+  };
   useLayoutEffect(() => {
     const g0 = root.current;
     if (!g0) return;
@@ -54,7 +65,7 @@ export function useFloorFx(root: RefObject<HTMLDivElement | null>, mc: MatchStat
             { transform: `translate(${dx}px,${dy}px) scale(${sc}) rotate(-12deg)` },
             { transform: `translate(${dx * .4}px,${dy * .4 - 36}px) scale(1.18) rotate(5deg)`, offset: .6 },
             { transform: 'none' },
-          ], { duration: 300, easing: ease });
+          ], { duration: 300, easing: ease }).onfinish = measure; // the snapshot below catches this card at its first frame
         }
       } else if (sr && S) {
         const pileEl = g0.querySelector(`[data-pile="${lr.seat}"]`);
@@ -106,11 +117,19 @@ export function useFloorFx(root: RefObject<HTMLDivElement | null>, mc: MatchStat
       }
     }
     prevKey.current = fxKey;
-    const f: Record<string, DOMRect> = {}, h: Record<string, DOMRect> = {};
-    g0.querySelectorAll<HTMLElement>('.fslot').forEach((e) => { f[e.dataset.cid!] = e.firstElementChild!.getBoundingClientRect(); });
-    g0.querySelectorAll<HTMLElement>('.hslot').forEach((e) => { h[e.dataset.cid!] = e.firstElementChild!.getBoundingClientRect(); });
-    snap.current = { floor: f, hand: h, live: liveScore(deal).map((l) => l.total) };
+    measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fxKey, ...o.relayout]);
+  // .sel / .pick / the hand fan (transitions) and the deal-in (animation) move cards after the snapshot above was taken at
+  // their first frame: retake it when one ends. (Reduced motion: nothing runs, so no event fires and the first snapshot is final.)
+  useEffect(() => {
+    const g0 = root.current;
+    if (!g0) return;
+    const onEnd = (e: TransitionEvent) => { if (e.propertyName === 'transform') measure(); };
+    g0.addEventListener('transitionend', onEnd);
+    g0.addEventListener('animationend', measure);
+    return () => { g0.removeEventListener('transitionend', onEnd); g0.removeEventListener('animationend', measure); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return { slots: slots.current, kinds: kinds.current };
 }

@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
-import { getProfile, saveMatch } from '../lib/store';
+import { getProfile } from '../lib/store';
+import { abandonSaved } from '../screens/game/settle';
 
 function Fallback() {
   let fa = true;
@@ -9,8 +10,8 @@ function Fallback() {
     <div className="modal" role="alertdialog" aria-modal="true" aria-label={tr('خطا', 'Error')} dir={fa ? 'rtl' : 'ltr'}>
       <div className="sheet col" style={{ textAlign: 'center' }}>
         <h2>{tr('مشکلی پیش آمد', 'Something went wrong')}</h2>
-        <span className="mute">{tr('بازی نیمه‌تمام پاک می‌شود تا برنامه دوباره باز شود.', 'The match in progress is cleared so the app can start again.')}</span>
-        <button className="btn primary" autoFocus onClick={() => { saveMatch(null); location.reload(); }}>{tr('بازگشت به خانه', 'Back to home')}</button>
+        <span className="mute">{tr('بازی نیمه‌تمام به‌عنوان انصراف ثبت می‌شود تا برنامه دوباره باز شود.', 'The match in progress is recorded as a forfeit so the app can start again.')}</span>
+        <button className="btn primary" autoFocus onClick={() => { abandonSaved(); location.reload(); }}>{tr('بازگشت به خانه', 'Back to home')}</button>
       </div>
     </div>
   );

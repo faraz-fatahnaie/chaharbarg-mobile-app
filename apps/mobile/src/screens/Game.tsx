@@ -32,8 +32,6 @@ import { saveMatch, update, useProfile, type MatchCtx } from '../lib/store';
 const AUTOPILOT = import.meta.env.VITE_AUTOPILOT ? String(import.meta.env.VITE_AUTOPILOT) : '';
 const FAST = (!!AUTOPILOT && !AUTOPILOT.endsWith(':slow'))
   || ((import.meta.env.DEV || !!AUTOPILOT) && typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast'));
-// visually hidden but read by screen readers (no shared CSS class for it)
-const SR_ONLY = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const;
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
 const byRank = (a: Card, b: Card) => a.rank - b.rank || a.suit.localeCompare(b.suit);
 const label = (c: Card) => `${({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[c.rank] ?? c.rank}${{ S: '♠', H: '♥', D: '♦', C: '♣' }[c.suit]}`;
@@ -82,10 +80,11 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     saveMatch({ ...ctx, match: mc });
   }, [mc, ctx]);
 
+  // always ask for the bed: it stays silent while music is off and starts if music is turned on mid-game
   useEffect(() => {
-    if (profile.settings.music) startAmbient(arena.ambient, arena.id);
+    startAmbient(arena.ambient, arena.id);
     return () => stopAmbient();
-  }, [arena.ambient, profile.settings.music]);
+  }, [arena.ambient, arena.id]);
 
   const wasMyTurn = useRef(false);
   useEffect(() => {
@@ -304,7 +303,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
           return (
             <div key={c.id} data-cid={c.id} className={`fslot ${kinds[c.id] === 'deal' ? 'deal' : ''}`} style={{ ['--c' as string]: col, ['--r' as string]: row, ['--i' as string]: si }}>
               <CardView card={c} deck={profile.equipped.deck} back={profile.equipped.back}
-                className={pick.includes(c.id) ? 'pick' : ''}
+                className={pick.includes(c.id) ? 'pick' : ''} pressed={pick.includes(c.id)}
                 glow={hintIds.has(c.id) && !pick.includes(c.id)} dim={!!card && opts.length > 0 && profile.settings.hints && !hintIds.has(c.id)}
                 disabled={!myTurn || !card || opts.length === 0} onClick={() => tapFloor(c)} />
             </div>
@@ -319,7 +318,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
           <span aria-hidden="true">{hint}</span>
         </div>
         {/* one polite live region for what to do next / whose turn it is (not the ticking clock) */}
-        <span aria-live="polite" style={SR_ONLY}>{hint || (mc.phase === 'playing' && !myTurn && !handoff ? waitText : '')}</span>
+        <span aria-live="polite" className="sr-only">{hint || (mc.phase === 'playing' && !myTurn && !handoff ? waitText : '')}</span>
         <div className={`opts ${hasOpts ? '' : 'off'}`}>
           {hasOpts && opts.map((o, i) => {
             const oi = o.map((x) => x.id);

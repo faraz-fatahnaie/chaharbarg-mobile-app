@@ -66,6 +66,17 @@ describe('sound toggles', () => {
     expect(ctx.createBufferSource.mock.calls.length).toBe(m);
   });
 
+  it('a game started with music off plays its arena bed once music is turned on mid-game', async () => {
+    const ctx = setup();
+    const s = await import('./sound');
+    s.setMusicEnabled(false);
+    s.startAmbient('wind', 'persepolis'); // what Game does at start, whatever the setting
+    expect(ctx.createBufferSource).not.toHaveBeenCalled();
+    s.setMusicEnabled(true);
+    expect(ctx.createBufferSource).toHaveBeenCalled();
+    s.stopAmbient();
+  });
+
   it('resumes an iOS "interrupted" context', async () => {
     const ctx = setup() as ReturnType<typeof setup> & { resume: () => Promise<void> };
     ctx.state = 'interrupted';

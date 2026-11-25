@@ -3,6 +3,7 @@ import { liveScore, scoreDeal, type MatchState, type UnitScore } from '@chaharba
 import { useLang } from '../lib/i18n';
 import { Avatar } from '../art/Avatar';
 import { Suit } from '../art/CardView';
+import { Dialog } from '../ui/Dialog';
 
 export interface ScoreUnit { name: string; avatars: { hue: number; glyph: string }[]; me: boolean; team?: string }
 
@@ -64,8 +65,9 @@ export function Scoreboard({ mc, units, onMenu }: { mc: MatchState; units: Score
       </div>
       {open && (
         <>
-          <div className="scrim" onClick={() => setOpen(false)} />
-          <div className="detail">
+          {/* pointer-only shortcut, like a Dialog backdrop; Escape / Android back close the dialog itself */}
+          <div className="scrim" aria-hidden="true" onClick={() => setOpen(false)} />
+          <Dialog className="detail" label={tr('جزئیات امتیاز', 'Score details')} onClose={() => setOpen(false)}>
             <table className="sc">
               <thead><tr><th />{units.map((u, i) => <th key={i}>{u.name}</th>)}</tr></thead>
               <tbody>
@@ -81,7 +83,7 @@ export function Scoreboard({ mc, units, onMenu }: { mc: MatchState; units: Score
                 })()}
               </tbody>
             </table>
-          </div>
+          </Dialog>
         </>
       )}
     </div>

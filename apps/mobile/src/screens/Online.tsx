@@ -63,7 +63,8 @@ export function Online({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     signIn(p.name || `${tr('مهمان', 'Guest')} ${100 + Math.floor(Math.random() * 900)}`).then((id) => { setMyId(id); refreshMe(); })
       .catch(() => setErr(tr('به سرور وصل نشد. آدرس سرور درست است و سرور روشن است؟', 'Cannot reach the server. Is the address right and the server running?')));
-    return () => stop.current();
+    // however the screen closes (its button, Android back), leave the queue and the table
+    return () => exitRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
@@ -86,6 +87,8 @@ export function Online({ onClose }: { onClose: () => void }) {
   const closed = () => { stop.current = noop; setOnline(true); setCode(null); setView(null); setErr(tr('این میز بسته شد.', 'This room was closed.')); };
   const enter = (c: string) => { stop.current(); setErr(''); setCode(c); setView(null); setInvite(null); stop.current = watchRoom(c, setView, setOnline, closed); };
   const leave = () => { if (code) void leaveRoom(code).catch(() => {}); stop.current(); stop.current = noop; setOnline(true); setCode(null); setView(null); };
+  const exitRef = useRef(noop);
+  exitRef.current = () => { if (queue) void leaveQueue().catch(() => {}); leave(); };
   const run = async (f: () => Promise<unknown>) => { setErr(''); try { await f(); } catch (e) { setErr((e as Error).message); } };
   // show "searching" before the request returns: the server can match instantly and push match-found first
   const find = (size: number) => run(async () => {
@@ -118,7 +121,7 @@ export function Online({ onClose }: { onClose: () => void }) {
     <div className="scroll col" style={{ padding: 14, gap: 12 }}>
       <div className="row"><h2 className="grow">🌐 {tr('بازی آنلاین', 'Online play')}</h2>
         <span className="chip" title={tr('جام‌های آنلاین', 'Online trophies')}>🏆 {n(trophies)}</span>
-        <button className="btn ghost" onClick={() => { if (queue) void leaveQueue().catch(() => {}); leave(); onClose(); }}>{tr('بستن', 'Close')}</button></div>
+        <button className="btn ghost" onClick={onClose}>{tr('بستن', 'Close')}</button></div>
       {err && <div className="panel" role="alert">{err}</div>}
       {!online && <div className="panel">{tr('اتصال قطع شد؛ در حال تلاش دوباره…', 'Disconnected, retrying…')}</div>}
       {invite && (

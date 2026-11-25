@@ -3,7 +3,7 @@ import { targetOptions } from '@chaharbarg/engine';
 import { Scene } from '../art/Scene';
 import { ARENAS, timeOfDayFor, type Arena } from '../data/arenas';
 import {
-  AD_REWARD, adStatus, canClaimRelief, claimChallenge, claimLogin, claimRelief, dailyChallenges, grantAd,
+  AD_REWARD, adStatus, canClaimRelief, claimChallenge, clockOk, claimLogin, claimRelief, dailyChallenges, grantAd,
   forfeitXpLoss, levelOf, loginPreview, todayKey, xpForLevel, LOGIN_SHAHI, currentTitle,
 } from '../economy/economy';
 import { useLang } from '../lib/i18n';
@@ -67,6 +67,9 @@ export function Home({ saved, notice, onStart, onResume, onForfeit, onTutorial, 
   const tod = p.settings.timeOfDay === 'auto' ? timeOfDayFor() : p.settings.timeOfDay;
   const login = loginPreview(p, today);
   const ad = adStatus(p, now, today);
+  // claims refuse a clock set back in time anyway; say so instead of a button that silently does nothing
+  const clock = clockOk(p, now);
+  const clockHint = !clock && <span className="mute" role="note">{tr('ساعت گوشی‌ات درست به نظر نمی‌رسد؛ برای گرفتن جایزه آن را تنظیم کن.', 'Your device clock looks wrong; fix it to claim rewards.')}</span>;
   const challenges = dailyChallenges(today);
   const nextArena = ARENAS.find((a) => p.trophies < a.minTrophies);
 
@@ -171,9 +174,10 @@ export function Home({ saved, notice, onStart, onResume, onForfeit, onTutorial, 
               <span className="mute" style={{ fontSize: 10 }}>{n(i + 1)}</span><b style={{ fontSize: 13 }}>{i === 6 ? '💎' : n(v)}</b></div>;
           })}
         </div>
-        <button className="btn good" disabled={!login.claimable} onClick={() => { update((q) => claimLogin(q, today, Date.now()).profile); sfx('coin'); }}>
+        <button className="btn good" disabled={!login.claimable || !clock} onClick={() => { update((q) => claimLogin(q, today, Date.now()).profile); sfx('coin'); }}>
           {login.claimable ? tr('دریافت جایزه', 'Claim') : tr('امروز گرفتی ✓', 'Claimed today ✓')}
         </button>
+        {clockHint}
       </div>
 
       <div className="panel col" style={{ margin: '0 14px' }}>
@@ -185,7 +189,7 @@ export function Home({ saved, notice, onStart, onResume, onForfeit, onTutorial, 
           return (
             <div key={c.id} className="row">
               <div className="grow"><div>{label}</div><div className="pbar"><i style={{ width: `${(prog / c.goal) * 100}%` }} /></div></div>
-              <button className="btn sm good" disabled={claimed || prog < c.goal} onClick={() => { update((q) => claimChallenge(q, c.id, today, Date.now())); sfx('coin'); }}>
+              <button className="btn sm good" disabled={claimed || prog < c.goal || !clock} onClick={() => { update((q) => claimChallenge(q, c.id, today, Date.now())); sfx('coin'); }}>
                 {claimed ? '✓' : <><span className="coin" /> {n(c.shahi)}</>}
               </button>
             </div>
@@ -194,7 +198,7 @@ export function Home({ saved, notice, onStart, onResume, onForfeit, onTutorial, 
       </div>
 
       <div className="row" style={{ padding: '0 14px' }}>
-        <button className="btn grow" disabled={!ad.ok || adBusy} onClick={watch}>
+        <button className="btn grow" disabled={!ad.ok || adBusy || !clock} onClick={watch}>
           ▶ {ad.ok ? tr(`${n(AD_REWARD)} شاهی رایگان (ویدیو)`, `${AD_REWARD} free Shahi (video)`) : ad.left <= 0 ? tr('سقف ویدیوهای امروز', 'Daily video limit') : tr(`صبر کن ${n(Math.ceil(ad.waitMs / 1000))} ثانیه`, `Wait ${Math.ceil(ad.waitMs / 1000)}s`)}
         </button>
         {canClaimRelief(p, now) && <button className="btn good" onClick={() => { update((q) => claimRelief(q, Date.now())); sfx('coin'); }}>🎁 {tr('هدیه', 'Gift')}</button>}

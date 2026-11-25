@@ -1,22 +1,25 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import { backAction } from './back';
 
 // Open dialogs, top last: only the top one reacts to Escape / Android back.
 const stack: { close?: () => void }[] = [];
-// ponytail: one history entry stands in for "a dialog is open" so Android back (no @capacitor/app installed) fires popstate
-// instead of leaving the app. A dialog closed by its own button leaves that entry, so the next back press on a plain screen
-// is swallowed once. Switch to App.addListener('backButton') if @capacitor/app is ever added.
-let armed = false;
-const arm = () => { if (armed) return; armed = true; try { history.pushState({ dialog: 1 }, ''); } catch { /* sandboxed */ } };
+// how the current screen goes Home on Android back; null = already Home (App sets it every render)
+let screenBack: (() => void) | null = null;
+export const setScreenBack = (f: (() => void) | null) => { screenBack = f; };
 
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') stack.at(-1)?.close?.(); });
-  window.addEventListener('popstate', () => {
-    armed = false;
+}
+// registered once per page; with a listener present Capacitor no longer closes the app on Back, so every case is handled here
+if (Capacitor.isNativePlatform()) {
+  void CapApp.addListener('backButton', () => {
     const top = stack.at(-1);
-    if (!top) return;
-    top.close?.();
-    // a dialog that can't be dismissed (deal summary, hand-off…) or one still underneath keeps the back button captured
-    if (!top.close || stack.length > 1) arm();
+    const a = backAction(top, !screenBack);
+    if (a === 'close') top!.close!();
+    else if (a === 'home') screenBack!();
+    else if (a === 'minimize') void CapApp.minimizeApp();
   });
 }
 
@@ -32,7 +35,6 @@ export function Dialog({ label, onClose, className = 'modal', style, onBackdrop,
   useEffect(() => {
     const e = entry.current;
     stack.push(e);
-    arm();
     const prev = document.activeElement as HTMLElement | null;
     const el = ref.current;
     (el?.querySelector<HTMLElement>(FOCUSABLE) ?? el)?.focus();

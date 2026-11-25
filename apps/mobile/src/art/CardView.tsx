@@ -103,6 +103,8 @@ export interface CardViewProps {
   deck?: string;
   back?: string;
   selected?: boolean;
+  /** aria-pressed without the hand's lifted `.sel` look (e.g. a picked floor card); defaults to `selected` */
+  pressed?: boolean;
   glow?: boolean;
   dim?: boolean;
   onClick?: () => void;
@@ -112,13 +114,13 @@ export interface CardViewProps {
   className?: string;
 }
 
-export function CardView({ card, faceDown, deck = 'deck-classic', back = 'back-indigo', selected, glow, dim, onClick, disabled, style, className }: CardViewProps) {
+export function CardView({ card, faceDown, deck = 'deck-classic', back = 'back-indigo', selected, pressed = selected, glow, dim, onClick, disabled, style, className }: CardViewProps) {
   const { lang, tr } = useLang();
   const cls = ['card', deck, selected && 'sel', glow && 'glow', dim && 'dim', onClick && 'tap', className].filter(Boolean).join(' ');
   const label = faceDown || !card ? tr('برگ پنهان', 'Hidden card') : cardName(card, lang);
   // tappable cards are keyboard/screen-reader buttons; a <button> can't hold the card's block children
   const a11y = onClick
-    ? { role: 'button', tabIndex: 0, 'aria-label': label, 'aria-pressed': selected, 'aria-disabled': disabled || undefined, onClick,
+    ? { role: 'button', tabIndex: 0, 'aria-label': label, 'aria-pressed': pressed, 'aria-disabled': disabled || undefined, onClick,
         onKeyDown: (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } }
     : { role: 'img', 'aria-label': label };
   if (faceDown || !card) {

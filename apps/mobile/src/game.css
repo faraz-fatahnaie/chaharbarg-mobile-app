@@ -12,7 +12,8 @@
 /* score zone */
 .score-zone { grid-row: 1; padding: 4px var(--pad) 0; display: flex; flex-direction: column; gap: 4px; position: relative; }
 .topbar2 { display: flex; align-items: center; gap: 8px; height: 30px; flex: none; }
-.topbar2 .iconbtn { width: 30px; height: 30px; border-radius: 10px; font-size: 15px; border: 2px solid var(--outline); }
+/* z-index: its 44px hit area (styles.css ::after) reaches under .units, which would otherwise paint over it */
+.topbar2 .iconbtn { width: 30px; height: 30px; border-radius: 10px; font-size: 15px; border: 2px solid var(--outline); z-index: 1; }
 .topbar2 .round { flex: 1; text-align: center; font-size: 12px; color: var(--mute); font-weight: 600; }
 .topbar2 .goal { font-size: 12px; background: rgba(5,9,22,.7); border: 2px solid var(--outline); border-radius: 10px; padding: 2px 8px; }
 .topbar2 .goal b { font-family: var(--f-display); font-weight: 400; color: var(--gold); font-size: 15px; }
@@ -106,16 +107,21 @@
 .emotes { position: absolute; bottom: 100%; inset-inline: var(--pad); z-index: 15; display: flex; gap: 6px; overflow-x: auto; padding: 4px; background: rgba(5,9,22,.85); border-radius: 12px; scrollbar-width: none; }
 .emotes button { flex: none; border: 2px solid var(--outline); background: var(--panel2); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 800; }
 
+/* outline halo sized by --hl, scaled with the text like the card index (cards.css): text-stroke + paint-order fails on some WebViews */
+.banner b, .banner small, .fly.txt, .vs-splash .vs {
+  --halo: var(--hl) 0 var(--outline), calc(var(--hl) * -1) 0 var(--outline), 0 var(--hl) var(--outline), 0 calc(var(--hl) * -1) var(--outline),
+    var(--hl) var(--hl) var(--outline), calc(var(--hl) * -1) var(--hl) var(--outline), var(--hl) calc(var(--hl) * -1) var(--outline), calc(var(--hl) * -1) calc(var(--hl) * -1) var(--outline); }
+
 /* banners */
 .banner { position: absolute; inset: 0; display: grid; place-items: center; z-index: 30; pointer-events: none; }
-.banner b { font-family: var(--f-display); font-weight: 400; font-size: 64px; color: var(--gold-hi); -webkit-text-stroke: 5px var(--outline); paint-order: stroke fill; text-shadow: 0 4px 0 var(--gold-d), 0 0 30px rgba(255,200,60,.9); animation: slam .9s ease-out forwards; text-align: center; line-height: 1.1; }
-.banner small { display: block; font-size: 24px; color: #fff; -webkit-text-stroke: 3px var(--outline); paint-order: stroke fill; }
+.banner b { --hl: .04em; font-family: var(--f-display); font-weight: 400; font-size: 64px; color: var(--gold-hi); text-shadow: var(--halo), 0 4px 0 var(--gold-d), 0 0 30px rgba(255,200,60,.9); animation: slam .9s ease-out forwards; text-align: center; line-height: 1.1; }
+.banner small { --hl: .06em; display: block; font-size: 24px; color: #fff; text-shadow: var(--halo), 0 4px 0 var(--gold-d), 0 0 30px rgba(255,200,60,.9); }
 @keyframes slam { 0% { transform: scale(3) rotate(-8deg); opacity: 0; } 25% { transform: scale(1) rotate(-3deg); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(1.1) rotate(-3deg); opacity: 0; } }
 
 /* ---------- animations (design/ux/game-screen.md section 4) ---------- */
 .fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 25; overflow: hidden; }
 .fly { position: absolute; will-change: transform, opacity; }
-.fly.txt { font-family: var(--f-display); font-size: 22px; color: var(--gold-hi); -webkit-text-stroke: 4px var(--outline); paint-order: stroke fill; white-space: nowrap; width: auto !important; direction: ltr; text-shadow: 0 2px 0 var(--gold-d); }
+.fly.txt { font-family: var(--f-display); font-size: 22px; color: var(--gold-hi); --hl: .09em; white-space: nowrap; width: auto !important; direction: ltr; text-shadow: var(--halo), 0 2px 0 var(--gold-d); }
 @keyframes dealin { from { transform: translate(0, -140px) scale(.5) rotate(-18deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
 @keyframes fanin { from { transform: scale(0); opacity: 0; } to { transform: none; opacity: 1; } }
 .hslot .card.dealin, .fslot.deal .card { animation: dealin .34s cubic-bezier(.3,1.4,.5,1) backwards; animation-delay: calc(var(--i, 0) * 80ms); }
@@ -138,7 +144,7 @@
 .vs-splash .half > * { transform: skewX(8deg); }
 .vs-splash .avatar { width: 84px; height: 84px; font-size: 38px; border-width: 4px; }
 .vs-splash .pn { font-family: var(--f-display); font-size: 26px; text-shadow: 0 3px 0 var(--outline); text-align: center; line-height: 1.1; padding: 0 12px; }
-.vs-splash .vs { position: absolute; left: 50%; top: 50%; margin: -44px 0 0 -44px; font-family: var(--f-display); font-size: 76px; line-height: 88px; color: var(--gold-hi); -webkit-text-stroke: 6px var(--outline); paint-order: stroke fill; text-shadow: 0 5px 0 var(--gold-d); z-index: 2; animation: vsstamp .35s cubic-bezier(.2,1.4,.4,1) .38s backwards; }
+.vs-splash .vs { position: absolute; left: 50%; top: 50%; margin: -44px 0 0 -44px; font-family: var(--f-display); font-size: 76px; line-height: 88px; color: var(--gold-hi); --hl: .04em; text-shadow: var(--halo), 0 5px 0 var(--gold-d); z-index: 2; animation: vsstamp .35s cubic-bezier(.2,1.4,.4,1) .38s backwards; }
 .vs-splash .arena-tag { position: absolute; bottom: 14%; left: 0; right: 0; text-align: center; z-index: 2; animation: fanin .3s ease-out .7s backwards; }
 .vs-splash .arena-tag span { background: var(--outline); border: 2px solid var(--gold); color: var(--gold-hi); padding: 4px 14px; border-radius: 999px; font-family: var(--f-display); font-size: 18px; }
 @keyframes vsl { to { transform: skewX(-8deg); } } @keyframes vsr { to { transform: skewX(-8deg); } }

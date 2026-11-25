@@ -81,3 +81,25 @@ describe('forfeitSaved', () => {
     expect(store.loadMatch()).toBeNull();
   });
 });
+
+describe('abandonSaved', () => {
+  it('a paid match in progress is settled as a quit loss', async () => {
+    const { store, match, settle } = await load();
+    store.saveMatch(match.buildCtx(store.getProfile(), ARENAS[0], 2, 'bots'));
+    settle.abandonSaved();
+    expect(store.getProfile().stats).toMatchObject({ games: 1, losses: 1 });
+    expect(store.loadMatch()).toBeNull();
+  });
+
+  it('a save that breaks settling is still dropped, with nothing recorded', async () => {
+    const { store, match, settle } = await load();
+    const ctx = match.buildCtx(store.getProfile(), ARENAS[0], 2, 'bots');
+    store.saveMatch({ ...ctx, match: { ...ctx.match, history: [null as never] } });
+    expect(store.loadMatch()).not.toBeNull();
+    const stats = store.getProfile().stats;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    settle.abandonSaved();
+    expect(store.loadMatch()).toBeNull();
+    expect(store.getProfile().stats).toEqual(stats);
+  });
+});
