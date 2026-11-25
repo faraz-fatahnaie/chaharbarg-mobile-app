@@ -58,7 +58,7 @@
 .chip2 { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; background: rgba(5,9,22,.7); border: 2px solid var(--outline); padding: 0 6px; border-radius: 9px; direction: ltr; font-variant-numeric: tabular-nums; }
 .chip2.bump { animation: pillpop .3s cubic-bezier(.2,1.5,.4,1); }
 .chip2 i { width: 9px; height: 12px; border-radius: 2px; background: linear-gradient(135deg, #4f7bff, var(--lapis)); border: 1px solid var(--outline); display: inline-block; }
-.bubble { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: #fff; color: #222; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 800; white-space: nowrap; animation: pop .25s; z-index: 9; box-shadow: 0 2px 6px rgba(0,0,0,.4); direction: rtl; }
+.bubble { position: absolute; top: 100%; left: 50%; --tx: -50%; transform: translateX(var(--tx)); background: #fff; color: #222; padding: 3px 9px; border-radius: 10px; font-size: 12px; font-weight: 800; white-space: nowrap; animation: pop .3s cubic-bezier(.2,1.5,.4,1); z-index: 9; box-shadow: 0 2px 6px rgba(0,0,0,.4); direction: rtl; }
 
 /* floor: fixed 7x3 slot grid, card size depends only on the container */
 .floor { grid-row: 3; position: relative; container-type: size; margin: 0 var(--pad); direction: ltr;
@@ -78,7 +78,8 @@
 /* action zone: hint / options / buttons, always rendered at fixed heights */
 .action { grid-row: 4; display: grid; grid-template-rows: 18px 34px 1fr; padding: 0 var(--pad); }
 .hint-line { font-size: 12px; color: var(--mute); text-align: center; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.opts { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; align-items: center; direction: ltr; }
+/* padding/negative margin give the scroller room for the chips' 44px hit area without moving the layout */
+.opts { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; align-items: center; direction: ltr; padding-block: 7px; margin-block: -7px; }
 .opts::-webkit-scrollbar { display: none; }
 .opts.off { visibility: hidden; }
 .optchip { flex: none; min-width: 64px; height: 30px; border-radius: 10px; padding: 0 9px; background: rgba(5,9,22,.8); color: var(--ink); direction: ltr; font-weight: 800; font-size: 13px; border: 2px solid rgba(255,255,255,.2); }
@@ -101,7 +102,7 @@
 .foot.turn .avatar { box-shadow: 0 0 0 2px var(--gold), 0 0 10px rgba(255,210,74,.8); }
 .foot .sp { flex: 1; }
 .foot .iconbtn { width: 30px; height: 30px; font-size: 14px; }
-.foot .bubble { top: auto; bottom: 100%; left: 20px; transform: none; }
+.foot .bubble { top: auto; bottom: 100%; left: 20px; --tx: 0px; }
 .emotes { position: absolute; bottom: 100%; inset-inline: var(--pad); z-index: 15; display: flex; gap: 6px; overflow-x: auto; padding: 4px; background: rgba(5,9,22,.85); border-radius: 12px; scrollbar-width: none; }
 .emotes button { flex: none; border: 2px solid var(--outline); background: var(--panel2); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 800; }
 
@@ -126,7 +127,6 @@
 .floor.surfx::after { content: ''; position: absolute; inset: -20px; background: radial-gradient(circle, rgba(255,255,255,.85), rgba(255,210,74,.4) 50%, transparent 72%); animation: flash .5s ease-out forwards; pointer-events: none; z-index: 6; }
 @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
 @keyframes shake { 0%, 100% { transform: none; } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
-.chip2.bump { animation: pillpop .3s cubic-bezier(.2,1.5,.4,1); }
 .banner::before { content: ''; position: absolute; width: 340px; height: 340px; border-radius: 50%; background: conic-gradient(from 0deg, rgba(255,210,74,.0), rgba(255,210,74,.55), rgba(255,210,74,0), rgba(255,210,74,.55), rgba(255,210,74,0), rgba(255,210,74,.55), rgba(255,210,74,0)); -webkit-mask: radial-gradient(circle, #000 20%, transparent 70%); mask: radial-gradient(circle, #000 20%, transparent 70%); animation: spin 1.2s linear, flash 1.2s ease-in forwards; }
 @keyframes spin { to { transform: rotate(120deg); } }
 
@@ -163,7 +163,6 @@ table.sc tbody tr { animation: rowin .3s ease-out backwards; animation-delay: ca
 .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
 .confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: fall linear infinite; }
 @keyframes fall { to { transform: translateY(700px) rotate(calc(var(--r) + 540deg)); opacity: .9; } }
-.bubble { animation: pop .3s cubic-bezier(.2,1.5,.4,1); }
 
 @media (prefers-reduced-motion: reduce) {
   .game *, .game *::before, .game *::after { animation: none !important; transition-duration: 0s !important; }

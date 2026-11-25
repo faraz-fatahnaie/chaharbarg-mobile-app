@@ -16,9 +16,10 @@
 @keyframes scn-mv { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 15%, 85% { opacity: var(--a); } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; } }
 @keyframes scn-tw { 0%, 100% { opacity: .15; } 50% { opacity: var(--a, .9); } }
 @keyframes scn-ff { 0%, 100% { transform: translate(0, 0); opacity: .1; } 50% { transform: translate(var(--dx), var(--dy)); opacity: var(--a); } }
+/* px on an SVG element are viewBox user units, so 470 = 400-wide viewBox + entry/exit margin; it scales with the svg, not the screen */
 @keyframes scn-fly { 0% { transform: translateX(0); opacity: 0; } 8%, 92% { opacity: var(--a); } 100% { transform: translateX(470px); opacity: 0; } }
 
-.scn-rays { mix-blend-mode: screen; opacity: var(--ray); animation: scn-ray 8s ease-in-out infinite; }
+.scn-rays { opacity: var(--ray); animation: scn-ray 8s ease-in-out infinite; }
 @keyframes scn-ray { 0%, 100% { opacity: calc(var(--ray) * .7); } 50% { opacity: var(--ray); } }
 .scn-lit { animation: scn-lit 3.2s ease-in-out infinite; }
 @keyframes scn-lit { 0%, 100% { opacity: .9; } 50% { opacity: .65; } }

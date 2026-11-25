@@ -5,6 +5,10 @@ import { STAGES, cleanStages } from './stages';
 const rank = { easy: 0, medium: 1, hard: 2 } as const;
 
 describe('stages', () => {
+  it('have one stage and a defined prize per arena', () => {
+    expect(STAGES).toHaveLength(ARENAS.length);
+    STAGES.forEach((s) => expect(Number.isFinite(s.prize)).toBe(true));
+  });
   it('have unique ids, real arenas, positive rising prizes', () => {
     expect(new Set(STAGES.map((s) => s.id)).size).toBe(STAGES.length);
     STAGES.forEach((s, i) => {

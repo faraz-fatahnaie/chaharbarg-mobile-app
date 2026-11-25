@@ -7,6 +7,7 @@
   --gohar: #6ef0ff; --ok: #2fcf72; --bad: #e0263f;
   --suit-S: #15171f; --suit-C: #15171f; --suit-H: #d4193a; --suit-D: #d4193a;
   --paper: #fffaf0; --paper-d: #ecdcb4;
+  --bust-robe: #2f6fe0; --bust-beard: #4a3320; --bust-hat: #e0263f; /* J/Q/K face art; decks may override */
   --sh-1: 0 2px 0 var(--outline), 0 4px 8px rgba(0,0,0,.4);
   --sh-2: 0 4px 0 var(--outline), 0 10px 18px rgba(0,0,0,.5);
   --bevel: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -4px 0 rgba(0,0,0,.28);
@@ -45,6 +46,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn.ghost { background: rgba(255,255,255,.06); box-shadow: none; border: 2px solid rgba(255,255,255,.25); text-shadow: none; }
 .btn[disabled] { filter: grayscale(.8) brightness(.7); pointer-events: none; }
 .btn.sm { padding: 4px 11px; font-size: 15px; border-radius: 10px; }
+/* small controls keep their look; an invisible ::after grows the hit area to at least 44x44 */
+.btn.sm, .iconbtn, .optchip { position: relative; }
+.btn.sm::after, .iconbtn::after, .optchip::after { content: ''; position: absolute; inset: min(0px, (100% - 44px) / 2); }
 .btn.block { width: 100%; }
 .row { display: flex; align-items: center; gap: 8px; }
 .col { display: flex; flex-direction: column; gap: 8px; }
@@ -80,6 +84,7 @@ h2 { font-size: 22px; } h3 { font-size: 17px; }
 .acard.sel { border-color: var(--gold); }
 .acard .pic { height: 150px; position: relative; }
 .acard .pic svg { width: 100%; height: 100%; display: block; }
+.acard:not(.sel) .scn * { animation-play-state: paused; } /* only the selected arena's scene animates */
 .acard .info { padding: 8px 12px 12px; }
 .acard .lock { position: absolute; inset: 0; background: rgba(5,9,22,.72); display: grid; place-items: center; text-align: center; font-weight: 700; z-index: 2; padding: 10px; }
 .acard .tod { position: absolute; top: 8px; inset-inline-end: 8px; display: flex; gap: 4px; z-index: 1; }

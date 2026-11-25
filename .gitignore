@@ -13,3 +13,11 @@ graphify-out/.graphify_root
 graphify-out/20*/
 
 packages/server/data/
+
+# ruflo / agent tool state (local, not source)
+.swarm/
+agentdb.rvf
+agentdb.rvf.lock
+ruvector.db
+.claude/proven-config.json
+.claude/.proven-config-version

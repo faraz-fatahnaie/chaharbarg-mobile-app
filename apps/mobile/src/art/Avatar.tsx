@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
+import { useLang } from '../lib/i18n';
 
 /*
  * Avatar emblems: famous Persian figures, places and symbols as small flat SVGs (48x48).
@@ -32,10 +33,13 @@ export const emblemGlyphs = EMBLEM_KEYS.map((k) => `e:${k}`);
 export const emblemName = (glyph: string, fa: boolean) => { const e = EMBLEMS[glyph.slice(2)]; return e ? (fa ? e.fa : e.en) : ''; };
 
 /** Round avatar: an emblem when `glyph` is "e:<key>", else the text/emoji glyph, else the name's first letter. */
-export function Avatar({ hue, glyph, name, className = '', style, ...rest }: { hue: number; glyph?: string; name: string; className?: string; style?: CSSProperties } & Record<string, unknown>) {
+/** Emblem avatars are role="img" named by `name`, else the emblem's own name; pass aria-hidden when purely decorative. */
+export function Avatar({ hue, glyph, name, className = '', style, ...rest }: { hue: number; glyph?: string; name: string } & HTMLAttributes<HTMLDivElement>) {
+  const { lang } = useLang();
   const e = glyph?.startsWith('e:') ? EMBLEMS[glyph.slice(2)] : undefined;
+  const label = e ? { role: 'img', 'aria-label': name || e[lang] } : {};
   return (
-    <div className={`avatar ${e ? 'emb-av' : ''} ${className}`} style={{ background: `hsl(${hue} 55% 38%)`, ...style }} {...rest}>
+    <div className={`avatar ${e ? 'emb-av' : ''} ${className}`} style={{ background: `hsl(${hue} 55% 38%)`, ...style }} {...label} {...rest}>
       {e ? <svg viewBox="0 0 48 48" aria-hidden="true">{e.art}</svg> : glyph || [...name][0]}
     </div>
   );
