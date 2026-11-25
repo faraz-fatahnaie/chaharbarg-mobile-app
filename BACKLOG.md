@@ -10,6 +10,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   packages/server/src/db.ts: guest bearer tokens never expire and cannot be revoked. Owner decides lifetime (e.g. 90 days sliding), refresh on use, and a logout/revoke endpoint; then implement with tests and update apps/mobile/src/lib/online.ts to re-sign-in on 401.
 - [ ] F-101 Decide: real support email address
   apps/mobile/src/lib/support.ts SUPPORT_EMAIL = support@chaharbarg.app is a placeholder guess. Owner provides the real address; one-line change.
+- [ ] F-102 Decide: large-print deck pip layout for 9 and 10
+  deck-large has a .5w corner index that still overlaps the 9/10 corner pips (apps/mobile/src/cards.css, art/CardView.tsx PIPS). Pips cannot move further without colliding. Owner picks: a separate pip layout for deck-large, or a smaller index on that deck.
 
 ## Ready
 
