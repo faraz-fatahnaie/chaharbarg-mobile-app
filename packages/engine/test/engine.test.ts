@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, liveScore, startDeal, mulberry32,
-  newMatch, targetOptions, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, type DealState, type Level, type RulesConfig,
+  newMatch, targetOptions, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, timeoutMove, shuffle, newDeck, type DealState, type MatchState, type Level, type RulesConfig,
 } from '../src/index';
 import { cs, ids, mk } from './helpers';
 
@@ -393,4 +393,151 @@ describe('bots (T31-T32)', () => {
       }
     }
   });
+});
+
+describe('review follow-ups', () => {
+  const STOCK16 = 'S2 S3 S4 S5 S6 S7 S8 S10 H2 H3 H4 H5 H6 H7 H8 H10';
+  const jacks = (cards: { rank: number }[]) => cards.filter((c) => c.rank === 11).length;
+  /** The first shuffle startDeal makes for this seed (deck order before any fix-up). */
+  const firstDeck = (seed: number) => shuffle(newDeck(), mulberry32(seed));
+  const seeds = Array.from({ length: 2000 }, (_, i) => i + 1);
+
+  it('opening floor: a single jack is replaced by the top stock card and reinserted into the stock', () => {
+    const seed = seeds.find((sd) => {
+      const d = firstDeck(sd);
+      const floor = d.slice(0, 4);
+      return jacks(floor) === 1 && d[12].rank < 11 && floor.filter((c) => c.rank >= 12).length <= 1;
+    })!;
+    expect(seed).toBeDefined();
+    const d = firstDeck(seed);
+    const j = d.slice(0, 4).findIndex((c) => c.rank === 11);
+    const s = startDeal({ ...DEFAULT_RULES, players: 2 }, mulberry32(seed), 0, [0, 0]);
+    const expected = d.slice(0, 4).map((c) => c.id);
+    expected[j] = d[12].id;
+    expect(s.floor.map((c) => c.id)).toEqual(expected);
+    expect(s.stock.map((c) => c.id)).toContain(d[j].id);
+    expect(s.stock.length).toBe(40);
+    expect(s.hands.flat().map((c) => c.id)).toEqual(d.slice(4, 12).map((c) => c.id));
+  });
+  it('opening floor: two or more jacks force a re-deal; with openingJack "allow" the floor stands', () => {
+    const seed = seeds.find((sd) => jacks(firstDeck(sd).slice(0, 4)) >= 2)!;
+    expect(seed).toBeDefined();
+    const first = firstDeck(seed).slice(0, 4).map((c) => c.id);
+    const s = startDeal({ ...DEFAULT_RULES, players: 2 }, mulberry32(seed), 0, [0, 0]);
+    expect(jacks(s.floor)).toBe(0);
+    expect(s.floor.map((c) => c.id)).not.toEqual(first);
+    const allow = startDeal({ ...DEFAULT_RULES, players: 2, openingJack: 'allow' }, mulberry32(seed), 0, [0, 0]);
+    expect(allow.floor.map((c) => c.id)).toEqual(first);
+  });
+
+  it('timeoutMove takes the biggest capture, else a legal drop, and only for the seat on turn', () => {
+    const s = mk({ hands: ['C5 S1', 'D2'], floor: 'S6 H4 H2', stock: 'S3' });
+    const mv = timeoutMove(s, 0, mulberry32(1));
+    expect(mv.cardId).toBe('C5');
+    expect([...mv.captureIds].sort()).toEqual(['H2', 'H4']);
+    const drop = mk({ hands: ['C12 S13', 'D2'], floor: 'H5', stock: 'S3' });
+    const d = timeoutMove(drop, 0, mulberry32(1));
+    expect(d.captureIds).toEqual([]);
+    expect(legalMoves(drop).some((l) => l.cardId === d.cardId)).toBe(true);
+    expect(() => timeoutMove(drop, 1, mulberry32(1))).toThrow(/not on turn/);
+  });
+  it('chooseMove throws when the seat is not on turn', () => {
+    const s = mk({ hands: ['C5 S1', 'D2'], floor: 'S6' });
+    expect(() => chooseMove(s, 1, 'hard', mulberry32(1))).toThrow(/not on turn/);
+  });
+  it('legalMoves rejects an out-of-range seat', () => {
+    const s = mk({ hands: ['C5', 'D2'], floor: 'S6' });
+    expect(() => legalMoves(s, 2)).toThrow();
+    expect(() => legalMoves(s, -1)).toThrow();
+    expect(legalMoves(s, 1).length).toBeGreaterThan(0);
+  });
+
+  it('parseCard rejects bad ids and accepts every deck id', () => {
+    for (const bad of ['X99', 'X9', 'S0', 'S14', 'S01', 'S', '', 's5', 'C2 ', 'D1.5']) expect(() => parseCard(bad)).toThrow();
+    for (const c of newDeck()) expect(parseCard(c.id)).toEqual(c);
+  });
+
+  it('newMatch range-checks players and firstDealer; the deal never aliases match scores', () => {
+    expect(() => newMatch({ ...DEFAULT_RULES, players: 5 as 2, target: 35 }, mulberry32(1))).toThrow();
+    expect(() => newMatch({ ...DEFAULT_RULES, players: 2, target: 35 }, mulberry32(1), 2)).toThrow();
+    expect(() => newMatch({ ...DEFAULT_RULES, players: 2, target: 35 }, mulberry32(1), -1)).toThrow();
+    expect(() => newMatch({ ...DEFAULT_RULES, players: 2, target: 35 }, mulberry32(1), 0.5)).toThrow();
+    const m = newMatch({ ...DEFAULT_RULES, players: 2, target: 35 }, mulberry32(1), 1);
+    expect(m.deal.carry).toEqual(m.scores);
+    expect(m.deal.carry).not.toBe(m.scores);
+  });
+
+  const lastMoveMatch = (scores: number[], phase: MatchState['phase'] = 'playing'): MatchState => {
+    // seat 0 drops the last card of the deal; seat 0's pile is worth 5 (4 aces + 1 jack)
+    const deal = mk({ hands: ['S9', ''], piles: ['H1 S1 D1 C1 H11', ''], carry: scores });
+    return { config: deal.config, scores, deal, dealNo: 1, phase, winner: null, history: [], lastResult: null };
+  };
+  it('a tie at or above the target does not end the match', () => {
+    const m = matchPlay(lastMoveMatch([30, 35]), 'S9');
+    expect(m.scores).toEqual([35, 35]);
+    expect(m.phase).toBe('dealOver');
+    expect(m.winner).toBeNull();
+    const won = matchPlay(lastMoveMatch([31, 35]), 'S9');
+    expect(won.phase).toBe('matchOver');
+    expect(won.winner).toBe(0);
+  });
+  it('matchPlay / matchNextDeal throw in the wrong phase', () => {
+    expect(() => matchPlay(lastMoveMatch([0, 0], 'dealOver'), 'S9')).toThrow();
+    expect(() => matchPlay(lastMoveMatch([0, 0], 'matchOver'), 'S9')).toThrow();
+    expect(() => matchNextDeal(lastMoveMatch([0, 0]), mulberry32(1))).toThrow();
+    expect(() => matchNextDeal(lastMoveMatch([0, 0], 'matchOver'), mulberry32(1))).toThrow();
+  });
+
+  it('3p: a three-way clubs tie gives the 7 to nobody', () => {
+    const s = mk({ hands: ['', '', ''], piles: ['C1 C3 C4 C5', 'C6 C7 C8 C9', 'C10 C11 C12 C13'] });
+    expect(scoreDeal(s).map((u) => u.clubs)).toEqual([0, 0, 0]);
+  });
+  it('2p: nobody gets the clubs 7 without at least 7 clubs', () => {
+    const tie = mk({ hands: ['', ''], piles: ['C1 C3 C4 C5 C6 C7', 'C8 C9 C10 C11 C12 C13'] });
+    expect(scoreDeal(tie).map((u) => u.clubs)).toEqual([0, 0]);
+    const short = mk({ hands: ['', ''], piles: ['C1 C3 C4 C5 C6 C7', 'C8 C9 C10 C11 C12'] });
+    expect(scoreDeal(short).map((u) => u.clubs)).toEqual([0, 0]);
+  });
+
+  it('dropping on an empty floor puts the card there', () => {
+    const { state, result } = play(mk({ hands: ['S9 S2', 'D8'], floor: '' }), 'S9');
+    expect(state.floor.map((c) => c.id)).toEqual(['S9']);
+    expect(result.captured).toEqual([]);
+    expect(result.sur).toBeNull();
+  });
+  it('a deal with no captures leaves the floor unassigned', () => {
+    let s = mk({ hands: ['S9', 'D9'], floor: 'H12' });
+    s = play(s, 'S9').state;
+    const { state, result } = play(s, 'D9');
+    expect(state.over).toBe(true);
+    expect(state.lastCapturer).toBeNull();
+    expect(result.leftover).toEqual([]);
+    expect(ids(state.floor)).toEqual(['D9', 'H12', 'S9']);
+    expect(state.piles.flat()).toEqual([]);
+  });
+
+  for (const [n, last] of [[3, 3], [4, 2]] as const) {
+    const hands = (lead: string) => [lead, 'D12 D9', 'S9 S8', 'H9 H8'].slice(0, n);
+    it(`${n}p: no sur or sarbaz in the last round (round ${last}), both allowed before`, () => {
+      expect(play(mk({ hands: hands('C5 H3'), floor: 'H6', round: last }), 'C5', ['H6']).result.sur).toBeNull();
+      expect(play(mk({ hands: hands('C5 H3'), floor: 'H6', round: last - 1, stock: 'S2' }), 'C5', ['H6']).result.sur).toBe('sur');
+      expect(play(mk({ hands: hands('C11 H3'), floor: 'S11', round: last }), 'C11', ['S11']).result.sur).toBeNull();
+      expect(play(mk({ hands: hands('C11 H3'), floor: 'S11', round: last - 1, stock: 'S2' }), 'C11', ['S11']).result.sur).toBe('sarbaz');
+      const off = mk({ hands: hands('C5 H3'), floor: 'H6', round: last, config: { noSurInLastRound: false } });
+      expect(play(off, 'C5', ['H6']).result.sur).toBe('sur');
+    });
+    it(`${n}p: seat order continues across the new-round deal`, () => {
+      const lead = ['C9', 'D9', 'S9', 'H9'].slice(0, n);
+      let s = mk({ hands: lead, floor: 'H12', stock: STOCK16.split(' ').slice(0, 4 * n).join(' ') });
+      const order: number[] = [];
+      for (let i = 0; i < n; i++) {
+        order.push(s.turn);
+        s = play(s, s.hands[s.turn][0].id).state;
+      }
+      expect(order).toEqual(Array.from({ length: n }, (_, i) => i));
+      expect(s.round).toBe(1);
+      expect(s.hands.map((h) => h.length)).toEqual(new Array(n).fill(4));
+      expect(s.turn).toBe((s.dealer + 1) % n);
+    });
+  }
 });

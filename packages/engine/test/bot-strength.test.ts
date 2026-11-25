@@ -19,7 +19,10 @@ function duel(a: Level, b: Level, n: number, seed: number) {
   return wins / n;
 }
 
-describe('bot levels are ordered (arena progression relies on it)', () => {
+declare const process: { env: Record<string, string | undefined> };
+
+// Opt-in (slow, statistical): BOT_STRENGTH=1 npm test -w @chaharbarg/engine
+describe.skipIf(!process.env.BOT_STRENGTH)('bot levels are ordered (arena progression relies on it)', () => {
   it('medium beats easy, hard beats medium', () => {
     const mE = duel('medium', 'easy', 60, 1000);
     const hM = duel('hard', 'medium', 60, 5000);

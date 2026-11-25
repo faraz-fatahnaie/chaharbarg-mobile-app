@@ -98,6 +98,8 @@ export function startDeal(config: RulesConfig, rng: Rng, dealer: number, carry: 
     const floor = deck.splice(0, 4);
     const hands = Array.from({ length: n }, () => deck.splice(0, 4));
     const stock = deck;
+    // The Q/K limit (no more than 2 of either on the opening floor) is only enforced together with
+    // openingJack === 'replace'; with 'allow' any floor stands. Intentional pending owner review (rules decision).
     if (config.openingJack === 'replace') {
       const j = floor.findIndex(isJack);
       if (j >= 0 && floor.filter(isJack).length === 1) {
@@ -124,7 +126,7 @@ export function startDeal(config: RulesConfig, rng: Rng, dealer: number, carry: 
       turn: (dealer + 1) % n,
       round: 0,
       lastCapturer: null,
-      carry,
+      carry: [...carry], // never alias the match's score array
       over: false,
     };
   }
@@ -134,6 +136,7 @@ const sameSet = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && [...a].sort().join() === [...b].sort().join();
 
 export function legalMoves(s: DealState, seat = s.turn): Move[] {
+  if (!Number.isInteger(seat) || seat < 0 || seat >= s.config.players) throw new Error(`invalid seat ${seat}`);
   if (s.over) return [];
   const moves: Move[] = [];
   for (const card of s.hands[seat]) {

@@ -9,7 +9,10 @@ export interface Card {
 }
 
 export const makeCard = (suit: Suit, rank: number): Card => ({ id: `${suit}${rank}`, suit, rank });
-export const parseCard = (id: string): Card => makeCard(id[0] as Suit, Number(id.slice(1)));
+export function parseCard(id: string): Card {
+  if (typeof id !== 'string' || !/^[SHDC](?:[1-9]|1[0-3])$/.test(id)) throw new Error(`invalid card id: ${String(id)}`);
+  return makeCard(id[0] as Suit, Number(id.slice(1)));
+}
 
 export const newDeck = (): Card[] => SUITS.flatMap((s) => Array.from({ length: 13 }, (_, i) => makeCard(s, i + 1)));
 

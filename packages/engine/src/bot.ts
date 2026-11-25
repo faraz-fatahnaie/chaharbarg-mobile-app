@@ -33,10 +33,12 @@ function moveGain(s: DealState, m: Move): { gain: number; after: DealState } {
  * ponytail: ignores which unseen cards are in whose hand and last-round limits; add belief tracking if bots need to be stronger.
  */
 function threat(s: DealState, after: DealState, seat: number): number {
+  // Known cards come from the pre-move state (the played card is still in s.hands[seat]):
+  // `after` may already hold the next round's hand, which the bot must not peek at.
   const seen = new Set<string>([
-    ...after.floor.map((c) => c.id),
-    ...after.hands[seat].map((c) => c.id),
-    ...after.piles.flat().map((c) => c.id),
+    ...s.floor.map((c) => c.id),
+    ...s.hands[seat].map((c) => c.id),
+    ...s.piles.flat().map((c) => c.id),
   ]);
   const unseen = newDeck().filter((c) => !seen.has(c.id));
   if (!unseen.length || !after.floor.length) return 0;
@@ -56,7 +58,12 @@ function threat(s: DealState, after: DealState, seat: number): number {
   return (total / unseen.length) * 1.6; // opponent picks the best of ~4 cards
 }
 
+const assertTurn = (s: DealState, seat: number) => {
+  if (seat !== s.turn) throw new Error(`seat ${seat} is not on turn (turn is ${s.turn})`);
+};
+
 export function chooseMove(s: DealState, seat: number, level: Level, rng: Rng): Move {
+  assertTurn(s, seat);
   const moves = legalMoves(s, seat);
   if (!moves.length) throw new Error('no legal moves');
   if (level === 'easy' && rng() < 0.4) return moves[Math.floor(rng() * moves.length)];
@@ -77,6 +84,7 @@ export function chooseMove(s: DealState, seat: number, level: Level, rng: Rng): 
 
 /** Move played for a player who ran out of time: the biggest capture if any exists, else the best drop. */
 export function timeoutMove(deal: DealState, seat: number, rng: Rng): Move {
+  assertTurn(deal, seat);
   const caps = legalMoves(deal, seat).filter((m) => m.captureIds.length);
   // ponytail: biggest capture by card count, not by points; rank by points if players complain
   if (caps.length) return caps.reduce((a, b) => (b.captureIds.length > a.captureIds.length ? b : a));

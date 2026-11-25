@@ -17,6 +17,10 @@ export interface MatchState {
 
 export function newMatch(config: RulesConfig, rng: Rng, firstDealer?: number): MatchState {
   const n = config.players;
+  if (n !== 2 && n !== 3 && n !== 4) throw new Error(`players must be 2, 3 or 4, got ${n}`);
+  if (firstDealer !== undefined && !(Number.isInteger(firstDealer) && firstDealer >= 0 && firstDealer < n)) {
+    throw new Error(`firstDealer ${firstDealer} out of range for ${n} players`);
+  }
   if (!targetOptions(n).includes(config.target)) throw new Error(`target ${config.target} not allowed for ${n} players`);
   const scores = new Array(unitCount(n)).fill(0);
   const dealer = firstDealer ?? Math.floor(rng() * n); // random starter (docx)
