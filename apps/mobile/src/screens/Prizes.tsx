@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Dialog } from '../ui/Dialog';
 import { applyDelta } from '../economy/economy';
 import { useLang } from '../lib/i18n';
 import { claimPrizeCall, getPrizes, hasCred, signIn, type PrizeInfo } from '../lib/online';
@@ -12,6 +13,7 @@ export function PrizeModal() {
   const { tr, n } = useLang();
   const [info, setInfo] = useState<PrizeInfo | null>(null);
   const [claimed, setClaimed] = useState('');
+  const claiming = useRef(false);
 
   useEffect(() => {
     if (!hasCred()) return;
@@ -32,6 +34,8 @@ export function PrizeModal() {
     setInfo(null);
   };
   const claim = async () => {
+    if (claiming.current) return;
+    claiming.current = true;
     let shahi = 0, gohar = 0;
     for (const p of info.mine) {
       try {
@@ -41,22 +45,23 @@ export function PrizeModal() {
       } catch { /* already claimed elsewhere */ }
     }
     setClaimed(`+${n(shahi)} ${tr('شاهی', 'Shahi')}${gohar ? ` +${n(gohar)} ${tr('گوهر', 'Gohar')}` : ''}`);
-    setInfo({ ...info, mine: [] });
+    setInfo((i) => i && { ...i, mine: [] });
+    claiming.current = false;
   };
   return (
-    <div className="modal" style={{ zIndex: 80 }} role="dialog" aria-label={tr('اعلام برندگان', 'Prize announcement')}>
+    <Dialog label={tr('اعلام برندگان', 'Prize announcement')} onClose={close} style={{ zIndex: 80 }}>
       <div className="sheet col" style={{ textAlign: 'center' }}>
         <h2>🏆 {tr('برندگان آنلاین', 'Online winners')}</h2>
         {info.announcement.map((a) => (
           <div key={a.period} className="panel col">
             <b>{a.period.startsWith('week') ? tr('هفتهٔ گذشته', 'Last week') : tr('ماه گذشته', 'Last month')}</b>
-            {a.winners.map((w) => <span key={w.rank}>{['🥇', '🥈', '🥉'][w.rank - 1]} {w.name}</span>)}
+            {a.winners.map((w) => <span key={w.rank}>{['🥇', '🥈', '🥉'][w.rank - 1]} <bdi>{w.name}</bdi></span>)}
           </div>
         ))}
         {info.mine.length > 0 && <button className="btn good" onClick={claim}>🎁 {tr('دریافت جایزهٔ تو', 'Claim your prize')}</button>}
         {claimed && <b role="status">{claimed}</b>}
         <button className="btn ghost" onClick={close}>{tr('بستن', 'Close')}</button>
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -34,8 +34,10 @@ export function Header() {
   );
 }
 
-export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages, onOnline }: {
+export function Home({ saved, notice, onStart, onResume, onForfeit, onTutorial, onStages, onOnline }: {
   saved: MatchCtx | null;
+  /** message from App, e.g. why "Play again" could not start */
+  notice?: string;
   onStart: (arena: Arena, players: 2 | 3 | 4, mode: 'bots' | 'pnp') => void;
   onResume: () => void;
   onForfeit: () => void;
@@ -94,7 +96,8 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
           ) : (
             <div className="row">
               <button className="btn primary grow" onClick={onResume}>{tr('ادامه', 'Resume')}</button>
-              {saved.mode === 'bots' && <button ref={quitBtn} className="btn ghost" onClick={() => setConfirmQuit(true)}>{tr('انصراف (باخت)', 'Forfeit (loss)')}</button>}
+              {/* a match that already ended is settled by Resume → result, never as a forfeit */}
+              {saved.mode === 'bots' && saved.match.phase !== 'matchOver' && <button ref={quitBtn} className="btn ghost" onClick={() => setConfirmQuit(true)}>{tr('انصراف (باخت)', 'Forfeit (loss)')}</button>}
               {saved.mode === 'pnp' && <button className="btn ghost" onClick={onForfeit}>{tr('لغو', 'Discard')}</button>}
             </div>
           )}
@@ -105,7 +108,9 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
         {ARENAS.map((a) => {
           const isLocked = p.trophies < a.minTrophies;
           return (
-            <div key={a.id} className={`acard ${a.id === sel ? 'sel' : ''}`} onClick={() => { setSel(a.id); sfx('click'); }}>
+            <div key={a.id} className={`acard ${a.id === sel ? 'sel' : ''}`} role="button" tabIndex={0} aria-pressed={a.id === sel} aria-disabled={isLocked || undefined}
+              onClick={() => { setSel(a.id); sfx('click'); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSel(a.id); sfx('click'); } }}>
               <div className="pic"><Scene id={a.id} tod={tod} /></div>
               {isLocked && (
                 <div className="lock"><div>🔒<br />{tr(`با ${n(a.minTrophies)} جام باز می‌شود`, `Unlocks at ${n(a.minTrophies)} trophies`)}</div></div>
@@ -140,7 +145,7 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
           <button className={mode === 'bots' ? 'on' : ''} onClick={() => setMode('bots')}>{tr('با ربات‌ها', 'Vs bots')}</button>
           <button className={mode === 'pnp' ? 'on' : ''} onClick={() => setMode('pnp')}>{tr('یک گوشی، چند نفر', 'Pass & play')}</button>
         </div>
-        <button className="btn primary block" style={{ fontSize: 18, padding: 14 }} disabled={mode === 'bots' && locked}
+        <button className="btn primary block" style={{ fontSize: 18, padding: 14 }} disabled={!!saved || (mode === 'bots' && locked)}
           onClick={() => {
             if (broke) { setMsg(tr('شاهی کافی نداری؛ هدیه یا ویدیو را امتحان کن.', 'Not enough Shahi — try the gift or a video.')); return; }
             sfx('click');
@@ -150,9 +155,10 @@ export function Home({ saved, onStart, onResume, onForfeit, onTutorial, onStages
             ? `${tr('شروع بازی', 'Play')} · ${n(arena.fee)} ${tr('شاهی', 'Shahi')}`
             : tr('شروع بازی (بدون هزینه)', 'Play (free)')}
         </button>
+        {saved && <span className="mute">{tr('اول بازی نیمه‌تمامت را تمام کن یا انصراف بده.', 'Finish or forfeit your match in progress first.')}</span>}
         {mode === 'pnp' && <span className="mute">{tr('بازی روی یک گوشی؛ بدون شاهی و جام.', 'One device, no Shahi or trophies at stake.')}</span>}
         {nextArena && <span className="mute">{tr(`آرنای بعدی: ${nextArena.fa} — ${n(nextArena.minTrophies - p.trophies)} جام دیگر`, `Next arena: ${nextArena.en} — ${n(nextArena.minTrophies - p.trophies)} trophies to go`)} · 🏆 {n(p.trophies)}</span>}
-        {msg && <div className="panel" style={{ textAlign: 'center' }}>{msg}</div>}
+        {(msg || notice) && <div className="panel" role="status" style={{ textAlign: 'center' }}>{msg || notice}</div>}
       </div>
 
       <div className="panel col" style={{ margin: '0 14px' }}>

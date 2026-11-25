@@ -2,6 +2,7 @@ import { arenaById } from '../data/arenas';
 import { STAGES } from '../data/stages';
 import { stageUnlocked } from '../economy/economy';
 import { useLang } from '../lib/i18n';
+import { Dialog } from '../ui/Dialog';
 import { sfx } from '../lib/sound';
 import { useProfile } from '../lib/store';
 
@@ -9,7 +10,7 @@ export function Stages({ busy, onPlay, onGuide, onClose }: { busy: boolean; onPl
   const { tr, n, lang } = useLang();
   const p = useProfile();
   return (
-    <div className="modal" style={{ zIndex: 60 }}>
+    <Dialog label={tr('مرحله‌های تک‌نفره', 'Solo stages')} onClose={onClose} style={{ zIndex: 60 }}>
       <div className="sheet col">
         <h2>{tr('مرحله‌های تک‌نفره', 'Solo stages')}</h2>
         <span className="mute">{tr('رایگان؛ جایزهٔ هر مرحله فقط بار اول برد پرداخت می‌شود.', 'Free to play; each prize is paid on the first win only.')}</span>
@@ -37,6 +38,6 @@ export function Stages({ busy, onPlay, onGuide, onClose }: { busy: boolean; onPl
         <button className="btn ghost" onClick={onGuide}>📖 {tr('آموزش بازی', 'How to play')}</button>
         <button className="btn ghost" onClick={onClose}>{tr('بستن', 'Close')}</button>
       </div>
-    </div>
+    </Dialog>
   );
 }

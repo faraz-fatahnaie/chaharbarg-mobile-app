@@ -33,18 +33,19 @@ export function Scoreboard({ mc, units, onMenu }: { mc: MatchState; units: Score
   return (
     <div className="score-zone">
       <div className="topbar2">
-        <button className="iconbtn" onClick={onMenu} aria-label="menu">☰</button>
+        <button className="iconbtn" onClick={onMenu} aria-label={tr('منو', 'Menu')}>☰</button>
         <span className="round">{tr('دست', 'Deal')} {n(mc.dealNo)} · {tr('نوبت', 'Round')} {n(deal.round + 1)}</span>
         <span className="goal">{tr('هدف', 'Goal')} <b>{n(target)}</b></span>
       </div>
-      <div className={`units u${units.length}`} role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen((o) => !o)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen((o) => !o); }}>
+      <div className={`units u${units.length}`} role="button" tabIndex={0} aria-expanded={open}
+        aria-label={`${tr('جزئیات امتیاز', 'Score details')}: ${units.map((u, i) => `${u.name} ${n(mc.scores[i])}/${n(target)} (+${n(live[i].total)})`).join(tr('، ', ', '))}`} onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen((o) => !o); } }}>
         {units.map((u, i) => (
-          <div key={i} className={`ucard ${u.me ? 'me' : ''}`} aria-label={`${u.name} ${mc.scores[i]} / ${target}, +${live[i].total}`}>
+          <div key={i} className={`ucard ${u.me ? 'me' : ''}`}>
             {i === leader && <span className="crown" aria-hidden="true">♛</span>}
             {showPlace && <span className="place">{n(place(i))}</span>}
             <div className="r1">
-              <span className="avs">{u.avatars.map((a, k) => <Avatar key={k} className="mini" hue={a.hue} glyph={a.glyph} name={u.name} />)}</span>
+              <span className="avs">{u.avatars.map((a, k) => <Avatar key={k} className="mini" hue={a.hue} glyph={a.glyph} name={u.name} aria-hidden="true" />)}</span>
               <span className="nm"><bdi>{u.name}</bdi></span>
               <span className="pill" key={live[i].total}>+{n(live[i].total)}</span>
             </div>

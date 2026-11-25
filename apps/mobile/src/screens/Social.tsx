@@ -26,9 +26,9 @@ function Thread({ me, peer, bus, onBack }: { me: string; peer: Person; bus: Bus;
   const send = () => run(async () => { const t = text.trim(); if (!t) return; const m = await sendDm(peer.id, t); setMsgs((x) => [...x, m]); setText(''); });
   return (
     <div className="panel col">
-      <div className="row"><button className="btn ghost" onClick={onBack}>←</button><h3 className="grow">{peer.name}</h3></div>
+      <div className="row"><button className="btn ghost" onClick={onBack}>←</button><h3 className="grow"><bdi>{peer.name}</bdi></h3></div>
       <div className="col" style={{ maxHeight: 240, overflowY: 'auto', gap: 4 }}>
-        {msgs.map((m) => <div key={m.id} style={{ alignSelf: m.from === me ? 'flex-end' : 'flex-start', background: m.from === me ? 'var(--panel2)' : 'rgba(255,255,255,.08)', borderRadius: 10, padding: '4px 10px', maxWidth: '80%' }}>{m.text}</div>)}
+        {msgs.map((m) => <div key={m.id} style={{ alignSelf: m.from === me ? 'flex-end' : 'flex-start', background: m.from === me ? 'var(--panel2)' : 'rgba(255,255,255,.08)', borderRadius: 10, padding: '4px 10px', maxWidth: '80%' }}><bdi>{m.text}</bdi></div>)}
         <div ref={end} />
       </div>
       {err && <span role="alert" className="mute">{err}</span>}
@@ -56,7 +56,7 @@ function Search({ onAdd, known }: { onAdd: (id: string) => void; known: Set<stri
       </div>
       {err && <span role="alert" className="mute">{err}</span>}
       {found?.length === 0 && <span className="mute">{tr('کسی پیدا نشد.', 'Nobody found.')}</span>}
-      {found?.map((p) => <div key={p.id} className="row"><span className="grow">{p.name}</span>
+      {found?.map((p) => <div key={p.id} className="row"><span className="grow"><bdi>{p.name}</bdi></span>
         <button className="btn primary" disabled={known.has(p.id)} onClick={() => onAdd(p.id)}>{known.has(p.id) ? tr('✓', '✓') : tr('افزودن', 'Add')}</button></div>)}
     </div>
   );
@@ -93,7 +93,7 @@ export function Friends({ me, bus }: { me: string; bus: Bus }) {
       <Search onAdd={(id) => run(async () => { await friendRequestById(id); reload(); })} known={new Set([...list.friends, ...list.outgoing].map((p) => p.id))} />
       {list.incoming.length > 0 && (
         <div className="panel col"><h3>{tr('درخواست‌ها', 'Requests')}</h3>
-          {list.incoming.map((p) => <div key={p.id} className="row"><span className="grow">{p.name}</span>
+          {list.incoming.map((p) => <div key={p.id} className="row"><span className="grow"><bdi>{p.name}</bdi></span>
             <button className="btn primary" onClick={() => act('accept', p.id)}>{tr('قبول', 'Accept')}</button>
             <button className="btn ghost" onClick={() => act('reject', p.id)}>{tr('رد', 'Reject')}</button>
             <button className="btn ghost" onClick={() => act('block', p.id)}>{tr('مسدود', 'Block')}</button></div>)}
@@ -101,15 +101,15 @@ export function Friends({ me, bus }: { me: string; bus: Bus }) {
       )}
       <div className="panel col"><h3>{tr('دوستان', 'Friends')}</h3>
         {list.friends.length === 0 && <span className="mute">{tr('هنوز دوستی نداری.', 'No friends yet.')}</span>}
-        {list.friends.map((p) => <div key={p.id} className="row"><span>{p.online ? '🟢' : '⚪'}</span><span className="grow">{p.name}</span>
+        {list.friends.map((p) => <div key={p.id} className="row"><span>{p.online ? '🟢' : '⚪'}</span><span className="grow"><bdi>{p.name}</bdi></span>
           <button className="btn" onClick={() => { setUnread((u) => ({ ...u, [p.id]: 0 })); setPeer(p); }}>💬{unread[p.id] ? ` ${unread[p.id]}` : ''}</button>
           <button className="btn ghost" onClick={() => act('remove', p.id)}>{tr('حذف', 'Remove')}</button>
           <button className="btn ghost" onClick={() => act('block', p.id)}>{tr('مسدود', 'Block')}</button></div>)}
-        {list.outgoing.map((p) => <div key={p.id} className="row mute"><span className="grow">{p.name} · {tr('در انتظار', 'pending')}</span><button className="btn ghost" onClick={() => act('remove', p.id)}>{tr('لغو', 'Cancel')}</button></div>)}
+        {list.outgoing.map((p) => <div key={p.id} className="row mute"><span className="grow"><bdi>{p.name}</bdi> · {tr('در انتظار', 'pending')}</span><button className="btn ghost" onClick={() => act('remove', p.id)}>{tr('لغو', 'Cancel')}</button></div>)}
       </div>
       {list.blocked.length > 0 && (
         <div className="panel col"><h3>{tr('مسدودشده‌ها', 'Blocked')}</h3>
-          {list.blocked.map((p) => <div key={p.id} className="row"><span className="grow">{p.name}</span><button className="btn ghost" onClick={() => act('unblock', p.id)}>{tr('رفع مسدودی', 'Unblock')}</button></div>)}
+          {list.blocked.map((p) => <div key={p.id} className="row"><span className="grow"><bdi>{p.name}</bdi></span><button className="btn ghost" onClick={() => act('unblock', p.id)}>{tr('رفع مسدودی', 'Unblock')}</button></div>)}
         </div>
       )}
     </div>

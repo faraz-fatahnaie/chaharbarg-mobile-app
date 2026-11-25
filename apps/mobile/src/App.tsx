@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { arenaById, type Arena } from './data/arenas';
-import { canEnter, payFee, settleMatch, todayKey } from './economy/economy';
+import { canEnter, payFee } from './economy/economy';
 import { buildCtx, stageCtx } from './lib/match';
 import { useLang } from './lib/i18n';
 import { registerAdUI, registerPayUI } from './lib/services';
 import { setEffectsEnabled, setMusicEnabled } from './lib/sound';
 import { getProfile, loadMatch, saveMatch, update, useProfile, type MatchCtx } from './lib/store';
+import { forfeitSaved } from './screens/game/settle';
+import { Dialog } from './ui/Dialog';
 import { SuitSprite } from './art/CardView';
 import { Game } from './screens/Game';
 import { Home } from './screens/Home';
@@ -32,16 +34,21 @@ function AdModal() {
   const { tr, n } = useLang();
   const [res, setRes] = useState<((ok: boolean) => void) | null>(null);
   const [left, setLeft] = useState(5);
-  useEffect(() => { registerAdUI((r) => { setLeft(5); setRes(() => r); }); return () => registerAdUI(null); }, []);
+  const pending = useRef<((ok: boolean) => void) | null>(null);
+  useEffect(() => {
+    // a second request while one is showing: the first resolves as not rewarded instead of hanging forever
+    registerAdUI((r) => { pending.current?.(false); pending.current = r; setLeft(5); setRes(() => r); });
+    return () => registerAdUI(null);
+  }, []);
   useEffect(() => {
     if (!res || left <= 0) return;
     const t = setTimeout(() => setLeft((l) => l - 1), 1000);
     return () => clearTimeout(t);
   }, [res, left]);
   if (!res) return null;
-  const close = (ok: boolean) => { res(ok); setRes(null); };
+  const close = (ok: boolean) => { pending.current = null; res(ok); setRes(null); };
   return (
-    <div className="modal" style={{ zIndex: 90, background: '#000' }}>
+    <Dialog label={tr('تبلیغ آزمایشی', 'Demo ad')} onClose={left > 0 ? () => close(false) : undefined} style={{ zIndex: 90, background: '#000' }}>
       <div className="col" style={{ alignItems: 'center', textAlign: 'center', gap: 14 }}>
         <div style={{ fontSize: 48 }}>📺</div>
         <b>{tr('تبلیغ آزمایشی', 'Demo ad')}</b>
@@ -50,7 +57,7 @@ function AdModal() {
         {left > 0 ? <button className="btn ghost" onClick={() => close(false)}>{tr('بستن', 'Close')} ({n(left)})</button>
           : <button className="btn primary" onClick={() => close(true)}>{tr('دریافت جایزه', 'Claim reward')}</button>}
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -59,18 +66,19 @@ function PayModal() {
   const [req, setReq] = useState<{ sku: string; res: (t: string | null) => void } | null>(null);
   useEffect(() => { registerPayUI((sku, res) => setReq({ sku, res })); return () => registerPayUI(null); }, []);
   if (!req) return null;
-  const pack = GOHAR_PACKS.find((g) => g.sku === req.sku)!;
+  const pack = GOHAR_PACKS.find((g) => g.sku === req.sku);
   const done = (t: string | null) => { req.res(t); setReq(null); };
   return (
-    <div className="modal" style={{ zIndex: 90 }}>
+    <Dialog label={tr('پرداخت آزمایشی', 'Demo checkout')} onClose={() => done(null)} style={{ zIndex: 90 }}>
       <div className="sheet col" style={{ textAlign: 'center' }}>
         <h2>{tr('پرداخت آزمایشی', 'Demo checkout')}</h2>
-        <b>{n(pack.gohar)} {tr('گوهر', 'Gohar')} — {n(pack.toman)} {tr('تومان', 'Toman')}</b>
+        {pack ? <b>{n(pack.gohar)} {tr('گوهر', 'Gohar')} — {n(pack.toman)} {tr('تومان', 'Toman')}</b>
+          : <span role="alert">{tr('این بسته پیدا نشد.', 'Unknown pack.')}</span>}
         <span className="mute">{tr('پولی کسر نمی‌شود. در نسخهٔ بازار یا مایکت، پرداخت با درگاه همان فروشگاه انجام می‌شود.', 'No money is charged. Bazaar/Myket builds use that store’s billing.')}</span>
-        <button className="btn primary" onClick={() => done(`mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)}>{tr('تأیید', 'Confirm')}</button>
+        {pack && <button className="btn primary" onClick={() => done(`mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)}>{tr('تأیید', 'Confirm')}</button>}
         <button className="btn ghost" onClick={() => done(null)}>{tr('انصراف', 'Cancel')}</button>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -84,6 +92,7 @@ export default function App() {
   const [stages, setStages] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [pending, setPending] = useState<string | null>(null); // stage waiting for the first-time guide
+  const [notice, setNotice] = useState('');
   const guided = useRef(false);
   const { tr } = useLang();
 
@@ -97,6 +106,8 @@ export default function App() {
   const begin = (ctx: MatchCtx) => { saveMatch(ctx); setSaved(ctx); setPlaying({ ctx, key: Date.now() }); };
 
   function start(arena: Arena, players: 2 | 3 | 4, mode: 'bots' | 'pnp') {
+    // never overwrite a saved match (it would cost a second fee and skip the forfeit); storage, not `saved`, is current here
+    if (loadMatch()) return;
     if (mode === 'bots') {
       if (!canEnter(getProfile(), arena)) return;
       update((q) => payFee(q, arena, Date.now()));
@@ -120,12 +131,7 @@ export default function App() {
   }
 
   function forfeit() {
-    if (saved && saved.mode === 'bots' && saved.paid) {
-      const hu = 0;
-      void hu;
-      update((q) => settleMatch(q, { arenaId: saved.arenaId, players: saved.match.config.players, outcome: 'loss', surs: 0, sarbaz: 0, paid: true, fee: saved.fee, margin: 0, target: saved.match.config.target, quit: true }, todayKey(), Date.now()).profile);
-    }
-    saveMatch(null);
+    forfeitSaved();
     setSaved(null);
   }
 
@@ -137,6 +143,11 @@ export default function App() {
     setPlaying(null);
     setSaved(null);
     if (c.stageId) { startStage(c.stageId); return; }
+    const a = arenaById(c.arenaId);
+    if (c.mode === 'bots' && !canEnter(getProfile(), a)) {
+      setNotice(getProfile().shahi < a.fee ? tr('شاهی کافی نداری؛ هدیه یا ویدیو را امتحان کن.', 'Not enough Shahi — try the gift or a video.') : tr('این آرنا برایت قفل شده است.', 'This arena is locked for you.'));
+      return;
+    }
     start(arenaById(c.arenaId), c.match.config.players, c.mode);
   };
 
@@ -149,10 +160,10 @@ export default function App() {
         <Game key={playing.key} ctx={playing.ctx} onExit={exit} onAgain={again} onForfeit={() => { forfeit(); setPlaying(null); }} onStage={(id) => { saveMatch(null); setPlaying(null); setSaved(null); startStage(id); }} />
       ) : (
         <>
-          {tab === 'home' && <Home saved={saved} onStart={start} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} onStages={() => setStages(true)} onOnline={() => setOnlineOpen(true)} />}
+          {tab === 'home' && <Home saved={saved} notice={notice} onStart={(a, pl, m) => { setNotice(''); start(a, pl, m); }} onResume={() => saved && setPlaying({ ctx: saved, key: Date.now() })} onForfeit={forfeit} onTutorial={() => setTutorial(true)} onStages={() => setStages(true)} onOnline={() => setOnlineOpen(true)} />}
           {tab === 'shop' && <Shop />}
           {tab === 'stats' && <Stats />}
-          {tab === 'settings' && <Settings onTutorial={() => setTutorial(true)} />}
+          {tab === 'settings' && <Settings onTutorial={() => setTutorial(true)} onErase={() => setSaved(null)} />}
           <nav className="tabs">
             {(['home', 'shop', 'stats', 'settings'] as Tab[]).map((k) => (
               <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>

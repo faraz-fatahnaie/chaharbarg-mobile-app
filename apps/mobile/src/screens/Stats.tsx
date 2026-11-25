@@ -6,6 +6,14 @@ import { useLang } from '../lib/i18n';
 import { update, useProfile } from '../lib/store';
 import { Header } from './Home';
 
+const REASONS: Record<string, [string, string]> = {
+  welcome: ['هدیهٔ شروع', 'Welcome gift'], 'daily-login': ['پاداش روزانه', 'Daily reward'], 'level-up': ['ارتقای سطح', 'Level up'],
+  relief: ['هدیه', 'Gift'], 'rewarded-ad': ['ویدیو', 'Video reward'], tutorial: ['آموزش بازی', 'Tutorial'],
+  fee: ['ورودی آرنا', 'Arena fee'], win: ['برد', 'Win'], draw: ['مساوی', 'Draw'], stage: ['جایزهٔ مرحله', 'Stage prize'],
+  achv: ['دستاورد', 'Achievement'], buy: ['خرید ظاهر', 'Cosmetic'], iap: ['خرید گوهر', 'Gohar purchase'],
+  challenge: ['چالش روزانه', 'Daily challenge'], prize: ['جایزهٔ آنلاین', 'Online prize'],
+};
+
 export function Stats() {
   const { tr, n, lang } = useLang();
   const p = useProfile();
@@ -20,7 +28,7 @@ export function Stats() {
           [tr('سور', 'Sur'), s.surs], [tr('سور سرباز', 'Sarbaz'), s.sarbaz], [tr('بهترین رکورد پیاپی', 'Best streak'), s.bestStreak],
           [tr('جام', 'Trophies'), p.trophies], [tr('سطح', 'Level'), levelOf(p.xp)], [tr('مساوی', 'Draws'), s.draws],
         ] as [string, number | string][]).map(([k, v]) => (
-          <div key={k} className="stat"><b>{typeof v === 'number' ? n(v) : n(v)}</b><span className="mute">{k}</span></div>
+          <div key={k} className="stat"><b>{n(v)}</b><span className="mute">{k}</span></div>
         ))}
       </div>
 
@@ -79,13 +87,19 @@ export function Stats() {
       <div className="panel col" style={{ margin: '0 14px 14px' }}>
         <h3>{tr('تراکنش‌ها', 'Recent transactions')}</h3>
         {p.tampered > 0 && <div className="mute" style={{ color: 'var(--bad)' }}>⚠ {tr('دست‌کاری در ذخیره‌سازی تشخیص داده و اصلاح شد.', 'Tampering with saved data was detected and rolled back.')}</div>}
-        {[...p.ledger].reverse().slice(0, 10).map((e) => (
+        {[...p.ledger].reverse().slice(0, 10).map((e) => {
+          const [kind, id] = e.reason.split(':');
+          const r = REASONS[kind];
+          const arena = ARENAS.find((a) => a.id === id);
+          const what = r ? `${tr(...r)}${arena ? ` · ${lang === 'fa' ? arena.fa : arena.en}` : kind === 'achv' && ACH_NAMES[id] ? ` · ${tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}` : ''}` : e.reason;
+          return (
           <div key={e.h} className="row mute">
-            <span className="grow">{e.reason}</span>
+            <span className="grow">{what}</span>
             {e.dS !== 0 && <span>{e.dS > 0 ? '+' : ''}{n(e.dS)} <span className="coin" /></span>}
             {e.dG !== 0 && <span>{e.dG > 0 ? '+' : ''}{n(e.dG)} <span className="gem" /></span>}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

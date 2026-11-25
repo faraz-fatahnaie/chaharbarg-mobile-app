@@ -3,6 +3,7 @@ import { makeCard } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
 import { applyDelta } from '../economy/economy';
 import { useLang } from '../lib/i18n';
+import { Dialog } from '../ui/Dialog';
 import { sfx } from '../lib/sound';
 import { update, useProfile } from '../lib/store';
 
@@ -27,7 +28,7 @@ export function Tutorial({ onClose }: { onClose: () => void }) {
   const s = slides[i];
   const last = i === slides.length - 1;
   return (
-    <div className="modal" style={{ zIndex: 60 }}>
+    <Dialog label={tr('آموزش بازی', 'How to play')} onClose={onClose} style={{ zIndex: 60 }}>
       <div className="sheet col">
         <div className="slide"><h2>{s.t}</h2>{s.d}<p style={{ margin: 0, lineHeight: 1.9 }}>{s.b}</p></div>
         <div className="dots">{slides.map((_, j) => <i key={j} className={j === i ? 'on' : ''} />)}</div>
@@ -43,6 +44,6 @@ export function Tutorial({ onClose }: { onClose: () => void }) {
           }}>{last ? tr('تمام', 'Done') : tr('بعدی', 'Next')}</button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

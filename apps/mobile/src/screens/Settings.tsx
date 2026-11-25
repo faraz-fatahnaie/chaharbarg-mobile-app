@@ -8,7 +8,12 @@ import { Header } from './Home';
 import { remindersSupported, setReminder } from '../lib/reminders';
 import { SUPPORT_EMAIL, feedbackHref, supportHref } from '../lib/support';
 
-export function Settings({ onTutorial }: { onTutorial: () => void }) {
+type TogKey = 'music' | 'effects' | 'hints' | 'noSurInLastRound' | 'mustCapture';
+const Tog = ({ k, label, s, set }: { k: TogKey; label: string; s: S; set: (k: TogKey, v: boolean) => void }) => (
+  <label className="tog"><span>{label}</span><input type="checkbox" checked={s[k]} onChange={(e) => set(k, e.target.checked)} /></label>
+);
+
+export function Settings({ onTutorial, onErase }: { onTutorial: () => void; onErase: () => void }) {
   const { tr, n } = useLang();
   const p = useProfile();
   const s = p.settings;
@@ -48,9 +53,6 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
   };
   const set = <K extends keyof S>(k: K, v: S[K]) => update((q) => ({ ...q, settings: { ...q.settings, [k]: v } }));
   const [remFailed, setRemFailed] = useState(false);
-  const Tog = ({ k, label }: { k: 'music' | 'effects' | 'hints' | 'noSurInLastRound' | 'mustCapture'; label: string }) => (
-    <label className="tog"><span>{label}</span><input type="checkbox" checked={s[k]} onChange={(e) => set(k, e.target.checked)} /></label>
-  );
   return (
     <div className="scroll col" style={{ padding: 0, gap: 12 }}>
       <Header />
@@ -87,9 +89,9 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         <h3>{tr('عمومی', 'General')}</h3>
         <label className="tog"><span>{tr('زبان', 'Language')}</span>
           <select value={s.lang} onChange={(e) => set('lang', e.target.value as S['lang'])}><option value="fa">فارسی</option><option value="en">English</option></select></label>
-        <Tog k="music" label={tr('موسیقی', 'Music')} />
-        <Tog k="effects" label={tr('جلوه‌های صوتی', 'Sound effects')} />
-        <Tog k="hints" label={tr('نمایش راهنما (برجسته‌کردن برداشت‌های ممکن)', 'Hints (highlight valid captures)')} />
+        <Tog k="music" label={tr('موسیقی', 'Music')} s={s} set={set} />
+        <Tog k="effects" label={tr('جلوه‌های صوتی', 'Sound effects')} s={s} set={set} />
+        <Tog k="hints" label={tr('نمایش راهنما (برجسته‌کردن برداشت‌های ممکن)', 'Hints (highlight valid captures)')} s={s} set={set} />
         <label className="tog"><span>{tr('زمان‌سنج نوبت (با ربات)', 'Turn timer (vs bots)')}</span>
           <select value={s.turnTimer} onChange={(e) => set('turnTimer', e.target.value as S['turnTimer'])}>
             <option value="off">{tr('خاموش', 'Off')}</option>
@@ -103,14 +105,14 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
 
       <div className="panel col" style={{ margin: '0 14px' }}>
         <h3>{tr('قوانین (برای بازی‌های جدید)', 'House rules (new matches)')}</h3>
-        <Tog k="noSurInLastRound" label={tr('در نوبت آخر سور حساب نمی‌شود', 'No sur in the last round')} />
-        <Tog k="mustCapture" label={tr('کارتی که می‌تواند بردارد نباید روی زمین بیفتد', 'A card that can capture may not be dropped')} />
+        <Tog k="noSurInLastRound" label={tr('در نوبت آخر سور حساب نمی‌شود', 'No sur in the last round')} s={s} set={set} />
+        <Tog k="mustCapture" label={tr('کارتی که می‌تواند بردارد نباید روی زمین بیفتد', 'A card that can capture may not be dropped')} s={s} set={set} />
         <label className="tog"><span>{tr('زمین اول: سرباز', 'Opening floor jack')}</span>
           <select value={s.openingJack} onChange={(e) => set('openingJack', e.target.value as S['openingJack'])}>
             <option value="replace">{tr('جایگزین شود', 'Replace it')}</option><option value="allow">{tr('بماند', 'Allow it')}</option></select></label>
         <label className="tog"><span>{tr('امتیاز سور سرباز', 'Sur Sarbaz points')}</span>
           <select value={s.surSarbazPoints} onChange={(e) => set('surSarbazPoints', Number(e.target.value) as 5 | 10)}><option value="10">۱۰</option><option value="5">۵</option></select></label>
-        <span className="mute">{tr('پیش‌فرض‌ها طبق فایل قوانین و منابع معتبر است؛ جزئیات در docs/rules-spec.md', 'Defaults follow your rules file and validated sources; see docs/rules-spec.md')}</span>
+        <span className="mute">{tr('پیش‌فرض‌ها همان قوانین رایج پاسور است. تغییرها از بازی بعدی اعمال می‌شود.', 'Defaults follow the common Pasur rules. Changes apply from your next match.')}</span>
       </div>
 
       <div className="panel col" style={{ margin: '0 14px' }}>
@@ -134,7 +136,7 @@ export function Settings({ onTutorial }: { onTutorial: () => void }) {
         {!confirm ? <button ref={eraseBtn} className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
           : <div role="alertdialog" aria-label={tr('پاک‌کردن همهٔ اطلاعات؟ این کار برگشت‌ندارد.', 'Erase all data? This cannot be undone.')} className="col">
             <span role="alert" className="mute">{tr('همهٔ اطلاعات پاک می‌شود و برگشت‌ندارد.', 'This erases everything and cannot be undone.')}</span>
-            <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); resetAll(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" autoFocus onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div></div>}
+            <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); resetAll(); onErase(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" autoFocus onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div></div>}
         <span className="mute">{tr('چهاربرگ — نسخهٔ ۰٫۱ · همه‌چیز روی همین گوشی ذخیره می‌شود.', 'Chaharbarg v0.1 · everything is stored on this device.')}</span>
       </div>
     </div>

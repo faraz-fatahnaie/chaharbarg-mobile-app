@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CardView, backStyle } from '../art/CardView';
 import { makeCard } from '@chaharbarg/engine';
 import { COSMETICS, GOHAR_PACKS, TABLE_COLORS, type CosmeticKind } from '../data/cosmetics';
@@ -20,19 +20,28 @@ export function Shop() {
   const p = useProfile();
   const [kind, setKind] = useState<CosmeticKind>('deck');
   const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false); // state lags a double tap by one render
 
-  async function buyPack(sku: string) {
+  async function guarded(fn: () => Promise<void>) {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    try { await fn(); } catch { setMsg(tr('ارتباط با فروشگاه ممکن نشد؛ دوباره امتحان کن.', "Couldn't reach the store — please try again.")); }
+    finally { busyRef.current = false; setBusy(false); }
+  }
+  const buyPack = (sku: string) => guarded(async () => {
     const r = await storeProvider.purchase(sku);
     if (!r) return;
     update((q) => grantPurchase(q, sku, r.token, Date.now()));
     sfx('coin');
     setMsg(tr('گوهر به حساب اضافه شد', 'Gohar added'));
-  }
-  async function restore() {
+  });
+  const restore = () => guarded(async () => {
     const list = await storeProvider.restore();
     update((q) => list.reduce((acc, x) => grantPurchase(acc, x.sku, x.token, Date.now()), q));
     setMsg(tr(`${n(list.length)} خرید بررسی شد؛ خریدهای تکراری دوباره اعمال نمی‌شوند.`, `${list.length} purchases checked; duplicates are never re-applied.`));
-  }
+  });
 
   return (
     <div className="scroll col" style={{ padding: 0, gap: 12 }}>
@@ -42,15 +51,15 @@ export function Shop() {
         <span className="mute">{tr('گوهر فقط برای ظاهر بازی است و هرگز در شرط‌بندی یا ورودی آرنا استفاده نمی‌شود.', 'Gohar only buys cosmetics. It is never used for entry fees or stakes.')}</span>
         <div className="grid2" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {GOHAR_PACKS.map((g) => (
-            <button key={g.sku} className="btn col" style={{ alignItems: 'center', gap: 2 }} onClick={() => buyPack(g.sku)}>
+            <button key={g.sku} className="btn col" style={{ alignItems: 'center', gap: 2 }} disabled={busy} onClick={() => buyPack(g.sku)}>
               <b style={{ color: 'var(--gohar)' }}>{n(g.gohar)} <span className="gem" /></b>
               <small>{n(g.toman)} {tr('تومان', 'Toman')}</small>
             </button>
           ))}
         </div>
         {storeProvider.isMock && <span className="mute">⚠ {tr('نسخهٔ آزمایشی: خرید واقعی نیست. در نسخهٔ بازار/مایکت به درگاه بازار/مایکت وصل می‌شود.', 'Demo build: no real payment. Bazaar/Myket builds use the store billing.')}</span>}
-        <button className="btn sm ghost" onClick={restore}>{tr('بازیابی خریدها', 'Restore purchases')}</button>
-        {msg && <span className="mute">{msg}</span>}
+        <button className="btn sm ghost" disabled={busy} onClick={restore}>{tr('بازیابی خریدها', 'Restore purchases')}</button>
+        {msg && <span className="mute" role="status">{msg}</span>}
       </div>
 
       <div style={{ padding: '0 14px' }}>

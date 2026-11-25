@@ -1,21 +1,26 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  captureOptions, chooseMove, liveScore, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
+  captureOptions, chooseMove, matchNextDeal, matchPlay, mulberry32, unitOf, unitCount,
   type Card, type MatchState,
 } from '@chaharbarg/engine';
 import { CardView } from '../art/CardView';
 import { Avatar } from '../art/Avatar';
 import { Sticker } from '../art/Stickers';
 import { Confetti, CountUp, FxLayer, reducedMotion, type FlySpec } from '../art/fx';
-import { Scoreboard, scoreRows, type ScoreUnit } from './Scoreboard';
+import { Scoreboard, type ScoreUnit } from './Scoreboard';
+import { Countdown, ServerClock } from './game/Countdown';
+import { DealSummary, Handoff, MenuSheet, VsSplash } from './game/parts';
+import { settleLocal, SUR_POINTS, type Settled } from './game/settle';
+import { useFloorFx } from './game/useFloorFx';
+import { useTimeouts } from './game/useTimeouts';
+import { Dialog } from '../ui/Dialog';
 import { Scene } from '../art/Scene';
 import { arenaById } from '../data/arenas';
 import { ACH_NAMES } from '../data/achievements';
 import { botById, CHAT_GAP_MS, EMOTES } from '../data/bots';
 import { TABLE_COLORS } from '../data/cosmetics';
-import { adStatus, checkAchievements, clearStage, grantAd, honorUnlocked, LEVEL_GOHAR, settleMatch, todayKey } from '../economy/economy';
+import { adStatus, grantAdBonus, LEVEL_GOHAR, todayKey } from '../economy/economy';
 import { STAGES } from '../data/stages';
-import { HONORS, type Honor } from '../data/honors';
 import { useLang } from '../lib/i18n';
 import type { RoomView } from '../lib/online';
 import { MAX_TIMEOUTS, TURN_SECONDS, timeoutMove } from '../lib/match';
@@ -23,15 +28,15 @@ import { adProvider } from '../lib/services';
 import { sfx, startAmbient, stopAmbient } from '../lib/sound';
 import { saveMatch, update, useProfile, type MatchCtx } from '../lib/store';
 
-const FAST = (!!import.meta.env.VITE_AUTOPILOT && !String(import.meta.env.VITE_AUTOPILOT).endsWith(':slow')) ||(typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast')); // test hook: quick bots
+// test hook: quick bots. `?fast` only counts in dev or autopilot builds, never in a shipped app.
+const AUTOPILOT = import.meta.env.VITE_AUTOPILOT ? String(import.meta.env.VITE_AUTOPILOT) : '';
+const FAST = (!!AUTOPILOT && !AUTOPILOT.endsWith(':slow'))
+  || ((import.meta.env.DEV || !!AUTOPILOT) && typeof location !== 'undefined' && new URLSearchParams(location.search).has('fast'));
+// visually hidden but read by screen readers (no shared CSS class for it)
+const SR_ONLY = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const;
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
 const byRank = (a: Card, b: Card) => a.rank - b.rank || a.suit.localeCompare(b.suit);
 const label = (c: Card) => `${({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[c.rank] ?? c.rank}${{ S: '♠', H: '♥', D: '♦', C: '♣' }[c.suit]}`;
-
-interface Settled {
-  outcome: 'win' | 'loss' | 'draw';
-  payout: number; trophyDelta: number; xpGain: number; levelUps: number; unlocked: string[]; honors: Honor[]; paid: boolean; bonus: number; stagePrize: number;
-}
 
 const Bubble = ({ text }: { text: string }) => (text[0] === '#' ? <div className="bubble stk-b"><Sticker k={text.slice(1)} /></div> : <div className="bubble">{text}</div>);
 
@@ -42,7 +47,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   const { tr, n, lang } = useLang();
   const profile = useProfile();
   const [mcLocal, setMc] = useState<MatchState>(ctx.match);
-  const mc = online ? online.view.match! : mcLocal;
+  const mc = online ? online.view.match ?? ctx.match : mcLocal;
   const [sel, setSel] = useState<string | null>(null);
   const [pick, setPick] = useState<string[]>([]);
   const [banner, setBanner] = useState<{ a: string; b?: string } | null>(null);
@@ -61,6 +66,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   const settled = useRef(false);
   const lastChat = useRef(0);
   const rng = useMemo(() => mulberry32((Date.now() ^ 0x9e3779b9) >>> 0), []);
+  const later = useTimeouts();
 
   const arena = arenaById(ctx.arenaId);
   const players = mc.config.players;
@@ -70,10 +76,10 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   const myTurn = mc.phase === 'playing' && (online ? deal.turn === view : !isBot(deal.turn)) && !handoff && !summary && !result;
   const table = TABLE_COLORS[profile.equipped.table] ?? { felt: arena.felt, rim: arena.rim };
 
-  // persist for resume; clear when the match is finished
+  // persist for resume, including a finished match until finish() has settled it (settleLocal drops the save)
   useEffect(() => {
-    if (online) return;
-    saveMatch(mc.phase === 'matchOver' ? null : { ...ctx, match: mc });
+    if (online || settled.current) return;
+    saveMatch({ ...ctx, match: mc });
   }, [mc, ctx]);
 
   useEffect(() => {
@@ -96,7 +102,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
 
   const say = (seat: number, text: string) => {
     setBubbles((b) => ({ ...b, [seat]: text }));
-    setTimeout(() => setBubbles((b) => (b[seat] === text ? { ...b, [seat]: '' } : b)), text[0] === '#' ? 2600 : 1800);
+    later(() => setBubbles((b) => (b[seat] === text ? { ...b, [seat]: '' } : b)), text[0] === '#' ? 2600 : 1800);
   };
 
   function announce(seat: number, r: NonNullable<MatchState['lastResult']>) {
@@ -105,8 +111,8 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
       sfx(r.sur === 'sarbaz' ? 'sarbaz' : 'sur');
       setBanner(r.sur === 'sarbaz'
         ? { a: tr('سور سرباز!', 'Sur Sarbaz!'), b: `+${n(mc.config.surSarbazPoints)}` }
-        : { a: tr('سور!', 'Sur!'), b: '+۵'.replace('۵', n(5)) });
-      setTimeout(() => setBanner(null), 1100);
+        : { a: tr('سور!', 'Sur!'), b: `+${n(SUR_POINTS)}` });
+      later(() => setBanner(null), 1100);
       const bot = ctx.seats[seat].botId;
       if (bot) say(seat, botById(bot).lines.sur[0]);
     } else if (r.captured.length >= 4 && ctx.seats[seat].botId) {
@@ -123,37 +129,24 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     setPick([]);
     announce(seat, m2.lastResult!);
     if (m2.phase !== 'playing') {
-      setTimeout(() => setSummary(true), m2.lastResult!.sur ? 1300 : 700);
+      later(() => setSummary(true), m2.lastResult!.sur ? 1300 : 700);
     } else if (ctx.mode === 'pnp') {
-      setTimeout(() => setHandoff(true), 450);
+      // same render as the move: the next player's hand must never show before the cover (myTurn is false while it is up)
+      setHandoff(true);
     }
   }
 
   // turn timer (vs bots only): 3 timeouts in a row forfeit the match
   const limit = ctx.mode === 'bots' && !online ? TURN_SECONDS[profile.settings.turnTimer] : 0;
-  const [left, setLeft] = useState(0);
   const timeouts = useRef(0);
   const play = (cardId: string, ids: string[]) => { timeouts.current = 0; commit(cardId, ids); };
-  useEffect(() => {
-    if (!limit || !myTurn || menu) return;
-    let s = limit;
-    setLeft(s);
-    const id = setInterval(() => {
-      s -= 1;
-      setLeft(s);
-      if (s > 0 && s <= 5) sfx('timer', s <= 3 ? 1 : 0);
-      if (s > 0) return;
-      clearInterval(id);
-      if (++timeouts.current >= MAX_TIMEOUTS) { onForfeit(); return; }
-      const mv = timeoutMove(deal, deal.turn, rng);
-      commit(mv.cardId, mv.captureIds);
-    }, 1000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limit, myTurn, menu, mc]);
+  const onTimeout = () => {
+    if (++timeouts.current >= MAX_TIMEOUTS) { onForfeit(); return; }
+    const mv = timeoutMove(deal, deal.turn, rng);
+    commit(mv.cardId, mv.captureIds);
+  };
 
-  // online: announce each new play, follow the deal summary, and tick the server's turn clock
-  const [clock, setClock] = useState(() => Date.now());
+  // online: announce each new play and follow the deal summary (the turn clock is <ServerClock/>)
   const playKey = online ? `${mc.dealNo}:${mc.deal.hands.reduce((a, h) => a + h.length, 0)}:${mc.deal.stock.length}` : '';
   useEffect(() => {
     if (online && mc.lastResult && mc.phase === 'playing') announce(mc.lastResult.seat, mc.lastResult);
@@ -166,12 +159,6 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online && mc.phase, online && mc.dealNo]);
-  useEffect(() => {
-    if (!online?.view.deadline) return;
-    const id = setInterval(() => setClock(Date.now()), 500);
-    return () => clearInterval(id);
-  }, [online?.view.deadline]);
-  const serverLeft = online?.view.deadline ? Math.max(0, Math.ceil((online.view.deadline - clock) / 1000)) : 0;
 
   // bots take their turn
   useEffect(() => {
@@ -180,7 +167,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     const t = setTimeout(() => {
       const mv = chooseMove(deal, seat, arena.botLevel, rng);
       commit(mv.cardId, mv.captureIds);
-    }, FAST ? 20 : 700 + Math.random() * 500);
+    }, FAST ? 20 : 700 + rng() * 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mc, summary, result, menu, vs]);
@@ -217,7 +204,6 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     ctx.mode === 'pnp'
       ? players === 4 ? tr(`تیم ${n(u + 1)}`, `Team ${u + 1}`) : ctx.seats[u].name
       : players === 4 ? (u === u0 ? tr('تیم شما', 'Your team') : tr('تیم حریف', 'Opponents')) : u === u0 ? tr('شما', 'You') : ctx.seats[u].name;
-  const targetLabel = n(mc.config.target);
 
   // ---- finishing ----
   function finish() {
@@ -236,37 +222,11 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
       if (ctx.mode === 'pnp') setHandoff(true);
       return;
     }
-    if (settled.current) return;
-    settled.current = true;
-    const hu = unitOf(players, view);
-    const outcome: Settled['outcome'] = mc.winner === null ? 'draw' : mc.winner === hu ? 'win' : 'loss';
-    let surs = 0;
-    let sarbaz = 0;
-    for (const d of mc.history) { surs += d[hu].sur / 5; sarbaz += d[hu].sarbaz / mc.config.surSarbazPoints; }
-    const paid = ctx.mode === 'bots' && ctx.paid;
-    const margin = outcome === 'win' ? mc.scores[hu] - Math.max(...mc.scores.filter((_, u) => u !== hu)) : 0;
-    let info = { payout: 0, trophyDelta: 0, xpGain: 0, levelUps: 0 };
-    let unlocked: string[] = [];
-    let stagePrize = 0;
-    let honors: Honor[] = [];
-    if (ctx.mode === 'bots') {
-      update((p) => {
-        const r = settleMatch(p, { arenaId: ctx.arenaId, players, outcome, surs, sarbaz, paid, fee: ctx.fee, margin, target: mc.config.target }, todayKey(), Date.now());
-        info = r;
-        const a = checkAchievements(r.profile, Date.now());
-        unlocked = a.unlocked;
-        honors = HONORS.filter((h) => !honorUnlocked(p, h) && honorUnlocked(a.profile, h));
-        if (ctx.stageId && outcome === 'win') {
-          const c = clearStage(a.profile, ctx.stageId, Date.now());
-          stagePrize = c.shahi - a.profile.shahi;
-          return c;
-        }
-        return a.profile;
-      });
-    }
-    sfx(outcome === 'win' ? 'win' : outcome === 'loss' ? 'lose' : 'click');
+    const r = settleLocal(settled, ctx, mc, unitOf(players, view));
+    if (!r) return;
+    sfx(r.outcome === 'win' ? 'win' : r.outcome === 'loss' ? 'lose' : 'click');
     setSummary(false);
-    setResult({ outcome, ...info, unlocked, honors, paid, bonus: 0, stagePrize });
+    setResult(r);
   }
 
   async function doubleUp() {
@@ -276,7 +236,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
     setAdBusy(false);
     if (!ok) return;
     const extra = Math.round(result.payout * 0.5);
-    update((p) => grantAd(p, todayKey(), Date.now(), extra));
+    update((p) => grantAdBonus(p, extra, Date.now()));
     sfx('coin');
     setResult({ ...result, bonus: extra });
   }
@@ -286,7 +246,6 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
   const now = Date.now();
   const adOk = adStatus(profile, now, todayKey()).ok;
   const last = mc.history[mc.history.length - 1];
-  const lastId = mc.lastResult?.card.id;
   const hint = !myTurn
     ? ''
     : !card
@@ -296,103 +255,10 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
         : opts.length === 1
           ? tr('دوباره بزن تا برداشته شود', 'Tap again to capture')
           : tr('یک ترکیب را انتخاب کن (یا کارت‌های زمین را بزن)', 'Choose a combination (or tap floor cards)');
+  const waitText = tr(`نوبت ${ctx.seats[deal.turn].name}…`, `${ctx.seats[deal.turn].name}'s turn…`);
 
-  // fixed floor slots: a card that stays never moves; new cards take the lowest free slot (centre-out)
-  const slots = useRef<Record<string, number>>({});
-  const kinds = useRef<Record<string, 'play' | 'deal'>>({});
-  const snap = useRef<{ floor: Record<string, DOMRect>; hand: Record<string, DOMRect>; live: number[] }>({ floor: {}, hand: {}, live: [] });
-  const flyId = useRef(0);
-  const lr = mc.lastResult;
-  const fxKey = lr ? `${mc.dealNo}:${lr.card.id}` : '';
-  const prevKey = useRef(fxKey);
-  {
-    const ids = new Set(deal.floor.map((c) => c.id));
-    const used = new Set<number>();
-    for (const id of Object.keys(slots.current)) { if (ids.has(id)) used.add(slots.current[id]); else { delete slots.current[id]; delete kinds.current[id]; } }
-    for (const c of deal.floor) {
-      if (slots.current[c.id] != null) continue;
-      let i = 0;
-      while (used.has(i) && i < 20) i++;
-      slots.current[c.id] = i; used.add(i);
-      kinds.current[c.id] = c.id === lastId ? 'play' : 'deal';
-    }
-  }
-  useLayoutEffect(() => {
-    const root = gameRef.current;
-    if (!root) return;
-    const g = root.getBoundingClientRect();
-    const rel = (r: DOMRect) => ({ x: r.x - g.x, y: r.y - g.y, w: r.width, h: r.height });
-    const ctr = (r: DOMRect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
-    if (fxKey && fxKey !== prevKey.current && lr && !noFx) {
-      const srcEl = root.querySelector(`[data-seat="${lr.seat}"]`);
-      const sr = snap.current.hand[lr.card.id] ?? srcEl?.getBoundingClientRect();
-      const S = sr && ctr(sr);
-      const ease = 'cubic-bezier(.2,.8,.2,1)';
-      if (sr && S && lr.captured.length === 0) {
-        const el = root.querySelector<HTMLElement>(`[data-cid="${lr.card.id}"] .card`);
-        if (el) {
-          const dr = el.getBoundingClientRect(); const D = ctr(dr);
-          const dx = S.x - D.x, dy = S.y - D.y, sc = sr.width / dr.width;
-          el.animate([
-            { transform: `translate(${dx}px,${dy}px) scale(${sc}) rotate(-12deg)` },
-            { transform: `translate(${dx * .4}px,${dy * .4 - 36}px) scale(1.18) rotate(5deg)`, offset: .6 },
-            { transform: 'none' },
-          ], { duration: 300, easing: ease });
-        }
-      } else if (sr && S) {
-        const pileEl = root.querySelector(`[data-pile="${lr.seat}"]`);
-        const fl = root.querySelector('.floor')!.getBoundingClientRect();
-        if (pileEl) {
-          const P = ctr(pileEl.getBoundingClientRect());
-          const M = ctr(fl);
-          const cap0 = lr.captured.map((c) => snap.current.floor[c.id]).find(Boolean);
-          const cw = cap0?.width ?? sr.width;
-          const land = 300, gap = lr.sur ? 480 : 140, fly = 380, st = 40, D = land + gap + fly + st * lr.captured.length;
-          const out: FlySpec[] = [];
-          const base = { deck: profile.equipped.deck, back: profile.equipped.back };
-          out.push({ id: ++flyId.current, ...base, card: lr.card, x: M.x - g.x - cw / 2, y: M.y - g.y - cw * 0.7, w: cw, ms: D, ease: 'linear', frames: [
-            { transform: `translate(${S.x - M.x}px,${S.y - M.y}px) scale(${sr.width / cw}) rotate(-12deg)`, easing: ease },
-            { transform: 'translate(0,0) scale(1.15) rotate(3deg)', offset: land / D },
-            { transform: 'translate(0,0) scale(1.15) rotate(3deg)', offset: (land + gap) / D, easing: 'cubic-bezier(.5,0,.9,.4)' },
-            { transform: `translate(${P.x - M.x}px,${P.y - M.y}px) scale(.35)`, opacity: .3 },
-          ] });
-          lr.captured.forEach((c, i) => {
-            const r = snap.current.floor[c.id];
-            if (!r) return;
-            const q = rel(r); const C = ctr(r);
-            out.push({ id: ++flyId.current, ...base, card: c, x: q.x, y: q.y, w: q.w, ms: fly, delay: land + gap + i * st, ease: 'cubic-bezier(.5,0,.9,.4)', frames: [
-              { transform: 'none', opacity: 1 }, { transform: `translate(${P.x - C.x}px,${P.y - C.y}px) scale(.35)`, opacity: .3 },
-            ] });
-          });
-          // score pops: +N flies from the pile to the unit's scoreboard card
-          const now = liveScore(deal).map((l) => l.total);
-          const cards = root.querySelectorAll('.ucard');
-          now.forEach((t, u) => {
-            const d = t - (snap.current.live[u] ?? t);
-            const tgt = cards[u]?.querySelector('.pill');
-            if (d <= 0 || !tgt) return;
-            const T = ctr(tgt.getBoundingClientRect());
-            out.push({ id: ++flyId.current, text: `+${n(d)}`, x: P.x - g.x - 14, y: P.y - g.y - 12, w: 28, ms: 650, delay: D - 120, ease, frames: [
-              { transform: 'translate(0,0) scale(.6)', opacity: 0 }, { transform: 'translate(0,-18px) scale(1.3)', opacity: 1, offset: .3 },
-              { transform: `translate(${T.x - P.x}px,${T.y - P.y}px) scale(.8)`, opacity: .2 },
-            ] });
-          });
-          setFlies((f) => [...f, ...out]);
-          now.forEach((t, u) => {
-            const d = t - (snap.current.live[u] ?? t);
-            for (let k = 0; k < Math.min(d, 14); k++) setTimeout(() => sfx('score', k), D - 120 + 350 + k * 100);
-          });
-          const chip = pileEl as HTMLElement;
-          setTimeout(() => { chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }, D - 60);
-          if (lr.sur) { setTimeout(() => setSurfx(true), land); setTimeout(() => setSurfx(false), land + 600); }
-        }
-      }
-    }
-    prevKey.current = fxKey;
-    const f: Record<string, DOMRect> = {}, h: Record<string, DOMRect> = {};
-    root.querySelectorAll<HTMLElement>('.fslot').forEach((e) => { f[e.dataset.cid!] = e.firstElementChild!.getBoundingClientRect(); });
-    root.querySelectorAll<HTMLElement>('.hslot').forEach((e) => { h[e.dataset.cid!] = e.firstElementChild!.getBoundingClientRect(); });
-    snap.current = { floor: f, hand: h, live: liveScore(deal).map((l) => l.total) };
+  const { slots, kinds } = useFloorFx(gameRef, mc, {
+    noFx, look: profile.equipped, fmt: n, later, setSurfx, addFlies: (f) => setFlies((x) => [...x, ...f]), relayout: [mc, vs, handoff, sel, pick],
   });
 
   const units: ScoreUnit[] = Array.from({ length: unitCount(players) }, (_, u) => {
@@ -417,7 +283,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
           const mate = players === 4 && unitOf(4, seat) === u0;
           return (
             <div key={seat} className={`seat ${mate ? 'mate' : ''} ${deal.turn === seat && mc.phase === 'playing' ? 'turn' : ''}`} style={{ gridColumn: cols[i], gridRow: 1 }}>
-              <Avatar data-seat={seat} hue={info.hue} glyph={info.glyph} name={info.name} />
+              <Avatar data-seat={seat} hue={info.hue} glyph={info.glyph} name={info.name} aria-hidden="true" />
               <div className="nm" title={mate ? tr('هم‌تیمی', 'partner') : undefined}><bdi>{info.name}</bdi></div>
               <div className="hand">
                 {!vs && deal.hands[seat].slice(0, 6).map((_, k) => <CardView key={k} faceDown back={profile.equipped.back} style={{ ['--i' as string]: k }} />)}
@@ -433,21 +299,27 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
         <div className="felt" />
         {deal.floor.length === 0 && <div className="center-tag">{tr('زمین خالی است', 'Floor is empty')}</div>}
         {!vs && deal.floor.map((c) => {
-          const si = slots.current[c.id];
+          const si = slots[c.id];
           const row = [1, 0, 2][Math.floor(si / 7)], col = [3, 2, 4, 1, 5, 0, 6][si % 7];
           return (
-            <div key={c.id} data-cid={c.id} className={`fslot ${kinds.current[c.id] === 'deal' ? 'deal' : ''}`} style={{ ['--c' as string]: col, ['--r' as string]: row, ['--i' as string]: si }}>
+            <div key={c.id} data-cid={c.id} className={`fslot ${kinds[c.id] === 'deal' ? 'deal' : ''}`} style={{ ['--c' as string]: col, ['--r' as string]: row, ['--i' as string]: si }}>
               <CardView card={c} deck={profile.equipped.deck} back={profile.equipped.back}
                 className={pick.includes(c.id) ? 'pick' : ''}
                 glow={hintIds.has(c.id) && !pick.includes(c.id)} dim={!!card && opts.length > 0 && profile.settings.hints && !hintIds.has(c.id)}
-                onClick={() => tapFloor(c)} />
+                disabled={!myTurn || !card || opts.length === 0} onClick={() => tapFloor(c)} />
             </div>
           );
         })}
       </div>
 
       <div className="action" data-zone="action">
-        <div className="hint-line">{((online ? serverLeft > 0 : limit > 0) && myTurn) && <b>⏱ {n(online ? serverLeft : Math.max(left, 0))}{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}{hint}</div>
+        <div className="hint-line">
+          {!!online?.view.deadline && myTurn && <ServerClock deadline={online.view.deadline} fmt={n} />}
+          {!online && limit > 0 && myTurn && <b>⏱ <Countdown limit={limit} active={!menu} resetKey={mc} onExpire={onTimeout} fmt={n} />{timeouts.current > 0 && ` · ${tr('وقت تمام شد', 'Timeouts')} ${n(timeouts.current)}/${n(MAX_TIMEOUTS)}`} · </b>}
+          <span aria-hidden="true">{hint}</span>
+        </div>
+        {/* one polite live region for what to do next / whose turn it is (not the ticking clock) */}
+        <span aria-live="polite" style={SR_ONLY}>{hint || (mc.phase === 'playing' && !myTurn && !handoff ? waitText : '')}</span>
         <div className={`opts ${hasOpts ? '' : 'off'}`}>
           {hasOpts && opts.map((o, i) => {
             const oi = o.map((x) => x.id);
@@ -469,7 +341,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
               ) : <span />}
             </>
           ) : (
-            !myTurn && mc.phase === 'playing' && !handoff && <span className="mute wait">{tr(`نوبت ${ctx.seats[deal.turn].name}…`, `${ctx.seats[deal.turn].name}'s turn…`)}</span>
+            !myTurn && mc.phase === 'playing' && !handoff && <span className="mute wait" aria-hidden="true">{waitText}</span>
           )}
         </div>
       </div>
@@ -477,7 +349,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
       <div className="hand-zone" data-zone="hand">
         {!handoff && !vs && hand.map((c, i) => (
           <div key={c.id} data-cid={c.id} className="hslot" style={{ ['--i' as string]: i, ['--d' as string]: i - (hand.length - 1) / 2, zIndex: sel === c.id ? 5 : i }}>
-            <CardView card={c} deck={profile.equipped.deck} className="dealin" selected={sel === c.id} dim={!myTurn} onClick={() => tapHand(c)} />
+            <CardView card={c} deck={profile.equipped.deck} className="dealin" selected={sel === c.id} dim={!myTurn} disabled={!myTurn} onClick={() => tapHand(c)} />
           </div>
         ))}
       </div>
@@ -496,7 +368,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
                 if (Date.now() - lastChat.current < CHAT_GAP_MS) return;
                 lastChat.current = Date.now();
                 say(0, `#${e.k}`); sfx('sticker'); setChat(false);
-                if (Math.random() < 0.5) { const s = 1 + Math.floor(Math.random() * (players - 1)); const b = ctx.seats[s].botId; if (b) setTimeout(() => { say(s, `#${EMOTES[Math.floor(Math.random() * EMOTES.length)].k}`); sfx('sticker'); }, 900); }
+                if (rng() < 0.5) { const s = 1 + Math.floor(rng() * (players - 1)); const b = ctx.seats[s].botId; if (b) later(() => { say(s, `#${EMOTES[Math.floor(rng() * EMOTES.length)].k}`); sfx('sticker'); }, 900); }
               }}><Sticker k={e.k} /><small>{tr(e.fa, e.en)}</small></button>
             ))}
           </div>
@@ -505,70 +377,18 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
 
       <FxLayer flies={flies} done={(id) => setFlies((f) => f.filter((x) => x.id !== id))} />
 
-      {vs && (
-        <div className="vs-splash" onClick={() => setVs(false)}>
-          <div className="half l">
-            <div className="row">{units[0].avatars.map((a, k) => <Avatar key={k} hue={a.hue} glyph={a.glyph} name="" />)}</div>
-            <div className="pn">{units[0].name}</div>
-          </div>
-          <div className="half r">
-            <div className="row">{units.slice(1).flatMap((u) => u.avatars).map((a, k) => <Avatar key={k} hue={a.hue} glyph={a.glyph} name="" />)}</div>
-            <div className="pn">{units.slice(1).map((u) => u.name).join(' · ')}</div>
-          </div>
-          <div className="vs">VS</div>
-          <div className="arena-tag"><span>{tr(arena.fa, arena.en)} · {tr('اولین نفر به', 'First to')} {n(mc.config.target)}</span></div>
-        </div>
-      )}
+      {vs && <VsSplash units={units} arena={arena} target={mc.config.target} onDone={() => setVs(false)} />}
 
       {banner && <div className="banner"><b>{banner.a}{banner.b && <small>{banner.b}</small>}</b></div>}
 
-      {handoff && mc.phase === 'playing' && (
-        <div className="handoff">
-          <div className="col" style={{ alignItems: 'center', gap: 14 }}>
-            <Avatar hue={ctx.seats[deal.turn].hue} glyph={ctx.seats[deal.turn].glyph} name={ctx.seats[deal.turn].name} style={{ width: 72, height: 72, fontSize: 30 }} />
-            <h2>{tr(`گوشی را به ${ctx.seats[deal.turn].name} بدهید`, `Pass the phone to ${ctx.seats[deal.turn].name}`)}</h2>
-            <span className="mute">{tr('بقیه نگاه نکنند!', 'Everyone else look away!')}</span>
-            <button className="btn primary" onClick={() => setHandoff(false)}>{tr('آماده‌ام', "I'm ready")}</button>
-          </div>
-        </div>
-      )}
+      {handoff && mc.phase === 'playing' && <Handoff seat={ctx.seats[deal.turn]} delay={noFx ? 0 : 450} onReady={() => setHandoff(false)} />}
 
-      {menu && (
-        <div className="modal" onClick={() => setMenu(false)}>
-          <div className="sheet col" onClick={(e) => e.stopPropagation()}>
-            <h2>{arena.fa}</h2>
-            <button className="btn" onClick={() => setMenu(false)}>{tr('ادامهٔ بازی', 'Resume')}</button>
-            <button className="btn ghost" onClick={online ? online.leave : onExit}>{online ? tr('خروج از میز', 'Leave the table') : tr('ذخیره و رفتن به خانه', 'Save and go home')}</button>
-            <span className="mute">{online ? tr('با کد اتاق می‌توانی برگردی؛ تا آن موقع نوبت‌هایت خودکار بازی می‌شود.', 'You can rejoin with the room code; meanwhile your turns are played for you.') : tr('بازی ذخیره می‌شود و بعداً ادامه پیدا می‌کند.', 'The match is saved and can be resumed later.')}</span>
-          </div>
-        </div>
-      )}
+      {menu && <MenuSheet arena={arena} online={!!online} onResume={() => setMenu(false)} onLeave={online ? online.leave : onExit} />}
 
-      {summary && last && (
-        <div className="modal">
-          <div className="sheet col pop">
-            <h2>{tr(`پایان دست ${n(mc.dealNo)}`, `Deal ${n(mc.dealNo)} complete`)}</h2>
-            <table className="sc">
-              <thead>
-                <tr><th />{last.map((_, u) => <th key={u}>{unitName(u)}</th>)}</tr>
-              </thead>
-              <tbody>
-                {scoreRows(tr, n).map(([label, f], i) => (
-                  <tr key={label} style={{ ['--i' as string]: i }}><td>{label}</td>{last.map((s, u) => <td key={u}>{f(s)}</td>)}</tr>
-                ))}
-                <tr className="tot"><td>{tr('امتیاز این دست', 'This deal')}</td>{last.map((s, u) => <td key={u}>{n(s.total)}</td>)}</tr>
-                <tr className="tot"><td>{tr('مجموع بازی', 'Match total')}</td>{mc.scores.map((s, u) => <td key={u}>{n(s)}</td>)}</tr>
-              </tbody>
-            </table>
-            <button className="btn primary" onClick={finish}>
-              {mc.phase === 'dealOver' ? tr('دست بعد', 'Next deal') : tr('نتیجهٔ بازی', 'Match result')}
-            </button>
-          </div>
-        </div>
-      )}
+      {summary && last && <DealSummary mc={mc} last={last} unitName={unitName} onNext={finish} />}
 
       {result && (
-        <div className="modal">
+        <Dialog label={result.outcome === 'win' ? tr('بردی!', 'You won!') : result.outcome === 'loss' ? tr('این‌بار نشد', 'Not this time') : tr('مساوی', 'Draw')}>
           <div className={`sheet col pop ${result.outcome === 'win' ? 'win' : result.outcome === 'loss' ? 'lose' : ''}`} style={{ textAlign: 'center' }}>
             {result.outcome === 'win' && <Confetti />}
             <h1 style={{ fontSize: 30, color: result.outcome === 'win' ? 'var(--gold)' : 'var(--ink)' }}>
@@ -592,7 +412,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
             {result.unlocked.map((id) => (
               <div key={id} className="panel">🏅 {tr(ACH_NAMES[id].fa, ACH_NAMES[id].en)}</div>
             ))}
-            {ctx.mode === 'bots' && !online && result.outcome === 'win' && result.paid && result.bonus === 0 && adOk && (
+            {ctx.mode === 'bots' && !online && result.outcome === 'win' && result.paid && result.payout > 0 && result.bonus === 0 && adOk && (
               <button className="btn good" disabled={adBusy} onClick={doubleUp}>▶ {tr(`تماشای ویدیو: ${n(Math.round(result.payout * 0.5))} شاهی بیشتر`, `Watch a video: +${n(Math.round(result.payout * 0.5))} Shahi`)}</button>
             )}
             {online && online.view.ranked && online.view.deltas?.[view] != null && (
@@ -609,7 +429,7 @@ export function Game({ ctx, onExit, onAgain, onStage, onForfeit, online }: { ctx
             {!online && <button className={nextStage ? 'btn ghost' : 'btn primary'} onClick={onAgain}>{ctx.stageId ? tr('تلاش دوباره', 'Retry') : tr('بازی دوباره', 'Play again')}</button>}
             {!online && <button className="btn ghost" onClick={onExit}>{tr('خانه', 'Home')}</button>}
           </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );

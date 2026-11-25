@@ -11,10 +11,13 @@ import './cards.css';
 import './game.css';
 import './stickers.css';
 import App from './App';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
 
