@@ -45,4 +45,33 @@ describe('sound toggles', () => {
     s.startAmbient('wind');
     expect(ctx.createBufferSource).toHaveBeenCalled();
   });
+
+  it('music back on restarts the bed the screen asked for; a repeat "on" or a stopped bed does not', async () => {
+    const ctx = setup();
+    const s = await import('./sound');
+    s.setMusicEnabled(false);
+    s.startAmbient('wind');
+    expect(ctx.createBufferSource).not.toHaveBeenCalled();
+    s.setMusicEnabled(true);
+    const n = ctx.createBufferSource.mock.calls.length;
+    expect(n).toBeGreaterThan(0);
+    s.stopAmbient(); // stop the pump so it schedules nothing more
+    s.startAmbient('wind');
+    const m = ctx.createBufferSource.mock.calls.length;
+    s.setMusicEnabled(true); // already on: no second bed
+    expect(ctx.createBufferSource.mock.calls.length).toBe(m);
+    s.stopAmbient();
+    s.setMusicEnabled(false);
+    s.setMusicEnabled(true); // the screen stopped its bed: nothing to restart
+    expect(ctx.createBufferSource.mock.calls.length).toBe(m);
+  });
+
+  it('resumes an iOS "interrupted" context', async () => {
+    const ctx = setup() as ReturnType<typeof setup> & { resume: () => Promise<void> };
+    ctx.state = 'interrupted';
+    ctx.resume = vi.fn(async () => {});
+    const s = await import('./sound');
+    s.sfx('click');
+    expect(ctx.resume).toHaveBeenCalled();
+  });
 });

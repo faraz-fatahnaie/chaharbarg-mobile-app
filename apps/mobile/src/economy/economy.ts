@@ -101,6 +101,8 @@ export interface Profile {
   title: string | null;
   avatar: Avatar;
   tampered: number;
+  /** latest time (ms) the profile saw a balance change; a clock earlier than this refuses day-keyed claims */
+  lastSeen: number;
   ledger: LedgerEntry[];
 }
 
@@ -123,15 +125,19 @@ export const DEFAULT_SETTINGS: Settings = {
   target: 'short', noSurInLastRound: true, mustCapture: true, openingJack: 'replace', surSarbazPoints: 10, turnTimer: 'off',
 };
 
-/** Load-time migration of saved settings: old `sound` becomes music + effects; bad booleans fall back to defaults. */
+/** Load-time migration of saved settings: old `sound` becomes music + effects, old numeric targets map to short/long;
+ *  only known keys are kept and bad values fall back to defaults. */
 export function migrateSettings(raw: unknown): Settings {
-  const r: Record<string, unknown> = raw && typeof raw === 'object' ? { ...(raw as object) } : {};
-  const out = { ...DEFAULT_SETTINGS, ...r } as Record<string, unknown>;
+  const r: Record<string, unknown> = isObj(raw) ? raw : {};
+  const out = { ...DEFAULT_SETTINGS } as Record<string, unknown>;
+  for (const k of Object.keys(DEFAULT_SETTINGS)) if (k in r) out[k] = r[k];
   if (typeof r.sound === 'boolean') {
     if (r.music === undefined) out.music = r.sound;
     if (r.effects === undefined) out.effects = r.sound;
   }
-  delete out.sound;
+  // old builds stored 62 / 100 / 'single'
+  if (r.target === 100) out.target = 'long';
+  else if (r.target === 62 || r.target === 'single') out.target = 'short';
   for (const k of ['music', 'effects', 'notifications'] as const) {
     if (typeof out[k] !== 'boolean') out[k] = DEFAULT_SETTINGS[k];
   }
@@ -147,10 +153,19 @@ export function migrateSettings(raw: unknown): Settings {
 const hashEntry = (e: Omit<LedgerEntry, 'h'>) => sha256([SECRET, e.prev, e.t, e.reason, e.dS, e.dG, e.s, e.g].join('|'));
 
 export function applyDelta(p: Profile, dS: number, dG: number, reason: string, now: number): Profile {
+  if (!Number.isInteger(dS) || !Number.isInteger(dG)) throw new Error('bad amount');
   if (p.shahi + dS < 0 || p.gohar + dG < 0) throw new Error('insufficient funds');
   const base = { t: now, reason, dS, dG, s: p.shahi + dS, g: p.gohar + dG, prev: p.ledger.at(-1)?.h ?? 'genesis' };
-  return { ...p, shahi: base.s, gohar: base.g, ledger: [...p.ledger, { ...base, h: hashEntry(base) }].slice(-40) };
+  return {
+    ...p, shahi: base.s, gohar: base.g, lastSeen: Math.max(p.lastSeen ?? 0, now),
+    ledger: [...p.ledger, { ...base, h: hashEntry(base) }].slice(-40),
+  };
 }
+
+/** A clock set back by more than this (since the last saved activity) refuses day-keyed claims; covers NTP corrections. */
+export const CLOCK_GRACE_MS = 5 * 60_000;
+/** True when `now` is plausible: not earlier than the last recorded activity (minus grace). */
+export const clockOk = (p: Profile, now: number) => now >= (p.lastSeen ?? 0) - CLOCK_GRACE_MS;
 
 export function createProfile(now: number): Profile {
   const blank: Profile = {
@@ -162,24 +177,41 @@ export function createProfile(now: number): Profile {
     login: { last: '', streak: 0 },
     daily: { date: '', progress: {}, claimed: [] },
     ads: { day: '', watched: 0, lastAt: 0 },
-    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], title: null, avatar: { ...DEFAULT_AVATAR }, tampered: 0, ledger: [],
+    reliefAt: 0, achievements: [], purchases: [], tutorialDone: false, stages: [], title: null, avatar: { ...DEFAULT_AVATAR }, tampered: 0, lastSeen: now, ledger: [],
   };
   return applyDelta(blank, START_SHAHI, 0, 'welcome', now);
 }
 
-/** Detects edited balances or ledger; rolls back to the last chain-valid entry. */
+const selfValid = (e: LedgerEntry) => { const { h, ...rest } = e; return hashEntry(rest) === h; };
+
+/**
+ * Detects edited balances or ledger; rolls back to the last chain-valid entry. Store purchases that sit after the
+ * break are kept: a dropped `iap:` entry with its own valid hash, the pack's exact Gohar and a time not before the
+ * valid head is granted again. An empty or wholly invalid ledger zeroes the balances only, never the rest of the profile.
+ */
 export function verifyProfile(p: Profile, now: number): Profile {
   let valid = 0;
   for (let i = 0; i < p.ledger.length; i++) {
     const e = p.ledger[i];
-    const { h, ...rest } = e;
-    if (hashEntry(rest) !== h || (i > 0 && e.prev !== p.ledger[i - 1].h)) break;
+    if (!selfValid(e) || (i > 0 && e.prev !== p.ledger[i - 1].h)) break;
     valid = i + 1;
   }
   const head = p.ledger[valid - 1];
   if (valid === p.ledger.length && head && head.s === p.shahi && head.g === p.gohar) return p;
-  if (!head) return createProfile(now);
-  return { ...p, shahi: head.s, gohar: head.g, ledger: p.ledger.slice(0, valid), tampered: p.tampered + 1 };
+  // no valid entry: zero balances (not the welcome gift, or deleting the ledger would pay out) and keep everything else
+  if (!head) return applyDelta({ ...p, shahi: 0, gohar: 0, ledger: [], tampered: p.tampered + 1 }, 0, 0, 'reset', now);
+  let q: Profile = { ...p, shahi: head.s, gohar: head.g, ledger: p.ledger.slice(0, valid), tampered: p.tampered + 1 };
+  const seen = new Set(q.ledger.map((e) => e.h)); // a copied entry is granted once
+  // ponytail: an entry is not bound to this profile, so a fresh purchase entry could be pasted once into another save
+  // idle since; bounded by real money spent. Store receipt checks are the real fix.
+  for (const e of p.ledger.slice(valid)) {
+    if (e.t < head.t) continue; // older than the valid head: could be replayed from the past, grant nothing
+    const sku = e.reason.startsWith('iap:') ? e.reason.slice(4) : '';
+    if (!sku || seen.has(e.h) || !selfValid(e) || !GOHAR_PACKS.some((x) => x.sku === sku && x.gohar === e.dG)) continue;
+    seen.add(e.h);
+    q = applyDelta(q, 0, e.dG, e.reason, now);
+  }
+  return q;
 }
 
 // XP values (see docs/xp-levels.md)
@@ -238,7 +270,8 @@ export const forfeitXpLoss = (xp: number) => xp - Math.max(xpForLevel(levelOf(xp
 
 export function settleMatch(p: Profile, m: MatchSummary, today: string, now: number) {
   const winners = m.players === 4 ? 2 : 1;
-  const payout = !m.paid ? 0 : m.outcome === 'win' ? Math.round((m.fee * m.players * POT_RAKE) / winners) : m.outcome === 'draw' ? m.fee : 0;
+  const fee = Number.isFinite(m.fee) && m.fee > 0 ? Math.floor(m.fee) : 0;
+  const payout = !m.paid ? 0 : m.outcome === 'win' ? Math.round((fee * m.players * POT_RAKE) / winners) : m.outcome === 'draw' ? fee : 0;
   let q = payout ? applyDelta(p, payout, 0, `${m.outcome}:${m.arenaId}`, now) : p;
   const trophyDelta = !m.paid ? 0 : m.outcome === 'win' ? WIN_TROPHIES : m.outcome === 'loss' ? -Math.min(LOSS_TROPHIES, q.trophies) || 0 : 0;
   const raw = matchXp(m);
@@ -283,7 +316,7 @@ export function loginPreview(p: Profile, today: string) {
 
 export function claimLogin(p: Profile, today: string, now: number) {
   const { claimable, streak } = loginPreview(p, today);
-  if (!claimable) return { profile: p, shahi: 0, gohar: 0 };
+  if (!claimable || today < p.login.last || !clockOk(p, now)) return { profile: p, shahi: 0, gohar: 0 };
   const day = (streak - 1) % 7;
   const shahi = LOGIN_SHAHI[day];
   const gohar = day === 6 ? LOGIN_GOHAR_DAY7 : 0;
@@ -294,7 +327,8 @@ export function claimLogin(p: Profile, today: string, now: number) {
 export function adStatus(p: Profile, now: number, today: string) {
   const watched = p.ads.day === today ? p.ads.watched : 0;
   const wait = Math.max(0, p.ads.lastAt + AD_COOLDOWN_MS - now);
-  return { ok: watched < AD_DAILY_CAP && wait === 0, waitMs: wait, left: AD_DAILY_CAP - watched };
+  const sane = clockOk(p, now) && today >= p.ads.day;
+  return { ok: sane && watched < AD_DAILY_CAP && wait === 0, waitMs: wait, left: AD_DAILY_CAP - watched };
 }
 
 export function grantAd(p: Profile, today: string, now: number, amount = AD_REWARD): Profile {
@@ -303,7 +337,13 @@ export function grantAd(p: Profile, today: string, now: number, amount = AD_REWA
   return { ...applyDelta(p, amount, 0, 'rewarded-ad', now), ads: { day: today, watched, lastAt: now } };
 }
 
+/** Bonus for an ad the player already watched (e.g. the result screen's double-up): never throws and does not use
+ *  the daily cap or cooldown. A non-positive or fractional amount changes nothing. */
+export const grantAdBonus = (p: Profile, amount: number, now: number): Profile =>
+  Number.isInteger(amount) && amount > 0 ? applyDelta(p, amount, 0, 'ad-bonus', now) : p;
+
 // ---- relief gift so nobody is locked out ----
+// a future reliefAt (clock set back after a claim) is clamped to load time by the store loader, so it cannot lock relief forever
 export const canClaimRelief = (p: Profile, now: number) => p.shahi < RELIEF_BELOW && now - p.reliefAt >= RELIEF_EVERY_MS;
 export const claimRelief = (p: Profile, now: number): Profile =>
   canClaimRelief(p, now) ? { ...applyDelta(p, RELIEF_AMOUNT, 0, 'relief', now), reliefAt: now } : p;
@@ -333,8 +373,9 @@ export function dailyChallenges(today: string): Challenge[] {
   return (['games', 'wins', 'surs'] as ChallengeKind[]).map((k, i) => POOL[k][(seed >> i) % 2]);
 }
 
+// only rolls forward: a date earlier than the saved one (clock set back) keeps the saved day
 const rollDay = (p: Profile, today: string): Profile =>
-  p.daily.date === today ? p : { ...p, daily: { date: today, progress: {}, claimed: [] } };
+  p.daily.date >= today ? p : { ...p, daily: { date: today, progress: {}, claimed: [] } };
 
 export function recordEvents(p: Profile, today: string, ev: Partial<Record<ChallengeKind, number>>): Profile {
   const q = rollDay(p, today);
@@ -346,7 +387,7 @@ export function recordEvents(p: Profile, today: string, ev: Partial<Record<Chall
 export function claimChallenge(p: Profile, id: string, today: string, now: number): Profile {
   const q = rollDay(p, today);
   const c = dailyChallenges(today).find((x) => x.id === id);
-  if (!c || q.daily.claimed.includes(id) || (q.daily.progress[c.kind] ?? 0) < c.goal) return q;
+  if (!c || q.daily.date !== today || !clockOk(p, now) || q.daily.claimed.includes(id) || (q.daily.progress[c.kind] ?? 0) < c.goal) return q;
   return { ...applyDelta(q, c.shahi, 0, `challenge:${id}`, now), daily: { ...q.daily, claimed: [...q.daily.claimed, id] } };
 }
 

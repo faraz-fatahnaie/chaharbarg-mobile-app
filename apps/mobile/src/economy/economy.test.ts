@@ -8,6 +8,7 @@ import {
   LEVEL_GOHAR, bigMarginAt, matchXp, xpForLevel, forfeitXpLoss, XP_QUIT,
   honorUnlocked, currentTitle, stageUnlocked, clearStage,
 } from './economy';
+import { grantAdBonus, type LedgerEntry } from './economy';
 import { HONORS } from '../data/honors';
 import { STAGES } from '../data/stages';
 
@@ -19,6 +20,101 @@ describe('sha256', () => {
     expect(sha256('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
     expect(sha256('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
     expect(sha256('a'.repeat(100))).toBe('2816597888e4a0d3a36b82b83316ab32680eb8f00f8cd3b904d681246d285a0e');
+  });
+  it('padding edges (55/56/64 bytes) and non-ASCII (values from node:crypto)', () => {
+    expect(sha256('a'.repeat(55))).toBe('9f4390f8d30c2dd92ec9f095b65e2b9ae9b0a925a5258e241c9f1e910f734318');
+    expect(sha256('a'.repeat(56))).toBe('b35439a4ac6f0948b6d6f9e3c6af0f5f590ce20f1bde7090ef7970686ec6738a');
+    expect(sha256('a'.repeat(64))).toBe('ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb');
+    expect(sha256('چهاربرگ ♠ é')).toBe('00b86ee1d10bb3503d643b30326338f014e786ff1a940c155701e93a04149ec8');
+  });
+});
+
+describe('review hardening', () => {
+  const sign = (e: Omit<LedgerEntry, 'h'>): LedgerEntry => ({ ...e, h: sha256(['chq1:7f3a91c2', e.prev, e.t, e.reason, e.dS, e.dG, e.s, e.g].join('|')) });
+
+  it('applyDelta rejects NaN, Infinity and fractions', () => {
+    const p = createProfile(NOW);
+    for (const [s, g] of [[NaN, 0], [0, NaN], [0.5, 0], [0, 1.5], [Infinity, 0]]) expect(() => applyDelta(p, s, g, 'x', NOW)).toThrow();
+  });
+
+  it('settleMatch survives a bad fee', () => {
+    const p = createProfile(NOW);
+    expect(settleMatch(p, win({ outcome: 'draw', fee: 20.7 }), 'd', NOW).payout).toBe(20);
+    expect(settleMatch(p, win({ outcome: 'draw', fee: -5 }), 'd', NOW).payout).toBe(0);
+    expect(settleMatch(p, win({ fee: NaN }), 'd', NOW).payout).toBe(0);
+  });
+
+  it('clock set back refuses login, challenges and ads', () => {
+    let p = claimLogin(createProfile(NOW), '2026-10-28', NOW).profile;
+    const back = NOW - 86_400_000;
+    expect(claimLogin(p, '2026-10-29', back).shahi).toBe(0); // new date string but time went backwards
+    expect(claimLogin(p, '2026-10-27', NOW + 86_400_000).shahi).toBe(0); // earlier date than the last claim
+    expect(claimLogin(p, '2026-10-29', NOW + 60_000).shahi).toBeGreaterThan(0);
+    expect(claimLogin(p, '2026-10-29', NOW - 60_000).shahi).toBeGreaterThan(0); // within grace
+    expect(adStatus(p, back, 'd').ok).toBe(false);
+    expect(() => grantAd(p, 'd', back)).toThrow();
+    const c = dailyChallenges('2026-10-28');
+    for (let i = 0; i < c[0].goal; i++) p = settleMatch(p, win({ paid: false }), '2026-10-28', NOW).profile;
+    expect(claimChallenge(p, c[0].id, '2026-10-28', back).shahi).toBe(p.shahi);
+    const yesterday = claimChallenge(p, c[0].id, '2026-10-27', NOW);
+    expect(yesterday.shahi).toBe(p.shahi);
+    expect(yesterday.daily).toEqual(p.daily); // an earlier day does not reset today's claims
+    expect(claimChallenge(p, c[0].id, '2026-10-28', NOW).shahi).toBe(p.shahi + c[0].shahi);
+  });
+
+  it('a future reliefAt does not lock relief forever', () => {
+    // the store loader clamps a future reliefAt to load time (store.test.ts); from there relief opens after the usual wait
+    const poor = { ...applyDelta(createProfile(NOW), -495, 0, 'spend', NOW), reliefAt: NOW };
+    expect(canClaimRelief(poor, NOW + 3 * 3600_000)).toBe(true);
+  });
+
+  it('grantAdBonus never throws and ignores the cap and cooldown', () => {
+    let p = grantAd(createProfile(NOW), 'd', NOW);
+    expect(() => grantAd(p, 'd', NOW + 1)).toThrow();
+    p = grantAdBonus(p, 18, NOW + 1);
+    expect(p.shahi).toBe(500 + AD_REWARD + 18);
+    expect(p.ads.watched).toBe(1);
+    for (const bad of [0, -5, 1.5, NaN]) expect(grantAdBonus(p, bad, NOW)).toBe(p);
+  });
+
+  it('tamper rollback keeps store purchases made after the break', () => {
+    let p = createProfile(NOW);
+    p = applyDelta(p, 50, 0, 'a', NOW + 1);
+    p = grantPurchase(p, 'gohar_60', 'tok-1', NOW + 2);
+    const ledger = p.ledger.map((e, i) => (i === 1 ? { ...e, dS: 9999, s: 10549 } : e));
+    const fixed = verifyProfile({ ...p, ledger }, NOW + 3);
+    expect(fixed.shahi).toBe(500);
+    expect(fixed.gohar).toBe(60);
+    expect(fixed.tampered).toBe(1);
+    expect(verifyProfile(fixed, NOW + 4)).toBe(fixed);
+  });
+
+  it('tamper rollback grants nothing for forged, copied or mis-sized purchase entries', () => {
+    let p = applyDelta(createProfile(NOW), 50, 0, 'a', NOW + 1);
+    const head = p.ledger[1];
+    const broken = { ...head, dS: 9999 }; // breaks the chain here
+    const forged = { t: NOW, reason: 'iap:gohar_150', dS: 0, dG: 150, s: 0, g: 150, prev: 'x', h: 'bad' };
+    const wrongSize = sign({ t: NOW, reason: 'iap:gohar_20', dS: 0, dG: 999, s: 0, g: 999, prev: 'x' });
+    const old = sign({ t: NOW - 1, reason: 'iap:gohar_150', dS: 0, dG: 150, s: 0, g: 150, prev: 'x' }); // replayed from the past
+    const real = sign({ t: NOW + 2, reason: 'iap:gohar_20', dS: 0, dG: 20, s: 0, g: 20, prev: 'x' });
+    p = verifyProfile({ ...p, ledger: [p.ledger[0], broken, forged, wrongSize, old, real, real] }, NOW + 3);
+    expect(p.gohar).toBe(20);
+    // with no valid head there is no anchor: nothing is re-granted
+    expect(verifyProfile({ ...p, ledger: [broken, real] }, NOW + 4).gohar).toBe(0);
+  });
+
+  it('an empty ledger zeroes balances only', () => {
+    const p = verifyProfile({ ...createProfile(NOW), name: 'Sara', trophies: 300, shahi: 99999, ledger: [] }, NOW);
+    expect(p).toMatchObject({ name: 'Sara', trophies: 300, shahi: 0, gohar: 0, tampered: 1 });
+    expect(verifyProfile(p, NOW)).toBe(p);
+  });
+
+  it('migrateSettings keeps only known keys and maps legacy targets', () => {
+    const s = migrateSettings({ lang: 'en', target: 100, junk: 1, __proto__x: 2 });
+    expect(Object.keys(s).sort()).toEqual(Object.keys(DEFAULT_SETTINGS).sort());
+    expect(s.target).toBe('long');
+    expect(migrateSettings({ target: 62 }).target).toBe('short');
+    expect(migrateSettings({ target: 'single' }).target).toBe('short');
   });
 });
 

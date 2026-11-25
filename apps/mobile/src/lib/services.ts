@@ -35,11 +35,23 @@ type PayUI = (sku: string, resolve: (token: string | null) => void) => void;
 let payUI: PayUI | null = null;
 export const registerPayUI = (f: PayUI | null) => { payUI = f; };
 
+/** The mock store hands out Gohar for free, so only dev builds or an explicit VITE_MOCK_STORE=1 build (demo / PWA) get it. */
+export const mockStoreAllowed = (env: { DEV?: boolean; VITE_MOCK_STORE?: string } = import.meta.env) =>
+  !!env.DEV || env.VITE_MOCK_STORE === '1';
+const MOCK = mockStoreAllowed();
+
 const bought: { sku: string; token: string }[] = (() => {
-  try { return JSON.parse(localStorage.getItem('chaharbarg.mockstore') ?? '[]'); } catch { return []; }
+  if (!MOCK) return [];
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem('chaharbarg.mockstore') ?? '[]');
+    return Array.isArray(v) ? v.filter((x) => x && typeof x.sku === 'string' && typeof x.token === 'string') : [];
+  } catch { return []; }
 })();
 
-export const storeProvider: StoreProvider = {
+/** Release build without a real billing plugin wired in: nothing can be bought. */
+const noStore: StoreProvider = { name: 'none', isMock: false, purchase: async () => null, restore: async () => [] };
+
+export const storeProvider: StoreProvider = !MOCK ? noStore : {
   name: 'mock',
   isMock: true,
   purchase: (sku) =>

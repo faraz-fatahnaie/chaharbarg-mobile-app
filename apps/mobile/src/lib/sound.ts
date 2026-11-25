@@ -7,10 +7,14 @@ let ctx: AudioContext | null = null;
 let musicOn = true;
 let effectsOn = true;
 let ambient: { stop: () => void } | null = null;
+/** the bed the screen asked for; kept while music is toggled off so turning it back on restarts it */
+let bed: { kind: Kind; arenaId?: string } | null = null;
 
 export const setMusicEnabled = (on: boolean) => {
+  const was = musicOn;
   musicOn = on;
-  if (!on) stopAmbient();
+  if (!on) haltAmbient();
+  else if (!was && bed) startAmbient(bed.kind, bed.arenaId);
 };
 export const setEffectsEnabled = (on: boolean) => {
   effectsOn = on;
@@ -19,7 +23,8 @@ export const setEffectsEnabled = (on: boolean) => {
 function ac() {
   try {
     ctx ??= new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    if (ctx.state === 'suspended') void ctx.resume();
+    // iOS reports 'interrupted' after a call or Siri; it is not in the DOM typings
+    if (ctx.state === 'suspended' || (ctx.state as string) === 'interrupted') void ctx.resume();
     return ctx;
   } catch {
     return null;
@@ -403,7 +408,10 @@ function begin(G: G, kind: Kind, arenaId?: string) {
         mg.gain.setValueAtTime(mg.gain.value, t);
         mg.gain.linearRampToValueAtTime(0.0001, t + 0.4);
         src.stop(t + 0.5);
-        oscs.forEach((o) => o.stop(t + 0.5));
+        oscs.forEach((o) => {
+          o.stop(t + 0.5);
+          o.onended = () => { try { o.disconnect(); } catch { /* fake node */ } };
+        });
       } catch { /* already stopped */ }
     },
   };
@@ -411,14 +419,21 @@ function begin(G: G, kind: Kind, arenaId?: string) {
 
 /** Generative modal bed for the arena (falls back by `kind` when the id is unknown or omitted). */
 export function startAmbient(kind: Kind, arenaId?: string) {
-  stopAmbient();
+  haltAmbient();
+  bed = { kind, arenaId };
   if (!musicOn) return;
   const G = gr();
   if (!G) return;
   ambient = begin(G, kind, arenaId);
 }
 
-export function stopAmbient() {
+function haltAmbient() {
   ambient?.stop();
   ambient = null;
+}
+
+/** Stops the bed and forgets it (leaving the screen). */
+export function stopAmbient() {
+  haltAmbient();
+  bed = null;
 }

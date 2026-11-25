@@ -14,6 +14,8 @@ beforeEach(() => {
     getItem: (k: string) => data.get(k) ?? null,
     setItem: (k: string, v: string) => { if (failWrites) throw new Error('quota'); data.set(k, v); },
     removeItem: (k: string) => { data.delete(k); },
+    get length() { return data.size; },
+    key: (i: number) => [...data.keys()][i] ?? null,
   });
   vi.resetModules();
 });
@@ -173,5 +175,101 @@ describe('saved avatar (F-007)', () => {
       vi.resetModules();
       expect((await fresh()).getProfile().avatar).toEqual(want);
     }
+  });
+});
+
+describe('profile loader is field by field', () => {
+  const saved = async () => JSON.parse(JSON.stringify((await fresh()).getProfile()));
+  const reload = async (v: unknown) => {
+    data.set(PROFILE_KEY, typeof v === 'string' ? v : JSON.stringify(v));
+    vi.resetModules();
+    return (await fresh()).getProfile();
+  };
+
+  it('corrupt JSON: starts fresh and keeps a backup copy', async () => {
+    const p = await reload('{"name":"Sara",');
+    expect(p.name).toBe('');
+    expect(p.shahi).toBe(500);
+    expect(data.get('chaharbarg.profile.v1.bak')).toBe('{"name":"Sara",');
+  });
+
+  it('an unknown version is backed up, not silently overwritten', async () => {
+    const base = await saved();
+    await reload({ ...base, v: 99 });
+    expect(JSON.parse(data.get('chaharbarg.profile.v1.bak')!).v).toBe(99);
+  });
+
+  it('missing ledger zeroes balances only', async () => {
+    const base = await saved();
+    delete base.ledger;
+    const p = await reload({ ...base, name: 'Sara', shahi: 99999, trophies: 300, stages: ['stage-1'] });
+    expect(p).toMatchObject({ name: 'Sara', shahi: 0, gohar: 0, trophies: 300, stages: ['stage-1'] });
+    expect(p.ledger.length).toBe(1);
+  });
+
+  it('daily: null and other bad fields do not cost the rest', async () => {
+    const base = await saved();
+    const p = await reload({ ...base, name: 'Sara', daily: null, ads: 'x', login: [], owned: 5, equipped: { deck: 'nope' }, achievements: [1, 'first-win', 'bogus'] });
+    expect(p.name).toBe('Sara');
+    expect(p.daily).toEqual({ date: '', progress: {}, claimed: [] });
+    expect(p.ads).toEqual({ day: '', watched: 0, lastAt: 0 });
+    expect(p.login).toEqual({ last: '', streak: 0 });
+    expect(p.owned.length).toBeGreaterThan(0);
+    expect(p.equipped.deck).toBe('deck-classic');
+    expect(p.achievements).toEqual(['first-win']);
+  });
+
+  it('a malformed ledger entry truncates the ledger there (rolls back, no crash)', async () => {
+    const s = await fresh();
+    s.update((q) => ({ ...q, name: 'Sara' }));
+    const base = JSON.parse(data.get(PROFILE_KEY)!);
+    const p = await reload({ ...base, ledger: [...base.ledger, null] });
+    expect(p).toMatchObject({ name: 'Sara', shahi: 500 });
+  });
+
+  it('a future reliefAt is clamped; lastSeen never below the ledger head', async () => {
+    const base = await saved();
+    const p = await reload({ ...base, reliefAt: Date.now() + 1e12, lastSeen: 0 });
+    expect(p.reliefAt).toBeLessThanOrEqual(Date.now());
+    expect(p.lastSeen).toBe(base.ledger.at(-1).t);
+  });
+
+  it('legacy settings target 100 loads as long', async () => {
+    const base = await saved();
+    expect((await reload({ ...base, settings: { ...base.settings, target: 100 } })).settings.target).toBe('long');
+    expect((await reload({ ...base, settings: { ...base.settings, target: 62 } })).settings.target).toBe('short');
+  });
+});
+
+describe('saved match', () => {
+  const MATCH_KEY = 'chaharbarg.match.v1';
+  const ctx = async () => {
+    const { buildCtx } = await import('./match');
+    const { arenaById } = await import('../data/arenas');
+    return buildCtx((await fresh()).getProfile(), arenaById('si-o-se-pol'), 2, 'bots');
+  };
+  it('a genuine saved match loads', async () => {
+    const c = await ctx();
+    data.set(MATCH_KEY, JSON.stringify(c));
+    vi.resetModules();
+    expect((await fresh()).loadMatch()?.fee).toBe(50);
+  });
+  it('a tampered fee, unknown arena or paid pass-and-play is rejected', async () => {
+    const c = await ctx();
+    for (const bad of [{ fee: 5000 }, { fee: 50.5 }, { fee: '50' }, { arenaId: 'nope' }, { paid: false }, { mode: 'pnp' }, { paid: 'yes' }]) {
+      data.set(MATCH_KEY, JSON.stringify({ ...c, ...bad }));
+      vi.resetModules();
+      expect((await fresh()).loadMatch()).toBeNull();
+    }
+  });
+});
+
+describe('resetAll', () => {
+  it('removes every chaharbarg.* key and nothing else', async () => {
+    for (const k of ['chaharbarg.online.v1', 'chaharbarg.online.v1:bob', 'chaharbarg.server.v1', 'chaharbarg.mockstore', 'chaharbarg.prizes.seen.v1', 'chaharbarg.match.v1', 'chaharbarg.profile.v1.bak', 'other.app']) data.set(k, 'x');
+    const s = await fresh();
+    s.setPhoto(JPEG);
+    s.resetAll();
+    expect([...data.keys()].sort()).toEqual([PROFILE_KEY, 'other.app']);
   });
 });

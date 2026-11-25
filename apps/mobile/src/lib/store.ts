@@ -1,28 +1,99 @@
 import { useSyncExternalStore } from 'react';
 import type { MatchState } from '@chaharbarg/engine';
-import { cleanAvatar, cleanStats, createProfile, migrateSettings, verifyProfile, type Profile } from '../economy/economy';
+import {
+  ACHIEVEMENTS, cleanAvatar, cleanStats, createProfile, migrateSettings, verifyProfile, type LedgerEntry, type Profile,
+} from '../economy/economy';
 import { fixMatchTarget } from './match';
 import { isPhotoDataUrl } from './identity';
 import { cleanStages } from '../data/stages';
 import { HONORS } from '../data/honors';
+import { ARENAS } from '../data/arenas';
+import { COSMETICS, type CosmeticKind } from '../data/cosmetics';
 
 // ponytail: localStorage is enough for a profile + 40-entry ledger; move to SQLite (Capacitor) if saves grow or the OS evicts it.
 const KEY = 'chaharbarg.profile.v1';
 const MATCH_KEY = 'chaharbarg.match.v1';
 
+const BAK_KEY = 'chaharbarg.profile.v1.bak';
+
+const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+const fin = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+const nat = (x: unknown) => (fin(x) && x > 0 ? Math.floor(x) : 0);
+const str = (x: unknown, d = '') => (typeof x === 'string' ? x : d);
+const strs = (x: unknown, ok: (s: string) => boolean = () => true) =>
+  Array.isArray(x) ? [...new Set(x.filter((s): s is string => typeof s === 'string' && ok(s)))] : [];
+const okEntry = (e: unknown): e is LedgerEntry =>
+  isObj(e) && (['t', 'dS', 'dG', 's', 'g'] as const).every((k) => fin(e[k])) && (['reason', 'prev', 'h'] as const).every((k) => typeof e[k] === 'string');
+
+/** Format migrations by saved version; v1 is current. Add `if (r.v === 1) { ...; r.v = 2; }` steps here. */
+function migrate(r: Record<string, unknown>): Record<string, unknown> {
+  if (r.v === undefined) r.v = 1;
+  if (r.v !== 1) throw new Error(`unknown profile version ${String(r.v)}`);
+  return r;
+}
+
+/** Rebuilds a saved profile field by field on top of fresh defaults, so one bad field never costs the rest. */
+export function profileFromSaved(saved: unknown, now: number): Profile {
+  if (!isObj(saved)) throw new Error('profile is not an object');
+  const r = migrate({ ...saved });
+  const d = createProfile(now);
+  const ledgerIn = Array.isArray(r.ledger) ? r.ledger : [];
+  const bad = ledgerIn.findIndex((e) => !okEntry(e));
+  const ledger = (bad < 0 ? ledgerIn : ledgerIn.slice(0, bad)) as LedgerEntry[];
+  const owned = [...new Set([...d.owned, ...strs(r.owned, (id) => COSMETICS.some((c) => c.id === id))])];
+  const eq = isObj(r.equipped) ? r.equipped : {};
+  const equipped = { ...d.equipped };
+  for (const k of Object.keys(equipped) as CosmeticKind[]) {
+    const id = eq[k];
+    if (typeof id === 'string' && owned.includes(id) && COSMETICS.some((c) => c.id === id && c.kind === k)) equipped[k] = id;
+  }
+  const daily = isObj(r.daily) ? r.daily : {};
+  const progress = isObj(daily.progress) ? Object.fromEntries((['games', 'wins', 'surs'] as const).map((k) => [k, nat((daily.progress as Record<string, unknown>)[k])])) : {};
+  const ads = isObj(r.ads) ? r.ads : {};
+  const login = isObj(r.login) ? r.login : {};
+  const p: Profile = {
+    ...d,
+    name: str(r.name),
+    // a missing balance cannot match the ledger head, so verifyProfile restores it from there
+    shahi: fin(r.shahi) ? r.shahi : -1,
+    gohar: fin(r.gohar) ? r.gohar : -1,
+    trophies: nat(r.trophies),
+    xp: nat(r.xp),
+    stats: cleanStats(r.stats),
+    owned,
+    equipped,
+    settings: migrateSettings(r.settings),
+    login: { last: str(login.last), streak: nat(login.streak) },
+    daily: { date: str(daily.date), progress, claimed: strs(daily.claimed) },
+    ads: { day: str(ads.day), watched: nat(ads.watched), lastAt: Math.min(nat(ads.lastAt), now) },
+    reliefAt: Math.min(nat(r.reliefAt), now), // a future value must not lock relief
+    achievements: strs(r.achievements, (id) => ACHIEVEMENTS.some((a) => a.id === id)),
+    purchases: strs(r.purchases).slice(-200),
+    tutorialDone: r.tutorialDone === true,
+    stages: cleanStages(r.stages),
+    title: HONORS.some((h) => h.id === r.title) ? (r.title as string) : null,
+    avatar: cleanAvatar(r.avatar),
+    tampered: nat(r.tampered),
+    lastSeen: nat(r.lastSeen),
+    ledger,
+  };
+  const q = verifyProfile(p, now);
+  // after verification the ledger head's time is hash-protected; the saved lastSeen is not
+  return { ...q, lastSeen: Math.max(q.lastSeen, nat(q.ledger.at(-1)?.t)) };
+}
+
+function backup(raw: string) {
+  try { localStorage.setItem(BAK_KEY, raw); } catch { /* quota: nothing more we can do */ }
+}
+
 function load(): Profile {
+  let raw: string | null = null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const p = JSON.parse(raw) as Profile;
-      const settings = migrateSettings(p.settings);
-      // old builds stored 62 / 100 / 'single'; storage may also hold edited values
-      const t: unknown = settings.target;
-      settings.target = t === 'long' || t === 100 ? 'long' : 'short';
-      return verifyProfile({ ...p, xp: Number.isFinite(p.xp) && p.xp > 0 ? Math.floor(p.xp) : 0, stages: cleanStages(p.stages), title: HONORS.some((h) => h.id === p.title) ? p.title : null, stats: cleanStats(p.stats), avatar: cleanAvatar(p.avatar), settings }, Date.now());
-    }
+    raw = localStorage.getItem(KEY);
+    if (raw) return profileFromSaved(JSON.parse(raw), Date.now());
   } catch {
-    /* storage unavailable or corrupt: start fresh */
+    // corrupt or from an unknown version: keep a copy before persist() overwrites it, then start fresh
+    if (raw) backup(raw);
   }
   return createProfile(Date.now());
 }
@@ -108,8 +179,12 @@ export function saveMatch(c: MatchCtx | null) {
 function validCtx(c: unknown): c is MatchCtx {
   const x = c as MatchCtx | null;
   const n = x?.match?.config?.players;
-  return (n === 2 || n === 3 || n === 4) && !!x!.match.deal && Array.isArray(x!.seats) && x!.seats.length === n
-    && typeof x!.arenaId === 'string' && (x!.mode === 'bots' || x!.mode === 'pnp');
+  if (!((n === 2 || n === 3 || n === 4) && !!x!.match.deal && Array.isArray(x!.seats) && x!.seats.length === n
+    && (x!.mode === 'bots' || x!.mode === 'pnp'))) return false;
+  // the saved fee sets the payout: it must be exactly what this arena charges (0 for free games)
+  const arena = ARENAS.find((a) => a.id === x!.arenaId);
+  if (!arena || typeof x!.paid !== 'boolean' || (x!.paid && x!.mode !== 'bots')) return false;
+  return Number.isInteger(x!.fee) && x!.fee === (x!.paid ? arena.fee : 0);
 }
 
 export function loadMatch(): MatchCtx | null {
@@ -124,9 +199,13 @@ export function loadMatch(): MatchCtx | null {
 
 export function resetAll() {
   try {
-    localStorage.removeItem(KEY);
-    localStorage.removeItem(MATCH_KEY);
-    localStorage.removeItem(PHOTO_KEY);
+    // every key the app writes starts with 'chaharbarg.' (profile, match, photo, online credential, server, mock store, prizes seen, backup)
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith('chaharbarg.')) keys.push(k);
+    }
+    for (const k of [...keys, KEY, MATCH_KEY, PHOTO_KEY]) localStorage.removeItem(k);
   } catch {
     /* ignore */
   }
