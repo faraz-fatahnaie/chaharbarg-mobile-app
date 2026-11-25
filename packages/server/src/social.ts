@@ -30,9 +30,14 @@ export const MAX_REPORTS_PER_HOUR = 10;
 export const REPORT_WINDOW_MS = 24 * 60 * 60_000;
 // Minimal word filter [review]: replace these with ***. A person should extend the list for Persian and English.
 const BAD_WORDS = ['fuck', 'shit', 'bitch', 'asshole', 'کیر', 'کس', 'کون', 'جنده', 'حرامزاده'];
-// Whole words only (کس must not touch کسی or کسب); \b is ASCII-only, so the word edges are spelled out with Unicode classes.
-const BAD_RE = BAD_WORDS.map((w) => new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{M}\\p{N}])`, 'giu'));
-export const filterText = (t: string) => BAD_RE.reduce((acc, re) => acc.replace(re, '***'), t);
+// Whole words plus common inflections (fucking, bitches, کیرها, جنده‌های), so کس never touches کسب or کنون.
+// \b is ASCII-only, so the word edges are spelled out with Unicode classes.
+const EN_SUFFIX = '(?:s|es|ed|ing|ers?)?';
+const FA_SUFFIX = '(?:\u200c?(?:های|ها|ی|ت|ش|م))?'; // attached, or after a zero-width non-joiner
+// Everyday words that are a bad word plus a suffix (کسی = someone).
+const CLEAN_WORDS = new Set(['کسی']);
+const BAD_RE = new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])(?:${BAD_WORDS.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (/^[a-z]+$/.test(w) ? EN_SUFFIX : FA_SUFFIX)).join('|')})(?![\\p{L}\\p{M}\\p{N}])`, 'giu');
+export const filterText = (t: string) => t.replace(BAD_RE, (m) => (CLEAN_WORDS.has(m) ? m : '***'));
 const cleanText = (x: unknown, max: number) => {
   const s = typeof x === 'string' ? x.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
   if (!s || [...s].length > max) throw new RoomError(400, `message must be 1-${max} characters`);

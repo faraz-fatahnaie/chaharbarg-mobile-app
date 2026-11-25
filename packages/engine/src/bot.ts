@@ -32,7 +32,8 @@ function moveGain(s: DealState, m: Move): { gain: number; after: DealState } {
  * Hard bot: expected best reply of an opponent holding a random unseen card.
  * ponytail: ignores which unseen cards are in whose hand and last-round limits; add belief tracking if bots need to be stronger.
  */
-function threat(s: DealState, after: DealState, seat: number): number {
+// Exported only for the regression test in test/engine.test.ts; not part of the bot API.
+export function threat(s: DealState, after: DealState, seat: number): number {
   // Known cards come from the pre-move state (the played card is still in s.hands[seat]):
   // `after` may already hold the next round's hand, which the bot must not peek at.
   const seen = new Set<string>([

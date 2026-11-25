@@ -10,7 +10,8 @@ const port = Number(process.env.PORT ?? 8787);
 // bearer tokens travel in every request and must never cross the internet over plain HTTP.
 const host = process.env.HOST ?? '127.0.0.1';
 mkdirSync('data', { recursive: true });
-const app = createApp({ db: openDb(process.env.DB_PATH ?? 'data/server.db') });
+// TRUST_PROXY=1 only behind your own reverse proxy: per-IP limits then use the proxy's X-Forwarded-For hop.
+const app = createApp({ db: openDb(process.env.DB_PATH ?? 'data/server.db'), trustProxy: process.env.TRUST_PROXY === '1' });
 app.server.listen(port, host, () => console.log(`chaharbarg server on http://${host}:${port}`));
 
 // Graceful shutdown: stop accepting, end matches in progress as aborted (see createApp's close), close the database.

@@ -3,6 +3,7 @@ import {
   DEFAULT_RULES, captureOptions, legalMoves, play, scoreDeal, liveScore, startDeal, mulberry32,
   newMatch, targetOptions, matchPlay, matchNextDeal, chooseMove, unitOf, parseCard, timeoutMove, shuffle, newDeck, type DealState, type MatchState, type Level, type RulesConfig,
 } from '../src/index';
+import { threat } from '../src/bot';
 import { cs, ids, mk } from './helpers';
 
 const opts = (card: string, floor: string) =>
@@ -440,6 +441,15 @@ describe('review follow-ups', () => {
     expect(d.captureIds).toEqual([]);
     expect(legalMoves(drop).some((l) => l.cardId === d.cardId)).toBe(true);
     expect(() => timeoutMove(drop, 1, mulberry32(1))).toThrow(/not on turn/);
+  });
+  it('hard bot does not peek at its next-round hand after a round deal', () => {
+    // Seat 0 plays its last card of the round; the play deals the next hands from the stock.
+    const s = mk({ hands: ['C5', ''], floor: 'S9 H3', stock: 'S2 S4 S6 S8 H2 H4 H6 H8' });
+    const after = play(s, 'C5', []).state;
+    expect(after.hands[0]).toHaveLength(4);
+    // What the bot will be dealt next must not change its estimate.
+    const blind = { ...after, hands: after.hands.map((h, i) => (i === 0 ? [] : h)) };
+    expect(threat(s, after, 0)).toBe(threat(s, blind, 0));
   });
   it('chooseMove throws when the seat is not on turn', () => {
     const s = mk({ hands: ['C5 S1', 'D2'], floor: 'S6' });

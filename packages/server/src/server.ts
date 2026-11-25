@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { isIP } from 'node:net';
 import { authenticate, finishMatch, guestLogin, openDb, pruneOld, trophiesOf, type Db } from './db';
 import { Queue } from './queue';
 import { RoomError, Rooms, type RoomsOptions } from './rooms';
@@ -49,7 +50,19 @@ const throttled = (method: string, path: string) =>
     || path === '/api/prizes/claim' || /^\/api\/rooms\/[A-Z0-9]{5}\/(join|invite)$/.test(path)))
   || (method === 'GET' && (path === '/api/players/search' || path === '/api/prizes'));
 
-export interface ServerOptions extends RoomsOptions { db?: Db; queueTickMs?: number }
+/**
+ * Key for per-IP limits. By default the socket address: X-Forwarded-For is client-controlled and forgeable.
+ * With `trustProxy` (only when a proxy you run is the sole way in), the rightmost X-Forwarded-For entry, the
+ * hop your proxy appended; anything left of it came from the client. Falls back to the socket address.
+ */
+export function clientIp(req: IncomingMessage, trustProxy = false): string {
+  const sock = req.socket.remoteAddress ?? '?';
+  if (!trustProxy) return sock;
+  const last = String(req.headers['x-forwarded-for'] ?? '').split(',').pop()!.trim();
+  return isIP(last) ? last : sock;
+}
+
+export interface ServerOptions extends RoomsOptions { db?: Db; queueTickMs?: number; trustProxy?: boolean }
 
 export function createApp(opts: ServerOptions = {}) {
   const db = opts.db ?? openDb();
@@ -110,8 +123,7 @@ export function createApp(opts: ServerOptions = {}) {
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const path = new URL(req.url ?? '/', 'http://x').pathname;
     const method = req.method ?? 'GET';
-    // The socket address, not X-Forwarded-For (a client can forge that). Behind a proxy, trust only the proxy's header there.
-    const ip = req.socket.remoteAddress ?? '?';
+    const ip = clientIp(req, opts.trustProxy);
 
     if (method === 'POST' && path === '/api/guest') {
       if (!perIp.take(ip)) return send(res, 429, { error: 'slow down' });

@@ -8,7 +8,7 @@ import { finishMatch, guestLogin, openDb, PAIR_COOLDOWN_MS, pruneOld, RETENTION_
 import { ensurePrizes, rankings } from '../src/rankings';
 import { FIRST_TURN_GRACE_S, ROOM_IDLE_MS, Rooms, type FinishInfo, type RoomView } from '../src/rooms';
 import { filterText, Hub, MAX_REPORTS_PER_HOUR, REPORT_WINDOW_MS, REPORTS_TO_HIDE, Social } from '../src/social';
-import { cleanName, createApp, MAX_OPEN_ROOMS, MAX_STREAMS, NEW_ACCOUNTS_PER_HOUR, WRITE_BURST } from '../src/server';
+import { cleanName, clientIp, createApp, MAX_OPEN_ROOMS, MAX_STREAMS, NEW_ACCOUNTS_PER_HOUR, WRITE_BURST } from '../src/server';
 
 const T0 = Date.UTC(2026, 10, 14, 12); // a Saturday
 const info = (ids: (string | null)[], ranked: boolean): FinishInfo => ({
@@ -136,6 +136,14 @@ describe('chat guards', () => {
     expect(filterText('ای کس')).toBe('ای ***');
     expect(filterText('you BITCH!')).toBe('you ***!');
   });
+  it('bad words also match common inflections, without substring false positives', () => {
+    for (const w of ['fucking', 'Fucked', 'fucker', 'fuckers', 'shits', 'bitches', 'assholes'])
+      expect(filterText(`a ${w} b`)).toBe('a *** b');
+    for (const w of ['کیرها', 'کس\u200cها', 'کسهای', 'کونی', 'کست', 'کسش', 'کسم', 'جنده\u200cهای', 'حرامزاده‌ها'])
+      expect(filterText(`ای ${w} بد`)).toBe('ای *** بد');
+    for (const ok of ['کسی', 'کسب', 'کنون', 'کسان', 'کسانی', 'کونیا', 'shitake', 'bitchy', 'fuckable', 'scunthorpe', 'Essex'])
+      expect(filterText(`a ${ok} b`)).toBe(`a ${ok} b`);
+  });
   it('names lose bidi controls', () => {
     expect(cleanName('‮abc⁦d‏')).toBe('abcd');
     expect(() => cleanName('‮‬')).toThrow();
@@ -194,6 +202,26 @@ describe('shutdown over HTTP', () => {
 });
 
 describe('rate limits over HTTP', () => {
+  it('clientIp: socket address by default; with trustProxy the rightmost X-Forwarded-For hop', () => {
+    const req = (xff?: string) => ({ socket: { remoteAddress: '10.0.0.1' }, headers: xff === undefined ? {} : { 'x-forwarded-for': xff } }) as never;
+    expect(clientIp(req('1.2.3.4'))).toBe('10.0.0.1'); // forged header ignored
+    expect(clientIp(req('6.6.6.6, 1.2.3.4'), true)).toBe('1.2.3.4'); // client-supplied left part ignored
+    expect(clientIp(req('2001:db8::1'), true)).toBe('2001:db8::1');
+    expect(clientIp(req(), true)).toBe('10.0.0.1');
+    expect(clientIp(req('1.2.3.4, garbage'), true)).toBe('10.0.0.1');
+  });
+  it('per-IP limits follow X-Forwarded-For only when trustProxy is on', async () => {
+    const run = async (trustProxy: boolean) => {
+      const app = createApp({ queueTickMs: 0, trustProxy }); apps.push(app);
+      await new Promise<void>((r) => app.server.listen(0, r));
+      const base = `http://127.0.0.1:${(app.server.address() as { port: number }).port}`;
+      const guest = (name: string, ip: string) => fetch(base + '/api/guest', { method: 'POST', body: JSON.stringify({ name }), headers: { 'x-forwarded-for': ip } });
+      for (let i = 0; i < NEW_ACCOUNTS_PER_HOUR; i++) expect((await guest(`G${i}`, '1.1.1.1')).status).toBe(200);
+      return (await guest('other', '2.2.2.2')).status;
+    };
+    expect(await run(false)).toBe(429); // same socket address, header ignored
+    expect(await run(true)).toBe(200); // a different client behind the proxy
+  });
   it('caps new guest accounts per IP; signing back in still works', async () => {
     const { guest } = await boot();
     const first = (await (await guest({ name: 'G0' })).json()) as { id: string; token: string };

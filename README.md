@@ -16,6 +16,7 @@ Play Pasur against bots or pass-and-play on one device, in ten arenas built on I
 - [What is in the game](#what-is-in-the-game)
 - [Repository layout](#repository-layout)
 - [Commands](#commands)
+- [Online server](#online-server)
 - [Architecture in brief](#architecture-in-brief)
 - [Rules in brief](#rules-in-brief)
 - [Economy in brief](#economy-in-brief)
@@ -94,6 +95,14 @@ Run from the repository root unless noted. `-w @chaharbarg/mobile` runs a script
 | `npm run ios:sim -w @chaharbarg/mobile` | build, install and launch in the iOS Simulator |
 | `npm run android:apk -w @chaharbarg/mobile` | build a debug APK |
 | `npm run e2e -w @chaharbarg/mobile` | full-match smoke test in headless Chrome (needs the dev server running) |
+
+## Online server
+
+`packages/server` (Node, SQLite) runs online rooms. `npm run server` listens on `127.0.0.1:8787` (set `PORT`, `HOST`, `DB_PATH` to change).
+
+- **Phone on the same Wi-Fi (development):** `npm run server:lan` binds `0.0.0.0` so the phone can reach `http://<your-computer's-LAN-IP>:8787`. Use it only on a network you trust.
+- **Production:** put a TLS reverse proxy (nginx, Caddy, a load balancer) in front. Bearer tokens travel with every request and must never cross the internet over plain HTTP.
+- **`TRUST_PROXY=1`:** set it only when that proxy is the sole way in. Per-IP limits then use the rightmost `X-Forwarded-For` entry (the hop the proxy appended) instead of the socket address. Without it the header is ignored, because clients can forge it; behind a proxy that would make every player share the proxy's address.
 
 ## Architecture in brief
 
