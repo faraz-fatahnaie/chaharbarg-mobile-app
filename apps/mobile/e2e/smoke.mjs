@@ -29,11 +29,11 @@ export default async ({ ev, shot, go, clickText, sleep }) => {
       continue;
     }
     if (st.hint) {
-      await ev(`(()=>{const cs=[...document.querySelectorAll('.myhand .card')]; if(cs.length) cs[Math.floor(Math.random()*cs.length)].click();})()`);
+      await ev(`(()=>{const cs=[...document.querySelectorAll('.hand-zone .card')]; if(cs.length) cs[Math.floor(Math.random()*cs.length)].click();})()`);
       await sleep(25);
       const h = await ev(`document.querySelector('.hint-line').textContent`);
       if (/دوباره بزن/.test(h)) {
-        await ev(`document.querySelector('.myhand .card.sel')?.click()`);
+        await ev(`document.querySelector('.hand-zone .card.sel')?.click()`);
       } else if (/یک ترکیب/.test(h)) {
         const chips = await ev(`document.querySelectorAll('.optchip').length`);
         await ev(`document.querySelectorAll('.optchip')[${Math.floor(Math.random() * 3) % 1 + 0}]?.click()`);
