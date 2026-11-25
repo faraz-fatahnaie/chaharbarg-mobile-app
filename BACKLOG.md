@@ -12,6 +12,8 @@ Add ideas to Inbox and promote them to Ready; the factory moves items after that
   apps/mobile/src/lib/support.ts SUPPORT_EMAIL = support@chaharbarg.app is a placeholder guess. Owner provides the real address; one-line change.
 - [ ] F-102 Decide: large-print deck pip layout for 9 and 10
   deck-large has a .5w corner index that still overlaps the 9/10 corner pips (apps/mobile/src/cards.css, art/CardView.tsx PIPS). Pips cannot move further without colliding. Owner picks: a separate pip layout for deck-large, or a smaller index on that deck.
+- [ ] F-103 Split branch before merging to main: tooling vs game code
+  worktree-v1-offline-game vs main is ~774 files / 138k lines, of which ~115k are .claude/ factory tooling, graphify-out/ and docs/graph generated files, and media (docs/demo mp4, screenshots). Land tooling/generated files separately (or ignore graphify-out/ and docs/graph/graph.json) so the app PR is reviewable.
 
 ## Ready
 
