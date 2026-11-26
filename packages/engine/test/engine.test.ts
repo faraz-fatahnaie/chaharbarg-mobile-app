@@ -551,3 +551,17 @@ describe('review follow-ups', () => {
     });
   }
 });
+
+describe('opening floor Q/K cap (F-099)', () => {
+  it("applies with openingJack 'allow' too: never more than 2 queens or 2 kings, jacks may stay", () => {
+    const rules = { ...DEFAULT_RULES, players: 2 as const, openingJack: 'allow' as const };
+    let sawJack = false;
+    for (let seed = 1; seed <= 20000; seed++) {
+      const f = startDeal(rules, mulberry32(seed), 0, [0, 0]).floor;
+      expect(f.filter((c) => c.rank === 12).length).toBeLessThanOrEqual(2);
+      expect(f.filter((c) => c.rank === 13).length).toBeLessThanOrEqual(2);
+      if (f.some((c) => c.rank === 11)) sawJack = true;
+    }
+    expect(sawJack).toBe(true);
+  });
+});

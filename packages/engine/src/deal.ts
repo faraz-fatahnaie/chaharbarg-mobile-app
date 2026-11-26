@@ -98,22 +98,17 @@ export function startDeal(config: RulesConfig, rng: Rng, dealer: number, carry: 
     const floor = deck.splice(0, 4);
     const hands = Array.from({ length: n }, () => deck.splice(0, 4));
     const stock = deck;
-    // The Q/K limit (no more than 2 of either on the opening floor) is only enforced together with
-    // openingJack === 'replace'; with 'allow' any floor stands. Intentional pending owner review (rules decision).
+    // 'replace': one opening jack is swapped back into the stock, two or more re-deal.
     if (config.openingJack === 'replace') {
       const j = floor.findIndex(isJack);
       if (j >= 0 && floor.filter(isJack).length === 1) {
         const [jack] = floor.splice(j, 1, stock.shift()!);
         stock.splice(Math.floor(rng() * (stock.length + 1)), 0, jack);
       }
-      if (
-        floor.filter(isJack).length > 0 ||
-        floor.filter(isQueen).length > 2 ||
-        floor.filter(isKing).length > 2
-      ) {
-        continue;
-      }
+      if (floor.some(isJack)) continue;
     }
+    // Fairness rule in every mode: no more than 2 queens or 2 kings on the opening floor.
+    if (floor.filter(isQueen).length > 2 || floor.filter(isKing).length > 2) continue;
     return {
       config,
       dealer,
