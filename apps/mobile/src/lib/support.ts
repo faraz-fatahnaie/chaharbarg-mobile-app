@@ -1,8 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 import { version as APP_VERSION } from '../../package.json';
 
-// ponytail: guessed from the appId app.chaharbarg.game; a person must confirm this address before release.
-export const SUPPORT_EMAIL = 'support@chaharbarg.app';
+// F-101: no real support address yet. Empty hides the support/feedback links in Settings; set it to enable them.
+export const SUPPORT_EMAIL = '';
 
 export const mailto = (to: string, subject: string, body: string) =>
   `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

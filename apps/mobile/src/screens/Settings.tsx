@@ -131,9 +131,11 @@ export function Settings({ onTutorial, onErase }: { onTutorial: () => void; onEr
 
       <div className="panel col" style={{ margin: '0 14px 14px' }}>
         <button className="btn" onClick={onTutorial}>📖 {tr('آموزش بازی', 'How to play')}</button>
-        <a className="btn" href={supportHref(s.lang)}>✉️ {tr('تماس با پشتیبانی', 'Contact support')}</a>
-        <a className="btn" href={feedbackHref(s.lang)}>💬 {tr('ارسال نظر و پیشنهاد', 'Send feedback / suggestions')}</a>
-        <span className="mute">{SUPPORT_EMAIL}</span>
+        {SUPPORT_EMAIL && <>
+          <a className="btn" href={supportHref(s.lang)}>✉️ {tr('تماس با پشتیبانی', 'Contact support')}</a>
+          <a className="btn" href={feedbackHref(s.lang)}>💬 {tr('ارسال نظر و پیشنهاد', 'Send feedback / suggestions')}</a>
+          <span className="mute">{SUPPORT_EMAIL}</span>
+        </>}
         {!confirm ? <button ref={eraseBtn} className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
           : <div role="alertdialog" aria-label={tr('پاک‌کردن همهٔ اطلاعات؟ این کار برگشت‌ندارد.', 'Erase all data? This cannot be undone.')} className="col">
             <span role="alert" className="mute">{tr('همهٔ اطلاعات پاک می‌شود و برگشت‌ندارد.', 'This erases everything and cannot be undone.')}</span>
