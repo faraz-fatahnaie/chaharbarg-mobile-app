@@ -29,7 +29,7 @@
 .card.back::before { content: ''; position: absolute; inset: 4px; border-radius: calc(var(--w) * .09); border: 2px solid var(--bk, var(--gold)); opacity: .9; pointer-events: none; }
 .card.deck-large { --suit-S: #000; --suit-C: #000; --suit-H: #c80028; --suit-D: #c80028; }
 .card.deck-large .idx b { font-size: calc(var(--w) * .5); }
-.card.deck-large .pip { width: calc(var(--w) * .2); height: calc(var(--w) * .2); } .card.deck-large .pip.sm { width: calc(var(--w) * .16); height: calc(var(--w) * .16); } .card.deck-large .pip.ace { width: calc(var(--w) * .5); height: calc(var(--w) * .5); }
+.card.deck-large .pip { width: calc(var(--w) * .2); height: calc(var(--w) * .2); } .card.deck-large .pip.sm { width: calc(var(--w) * .16); height: calc(var(--w) * .16); } .card.deck-large .pip.ace { width: calc(var(--w) * .5); height: calc(var(--w) * .5); } .card.deck-large .pip.solo { width: calc(var(--w) * .4); height: calc(var(--w) * .4); }
 .card.deck-ganjifeh { --suit-S: #1c2250; --suit-C: #1c2250; --suit-H: #a4161a; --suit-D: #a4161a; background: radial-gradient(circle at 50% 40%, #f8e8bd, #f6e2b4 60%, #e6c98a); border-color: #24398a; box-shadow: var(--sh-1), inset 0 0 0 2px var(--gold), inset 0 0 0 3px #24398a; border-radius: calc(var(--w) * .18); }
 .card.tap { cursor: pointer; }
 .card.tap:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }

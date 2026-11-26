@@ -135,7 +135,10 @@ export function CardView({ card, faceDown, deck = 'deck-classic', back = 'back-i
         <FaceArt rank={card.rank} suit={card.suit} />
       ) : (
         <div className="pips">
-          {PIPS[card.rank].map(([x, y], i) => (
+          {/* large-index deck: the half-width corner rank leaves no room for a pip grid, so one centred suit (jumbo-index style) */}
+          {deck === 'deck-large' && card.rank > 1 ? (
+            <svg className="pip solo" viewBox="0 0 24 24" style={{ left: '50%', top: '50%' }}><use href={`#s-${card.suit}`} /></svg>
+          ) : PIPS[card.rank].map(([x, y], i) => (
             <svg key={i} className={`pip${y > 50 ? ' flip' : ''}${card.rank === 1 ? ' ace' : card.rank >= 9 ? ' sm' : card.rank >= 7 ? ' md' : card.rank <= 4 ? ' lg' : ''}`} viewBox="0 0 24 24" style={{ left: `${x}%`, top: `${y}%` }}><use href={`#s-${card.suit}`} /></svg>
           ))}
         </div>
