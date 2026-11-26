@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { isIP } from 'node:net';
-import { authenticate, finishMatch, guestLogin, openDb, pruneOld, trophiesOf, type Db } from './db';
+import { authenticate, finishMatch, guestLogin, openDb, pruneOld, revokeToken, trophiesOf, type Db } from './db';
 import { Queue } from './queue';
 import { RoomError, Rooms, type RoomsOptions } from './rooms';
 import { Hub, Social } from './social';
@@ -128,12 +128,13 @@ export function createApp(opts: ServerOptions = {}) {
     if (method === 'POST' && path === '/api/guest') {
       if (!perIp.take(ip)) return send(res, 429, { error: 'slow down' });
       const b = await readJson(req);
-      const a = guestLogin(db, cleanName(b.name), typeof b.id === 'string' ? b.id : undefined, typeof b.token === 'string' ? b.token : undefined, () => newAccounts.take(ip));
+      const a = guestLogin(db, cleanName(b.name), typeof b.id === 'string' ? b.id : undefined, typeof b.token === 'string' ? b.token : undefined, () => newAccounts.take(ip), now());
       return send(res, 200, { id: a.id, token: `${a.id}.${a.token}`, name: a.name });
     }
 
-    const me = authenticate(db, req.headers.authorization);
+    const me = authenticate(db, req.headers.authorization, now());
     if (!me) return send(res, perIp.take(ip) ? 401 : 429, { error: 'sign in first' });
+    if (method === 'POST' && path === '/api/logout') { revokeToken(db, me.id); return send(res, 200, {}); }
     if (throttled(method, path) && !perAccount.take(me.id)) return send(res, 429, { error: 'slow down' });
 
     if (method === 'POST' && path === '/api/rooms') {

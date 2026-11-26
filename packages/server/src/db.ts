@@ -28,6 +28,9 @@ export function openDb(path = ':memory:') {
   // Older databases: results before this column existed count as unranked (they may include bot or friendly games).
   try { db.exec('ALTER TABLE results ADD COLUMN ranked INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
   try { db.exec('ALTER TABLE chat_reports ADD COLUMN ts INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
+  try { db.exec('ALTER TABLE players ADD COLUMN token_seen INTEGER NOT NULL DEFAULT 0'); } catch { /* column exists */ }
+  // rows from before token expiry existed count as used now, so nobody is signed out by the upgrade
+  db.prepare('UPDATE players SET token_seen = ? WHERE token_seen = 0').run(Date.now());
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS players_fcode ON players (fcode)');
   db.exec('CREATE INDEX IF NOT EXISTS result_players_player ON result_players (player_id, result_id)'); // pair cooldown + rankings
   for (const r of db.prepare('SELECT id FROM players WHERE fcode IS NULL').all() as { id: string }[]) db.prepare('UPDATE players SET fcode = ? WHERE id = ?').run(newFriendCode(db), r.id);
@@ -46,28 +49,39 @@ export type Db = ReturnType<typeof openDb>;
 
 export interface Account { id: string; name: string }
 
+/** A token unused this long stops working (sliding: every use renews it). */
+export const TOKEN_TTL_MS = 90 * 24 * 3600 * 1000;
+
+/** The account for id+secret when the token is valid and not expired; renews its last-use time. */
+function liveToken(db: Db, id: string, secret: string, now: number): Account | null {
+  const row = db.prepare('SELECT id, name, token_hash, token_seen FROM players WHERE id = ?').get(id) as
+    { id: string; name: string; token_hash: string; token_seen: number } | undefined;
+  if (!row || !same(row.token_hash, sha(secret)) || now - row.token_seen > TOKEN_TTL_MS) return null;
+  db.prepare('UPDATE players SET token_seen = ? WHERE id = ?').run(Math.max(now, row.token_seen), id);
+  return { id: row.id, name: row.name };
+}
+
 /** Guest account: the client keeps {id, token}; the server stores only a hash of the token. */
-export function guestLogin(db: Db, name: string, id?: string, token?: string, mayCreate: () => boolean = () => true): Account & { token: string } {
-  if (id && token) {
-    const row = db.prepare('SELECT token_hash FROM players WHERE id = ?').get(id) as { token_hash: string } | undefined;
-    if (row && same(row.token_hash, sha(token))) {
-      db.prepare('UPDATE players SET name = ? WHERE id = ?').run(name, id);
-      return { id, name, token };
-    }
+export function guestLogin(db: Db, name: string, id?: string, token?: string, mayCreate: () => boolean = () => true, now = Date.now()): Account & { token: string } {
+  if (id && token && liveToken(db, id, token, now)) {
+    db.prepare('UPDATE players SET name = ? WHERE id = ?').run(name, id);
+    return { id, name, token };
   }
   if (!mayCreate()) throw new RoomError(429, 'too many new accounts, try again later');
   const nid = randomUUID();
   const ntoken = randomBytes(24).toString('hex');
-  db.prepare('INSERT INTO players (id, name, token_hash, created, fcode) VALUES (?, ?, ?, ?, ?)').run(nid, name, sha(ntoken), Date.now(), newFriendCode(db));
+  db.prepare('INSERT INTO players (id, name, token_hash, created, fcode, token_seen) VALUES (?, ?, ?, ?, ?, ?)').run(nid, name, sha(ntoken), now, newFriendCode(db), now);
   return { id: nid, name, token: ntoken };
 }
 
-export function authenticate(db: Db, header: string | undefined): Account | null {
+export function authenticate(db: Db, header: string | undefined, now = Date.now()): Account | null {
   const m = /^Bearer ([0-9a-f-]{36})\.([0-9a-f]{48})$/.exec(header ?? '');
-  if (!m) return null;
-  const row = db.prepare('SELECT id, name, token_hash FROM players WHERE id = ?').get(m[1]) as { id: string; name: string; token_hash: string } | undefined;
-  if (!row || !same(row.token_hash, sha(m[2]))) return null;
-  return { id: row.id, name: row.name };
+  return m ? liveToken(db, m[1], m[2], now) : null;
+}
+
+/** Logout: the stored hash no longer matches any token, so this one is dead for good. */
+export function revokeToken(db: Db, id: string) {
+  db.prepare("UPDATE players SET token_hash = 'revoked' WHERE id = ?").run(id);
 }
 
 /** Ladder trophies (ranked matches only): +25 for a win, -12 for a loss or abandoning, never below 0. Same values as the offline arenas. */

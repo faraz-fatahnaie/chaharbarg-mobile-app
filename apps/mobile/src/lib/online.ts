@@ -68,13 +68,20 @@ function loadCred(): Cred | null {
 }
 
 let token = '';
+let lastName = '';
 
-async function call<T = Record<string, unknown>>(method: string, path: string, body?: unknown): Promise<T> {
+async function call<T = Record<string, unknown>>(method: string, path: string, body?: unknown, retry = true): Promise<T> {
   const res = await fetch(SERVER_URL + path, {
     method,
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
   });
+  // token expired (90 days unused) or revoked: sign in again once, then retry
+  if (res.status === 401 && retry && token && path !== '/api/guest') {
+    token = '';
+    await signIn(lastName);
+    return call<T>(method, path, body, false);
+  }
   const json: unknown = await res.json().catch(() => null);
   if (!res.ok) throw new Error(isObj(json) && typeof json.error === 'string' ? json.error.slice(0, 200) : `server error ${res.status}`);
   return (isObj(json) ? json : {}) as T;
@@ -82,12 +89,22 @@ async function call<T = Record<string, unknown>>(method: string, path: string, b
 
 /** Signs in as a guest (creating the account on first use); returns the player id. */
 export async function signIn(name: string): Promise<string> {
+  lastName = name;
   const c = loadCred();
   // the stored token is `id.secret`; /api/guest takes the bare secret (server db.ts guestLogin hashes it), so the split is required
   const r = await call<{ id: string; token: string }>('POST', '/api/guest', { name, id: c?.id, token: c ? c.token.split('.')[1] : undefined });
   token = r.token;
   try { localStorage.setItem(CRED_KEY, JSON.stringify({ id: r.id, token: r.token })); } catch { /* private mode */ }
   return r.id;
+}
+
+/** Revokes this device's token on the server (best effort) and forgets it locally. */
+export async function signOut(): Promise<void> {
+  const c = loadCred();
+  if (!token && c) token = c.token;
+  if (token) await call('POST', '/api/logout', {}, false).catch(() => {});
+  token = '';
+  try { localStorage.removeItem(CRED_KEY); } catch { /* private mode */ }
 }
 
 export const createRoom = (players: number, target: number, timer: number) => call<{ code: string }>('POST', '/api/rooms', { players, target, timer });

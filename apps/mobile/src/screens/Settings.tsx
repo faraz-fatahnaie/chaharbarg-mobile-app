@@ -6,6 +6,7 @@ import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
 import { AVATAR_GLYPHS, type Settings as S } from '../economy/economy';
 import { Header } from './Home';
 import { remindersSupported, setReminder } from '../lib/reminders';
+import { signOut } from '../lib/online';
 import { SUPPORT_EMAIL, feedbackHref, supportHref } from '../lib/support';
 
 type TogKey = 'music' | 'effects' | 'hints' | 'noSurInLastRound' | 'mustCapture';
@@ -136,7 +137,7 @@ export function Settings({ onTutorial, onErase }: { onTutorial: () => void; onEr
         {!confirm ? <button ref={eraseBtn} className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
           : <div role="alertdialog" aria-label={tr('پاک‌کردن همهٔ اطلاعات؟ این کار برگشت‌ندارد.', 'Erase all data? This cannot be undone.')} className="col">
             <span role="alert" className="mute">{tr('همهٔ اطلاعات پاک می‌شود و برگشت‌ندارد.', 'This erases everything and cannot be undone.')}</span>
-            <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); resetAll(); onErase(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" autoFocus onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div></div>}
+            <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); void signOut(); resetAll(); onErase(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" autoFocus onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div></div>}
         <span className="mute">{tr('چهاربرگ — نسخهٔ ۰٫۱ · همه‌چیز روی همین گوشی ذخیره می‌شود.', 'Chaharbarg v0.1 · everything is stored on this device.')}</span>
       </div>
     </div>

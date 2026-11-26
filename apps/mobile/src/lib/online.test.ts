@@ -87,3 +87,26 @@ describe('server address', () => {
     expect(o.validServerUrl('http://example.com', true)).toBe('http://example.com');
   });
 });
+
+describe('expired or revoked token (F-100)', () => {
+  it('a 401 signs in again once and retries; signOut revokes on the server', async () => {
+    const seen: string[] = [];
+    let n = 0;
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: { method: string; headers: Record<string, string> }) => {
+      const path = new URL(url).pathname;
+      seen.push(`${init.method} ${path} ${init.headers.authorization ?? '-'}`);
+      if (path === '/api/guest') { n++; return Response.json({ id: 'i', token: `i.t${n}`, name: 'Sara' }); }
+      if (path === '/api/me' && init.headers.authorization === 'Bearer i.t1') return Response.json({ error: 'sign in first' }, { status: 401 });
+      return Response.json({ id: 'i', name: 'Sara', code: 'C', trophies: 0, queued: false });
+    }));
+    await o.signIn('Sara');
+    expect((await o.getMe()).name).toBe('Sara');
+    expect(seen.slice(1)).toEqual(['GET /api/me Bearer i.t1', 'POST /api/guest -', 'GET /api/me Bearer i.t2']);
+    seen.length = 0;
+    await o.signOut();
+    expect(seen).toEqual(['POST /api/logout Bearer i.t2']);
+    vi.unstubAllGlobals();
+    vi.stubGlobal('location', { protocol: 'http:', hostname: 'localhost', search: '' });
+    vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} });
+  });
+});
