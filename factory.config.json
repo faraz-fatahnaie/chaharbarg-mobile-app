@@ -12,7 +12,7 @@
     "autoPush": true
   },
   "manager": {
-    "autonomy": "assist"
+    "autonomy": "autopilot"
   },
   "team": {
     "preset": "balanced"

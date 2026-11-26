@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)"
+    ]
+  },
+  "enabledPlugins": {
+    "software-factory@software-factory": false
+  }
+}
