@@ -1,0 +1,147 @@
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Avatar, emblemName } from '../art/Avatar';
+import { useLang } from '../lib/i18n';
+import { NAME_MAX, checkName, readPhoto } from '../lib/identity';
+import { resetAll, setPhoto, update, useProfile, usePhoto } from '../lib/store';
+import { AVATAR_GLYPHS, type Settings as S } from '../economy/economy';
+import { Header } from './Home';
+import { remindersSupported, setReminder } from '../lib/reminders';
+import { signOut } from '../lib/online';
+import { SUPPORT_EMAIL, feedbackHref, supportHref } from '../lib/support';
+
+type TogKey = 'music' | 'effects' | 'hints' | 'noSurInLastRound' | 'mustCapture';
+const Tog = ({ k, label, s, set }: { k: TogKey; label: string; s: S; set: (k: TogKey, v: boolean) => void }) => (
+  <label className="tog"><span>{label}</span><input type="checkbox" checked={s[k]} onChange={(e) => set(k, e.target.checked)} /></label>
+);
+
+export function Settings({ onTutorial, onErase }: { onTutorial: () => void; onErase: () => void }) {
+  const { tr, n } = useLang();
+  const p = useProfile();
+  const s = p.settings;
+  const [confirm, setConfirm] = useState(false);
+  const eraseBtn = useRef<HTMLButtonElement>(null);
+  const wasConfirm = useRef(false);
+  // after cancelling, put focus back on the button that opened the confirmation
+  useEffect(() => { if (wasConfirm.current && !confirm) eraseBtn.current?.focus(); wasConfirm.current = confirm; }, [confirm]);
+  const photo = usePhoto();
+  const [draft, setDraft] = useState(p.name);
+  const [nameErr, setNameErr] = useState('');
+  const [picErr, setPicErr] = useState('');
+  const saveName = () => {
+    const r = checkName(draft);
+    if ('error' in r) {
+      setNameErr(r.error === 'empty' ? tr('نام نمی‌تواند خالی باشد.', "Name can't be empty.")
+        : tr(`نام حداکثر ${n(NAME_MAX)} حرف باشد.`, `Name can be at most ${NAME_MAX} characters.`));
+      return;
+    }
+    update((q) => ({ ...q, name: r.name }));
+    setDraft(r.name);
+    setNameErr('');
+  };
+  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      setPicErr(setPhoto(await readPhoto(file)) ? '' : tr('ذخیرهٔ تصویر ممکن نشد.', "Couldn't save the picture."));
+    } catch (err) {
+      const m = (err as Error).message;
+      setPicErr(m === 'too-big' ? tr('تصویر بزرگ‌تر از ۱۰ مگابایت است.', 'Picture is larger than 10 MB.')
+        : m === 'too-large' ? tr('ابعاد تصویر خیلی بزرگ است (بیش از ۵۰ مگاپیکسل).', 'Picture is too large (over 50 megapixels).')
+        : tr('این فایل تصویر نیست یا باز نشد.', "That file isn't a picture we can open."));
+    }
+    input.value = '';
+  };
+  const set = <K extends keyof S>(k: K, v: S[K]) => update((q) => ({ ...q, settings: { ...q.settings, [k]: v } }));
+  const [remFailed, setRemFailed] = useState(false);
+  return (
+    <div className="scroll col" style={{ padding: 0, gap: 12 }}>
+      <Header />
+      <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('پروفایل', 'Profile')}</h3>
+        <div className="row" style={{ alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', display: 'grid', placeItems: 'center', background: 'var(--panel2)', fontSize: 28, fontWeight: 800, flex: 'none' }}>
+            {photo ? <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : ([...p.name][0] ?? '👤')}
+          </div>
+          <label className="btn">{tr('انتخاب تصویر', 'Choose picture')}
+            <input type="file" accept="image/*" hidden onChange={onFile} /></label>
+          {photo && <button className="btn ghost" onClick={() => { setPhoto(null); setPicErr(''); }}>{tr('حذف تصویر', 'Remove picture')}</button>}
+        </div>
+        <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+          <span>{tr('نام شما', 'Your name')}</span>
+          <input value={draft} maxLength={40} onChange={(e) => setDraft(e.target.value)}
+            style={{ font: 'inherit', background: 'var(--panel2)', color: 'var(--ink)', border: 0, borderRadius: 10, padding: 7, width: 130 }} />
+          <button className="btn" onClick={saveName}>{tr('ذخیره', 'Save')}</button>
+        </div>
+        <div className="row" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Avatar hue={p.avatar.hue} glyph={p.avatar.glyph} name={p.name || '👤'} />
+          <input type="range" min={0} max={359} value={p.avatar.hue} aria-label={tr('رنگ آواتار', 'Avatar colour')}
+            onChange={(e) => update((q) => ({ ...q, avatar: { ...q.avatar, hue: Number(e.target.value) } }))} />
+          {['', ...AVATAR_GLYPHS].map((g) => (
+            <button key={g || 'letter'} className={p.avatar.glyph === g ? 'btn primary' : 'btn ghost'} aria-label={g.startsWith('e:') ? emblemName(g, p.settings.lang === 'fa') : g || tr('حرف اول نام', 'Name initial')}
+              onClick={() => update((q) => ({ ...q, avatar: { ...q.avatar, glyph: g } }))}>{g.startsWith('e:') ? <Avatar hue={p.avatar.hue} glyph={g} name="" style={{ width: 28, height: 28, border: 0 }} /> : g || 'A'}</button>
+          ))}
+        </div>
+        {(nameErr || picErr) && <span role="alert">{nameErr || picErr}</span>}
+        <span className="mute">{tr('تصویر پروفایل فقط روی همین گوشی ذخیره می‌شود و با آواتار بازی فرق دارد.', 'Your profile picture stays on this device and is separate from your in-game avatar.')}</span>
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('عمومی', 'General')}</h3>
+        <label className="tog"><span>{tr('زبان', 'Language')}</span>
+          <select value={s.lang} onChange={(e) => set('lang', e.target.value as S['lang'])}><option value="fa">فارسی</option><option value="en">English</option></select></label>
+        <Tog k="music" label={tr('موسیقی', 'Music')} s={s} set={set} />
+        <Tog k="effects" label={tr('جلوه‌های صوتی', 'Sound effects')} s={s} set={set} />
+        <Tog k="hints" label={tr('نمایش راهنما (برجسته‌کردن برداشت‌های ممکن)', 'Hints (highlight valid captures)')} s={s} set={set} />
+        <label className="tog"><span>{tr('زمان‌سنج نوبت (با ربات)', 'Turn timer (vs bots)')}</span>
+          <select value={s.turnTimer} onChange={(e) => set('turnTimer', e.target.value as S['turnTimer'])}>
+            <option value="off">{tr('خاموش', 'Off')}</option>
+            <option value="normal">{tr('عادی (۱۵ ثانیه)', 'Normal (15 s)')}</option>
+            <option value="speed">{tr('سریع (۵ ثانیه)', 'Speed (5 s)')}</option></select></label>
+        <label className="tog"><span>{tr('زمان روز در آرنا', 'Time of day')}</span>
+          <select value={s.timeOfDay} onChange={(e) => set('timeOfDay', e.target.value as S['timeOfDay'])}>
+            <option value="auto">{tr('خودکار (ساعت گوشی)', 'Automatic')}</option>
+            <option value="day">{tr('روز', 'Day')}</option><option value="dusk">{tr('غروب', 'Dusk')}</option><option value="night">{tr('شب', 'Night')}</option></select></label>
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('قوانین (برای بازی‌های جدید)', 'House rules (new matches)')}</h3>
+        <Tog k="noSurInLastRound" label={tr('در نوبت آخر سور حساب نمی‌شود', 'No sur in the last round')} s={s} set={set} />
+        <Tog k="mustCapture" label={tr('کارتی که می‌تواند بردارد نباید روی زمین بیفتد', 'A card that can capture may not be dropped')} s={s} set={set} />
+        <label className="tog"><span>{tr('زمین اول: سرباز', 'Opening floor jack')}</span>
+          <select value={s.openingJack} onChange={(e) => set('openingJack', e.target.value as S['openingJack'])}>
+            <option value="replace">{tr('جایگزین شود', 'Replace it')}</option><option value="allow">{tr('بماند', 'Allow it')}</option></select></label>
+        <label className="tog"><span>{tr('امتیاز سور سرباز', 'Sur Sarbaz points')}</span>
+          <select value={s.surSarbazPoints} onChange={(e) => set('surSarbazPoints', Number(e.target.value) as 5 | 10)}><option value="10">۱۰</option><option value="5">۵</option></select></label>
+        <span className="mute">{tr('پیش‌فرض‌ها همان قوانین رایج پاسور است. تغییرها از بازی بعدی اعمال می‌شود.', 'Defaults follow the common Pasur rules. Changes apply from your next match.')}</span>
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px' }}>
+        <h3>{tr('اعلان‌ها', 'Notifications')}</h3>
+        <label className="tog"><span>{tr('یادآوری روزانه (ساعت ۲۰)', 'Daily reminder (8 pm)')}</span>
+          <input type="checkbox" checked={s.notifications} disabled={!remindersSupported()}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              void setReminder(checked, s.lang).then((ok) => { set('notifications', ok); setRemFailed(checked && !ok); });
+            }} /></label>
+        {remFailed && <span className="mute">{tr('اجازهٔ اعلان داده نشد. آن را در تنظیمات گوشی برای چهاربرگ روشن کنید.', 'Notifications were not allowed. Turn them on for Chaharbarg in your phone settings.')}</span>}
+        {!remindersSupported() && <span className="mute">{tr('فقط در نسخهٔ نصبی', 'Only in the installed app')}</span>}
+        <span className="mute">{tr('یادآوری روی همین گوشی؛ بدون سرور.', 'Reminders are local to this device; no server.')}</span>
+      </div>
+
+      <div className="panel col" style={{ margin: '0 14px 14px' }}>
+        <button className="btn" onClick={onTutorial}>📖 {tr('آموزش بازی', 'How to play')}</button>
+        {SUPPORT_EMAIL && <>
+          <a className="btn" href={supportHref(s.lang)}>✉️ {tr('تماس با پشتیبانی', 'Contact support')}</a>
+          <a className="btn" href={feedbackHref(s.lang)}>💬 {tr('ارسال نظر و پیشنهاد', 'Send feedback / suggestions')}</a>
+          <span className="mute">{SUPPORT_EMAIL}</span>
+        </>}
+        {!confirm ? <button ref={eraseBtn} className="btn danger" onClick={() => setConfirm(true)}>{tr('پاک‌کردن همهٔ اطلاعات', 'Erase all data')}</button>
+          : <div role="alertdialog" aria-label={tr('پاک‌کردن همهٔ اطلاعات؟ این کار برگشت‌ندارد.', 'Erase all data? This cannot be undone.')} className="col">
+            <span role="alert" className="mute">{tr('همهٔ اطلاعات پاک می‌شود و برگشت‌ندارد.', 'This erases everything and cannot be undone.')}</span>
+            <div className="row"><button className="btn danger grow" onClick={() => { void setReminder(false, s.lang); void signOut(); resetAll(); onErase(); setDraft(''); setNameErr(''); setPicErr(''); setConfirm(false); }}>{tr('مطمئنم، پاک شود', 'Yes, erase')}</button><button className="btn ghost" autoFocus onClick={() => setConfirm(false)}>{tr('نه', 'No')}</button></div></div>}
+        <span className="mute">{tr('چهاربرگ — نسخهٔ ۰٫۱ · همه‌چیز روی همین گوشی ذخیره می‌شود.', 'Chaharbarg v0.1 · everything is stored on this device.')}</span>
+      </div>
+    </div>
+  );
+}

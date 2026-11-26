@@ -1,0 +1,38 @@
+{
+  "name": "@chaharbarg/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "e2e": "node e2e/cdp.mjs smoke",
+    "ios:sim": "sh scripts/ios-sim.sh",
+    "android:apk": "sh scripts/android-apk.sh",
+    "cap:sync": "npm run build && cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@chaharbarg/engine": "*",
+    "@fontsource/lalezar": "^5.3.0",
+    "@fontsource/vazirmatn": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^5.6.0",
+    "vite": "^8.3.5",
+    "vitest": "^3.0.0"
+  }
+}

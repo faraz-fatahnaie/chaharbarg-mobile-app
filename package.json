@@ -1,0 +1,14 @@
+{
+  "name": "chaharbarg",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm test -w @chaharbarg/engine && npm test -w @chaharbarg/server && npm test -w @chaharbarg/mobile",
+    "server": "npm start -w @chaharbarg/server",
+    "server:lan": "HOST=0.0.0.0 npm start -w @chaharbarg/server",
+    "dev": "npm run dev -w @chaharbarg/mobile",
+    "build": "npm run build -w @chaharbarg/mobile",
+    "typecheck": "npm run typecheck -w @chaharbarg/engine && npm run typecheck -w @chaharbarg/server && npm run typecheck -w @chaharbarg/mobile"
+  }
+}

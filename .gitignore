@@ -1,3 +1,22 @@
 node_modules
 dist
 .DS_Store
+.claude/worktrees/
+.claude-flow/
+android/app/build
+apps/mobile/build
+.factory/
+.worktrees/
+# generated knowledge graph: rebuilt locally, never committed
+graphify-out/
+docs/graph/graph.json
+
+packages/server/data/
+
+# ruflo / agent tool state (local, not source)
+.swarm/
+agentdb.rvf
+agentdb.rvf.lock
+ruvector.db
+.claude/proven-config.json
+.claude/.proven-config-version
